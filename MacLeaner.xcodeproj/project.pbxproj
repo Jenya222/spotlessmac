@@ -20,6 +20,7 @@
 		EE00000B000000000000EE00 /* LogsScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00000E000000000000DD00 /* LogsScanner.swift */; };
 		EE00000C000000000000EE00 /* LargeFilesScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00000F000000000000DD00 /* LargeFilesScanner.swift */; };
 		EE00000D000000000000EE00 /* FDAOnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000010000000000000DD00 /* FDAOnboardingView.swift */; };
+		EE00000E000000000000EE00 /* LargeFilesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000011000000000000DD00 /* LargeFilesView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -39,6 +40,7 @@
 		DD00000E000000000000DD00 /* LogsScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogsScanner.swift; sourceTree = "<group>"; };
 		DD00000F000000000000DD00 /* LargeFilesScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LargeFilesScanner.swift; sourceTree = "<group>"; };
 		DD000010000000000000DD00 /* FDAOnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FDAOnboardingView.swift; sourceTree = "<group>"; };
+		DD000011000000000000DD00 /* LargeFilesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LargeFilesView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -87,6 +89,7 @@
 				DD000002000000000000DD00 /* MacLeanerApp.swift */,
 				DD000003000000000000DD00 /* ContentView.swift */,
 				DD000010000000000000DD00 /* FDAOnboardingView.swift */,
+				DD000011000000000000DD00 /* LargeFilesView.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -203,6 +206,7 @@
 				EE00000B000000000000EE00 /* LogsScanner.swift in Sources */,
 				EE00000C000000000000EE00 /* LargeFilesScanner.swift in Sources */,
 				EE00000D000000000000EE00 /* FDAOnboardingView.swift in Sources */,
+				EE00000E000000000000EE00 /* LargeFilesView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
