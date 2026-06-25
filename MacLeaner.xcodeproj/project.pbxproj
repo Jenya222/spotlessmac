@@ -21,6 +21,7 @@
 		EE00000C000000000000EE00 /* LargeFilesScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00000F000000000000DD00 /* LargeFilesScanner.swift */; };
 		EE00000D000000000000EE00 /* FDAOnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000010000000000000DD00 /* FDAOnboardingView.swift */; };
 		EE00000E000000000000EE00 /* LargeFilesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000011000000000000DD00 /* LargeFilesView.swift */; };
+		EE00000F000000000000EE00 /* DiskUsageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000012000000000000DD00 /* DiskUsageView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -41,6 +42,7 @@
 		DD00000F000000000000DD00 /* LargeFilesScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LargeFilesScanner.swift; sourceTree = "<group>"; };
 		DD000010000000000000DD00 /* FDAOnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FDAOnboardingView.swift; sourceTree = "<group>"; };
 		DD000011000000000000DD00 /* LargeFilesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LargeFilesView.swift; sourceTree = "<group>"; };
+		DD000012000000000000DD00 /* DiskUsageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiskUsageView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -90,6 +92,7 @@
 				DD000003000000000000DD00 /* ContentView.swift */,
 				DD000010000000000000DD00 /* FDAOnboardingView.swift */,
 				DD000011000000000000DD00 /* LargeFilesView.swift */,
+				DD000012000000000000DD00 /* DiskUsageView.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -207,6 +210,7 @@
 				EE00000C000000000000EE00 /* LargeFilesScanner.swift in Sources */,
 				EE00000D000000000000EE00 /* FDAOnboardingView.swift in Sources */,
 				EE00000E000000000000EE00 /* LargeFilesView.swift in Sources */,
+				EE00000F000000000000EE00 /* DiskUsageView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
