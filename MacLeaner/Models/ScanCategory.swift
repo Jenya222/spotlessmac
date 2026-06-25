@@ -5,6 +5,7 @@ enum ScanCategory: String, CaseIterable, Identifiable, Sendable {
     case developerCaches = "developer_caches"
     case logs = "logs"
     case trash = "trash"
+    case largeFiles = "large_files"
 
     var id: String { rawValue }
 
@@ -14,6 +15,7 @@ enum ScanCategory: String, CaseIterable, Identifiable, Sendable {
         case .developerCaches: "Dev-кеши"
         case .logs: "Логи"
         case .trash: "Корзина"
+        case .largeFiles: "Крупные файлы"
         }
     }
 }
