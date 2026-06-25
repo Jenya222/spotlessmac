@@ -18,7 +18,8 @@ final class ScanViewModel {
         deletionFailures = []
         defer { isScanning = false }
         do {
-            items = try await engine.scan()
+            let fdaStatus = FDAService.detect()
+            items = try await engine.scan(fdaStatus: fdaStatus)
         } catch {
             scanError = error.localizedDescription
         }
