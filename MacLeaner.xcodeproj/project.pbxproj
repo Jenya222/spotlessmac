@@ -18,6 +18,7 @@
 		EE000009000000000000EE00 /* CachesScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00000C000000000000DD00 /* CachesScanner.swift */; };
 		EE00000A000000000000EE00 /* FDAService.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00000D000000000000DD00 /* FDAService.swift */; };
 		EE00000B000000000000EE00 /* LogsScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00000E000000000000DD00 /* LogsScanner.swift */; };
+		EE00000C000000000000EE00 /* LargeFilesScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00000F000000000000DD00 /* LargeFilesScanner.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -35,6 +36,7 @@
 		DD00000C000000000000DD00 /* CachesScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CachesScanner.swift; sourceTree = "<group>"; };
 		DD00000D000000000000DD00 /* FDAService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FDAService.swift; sourceTree = "<group>"; };
 		DD00000E000000000000DD00 /* LogsScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogsScanner.swift; sourceTree = "<group>"; };
+		DD00000F000000000000DD00 /* LargeFilesScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LargeFilesScanner.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -104,6 +106,7 @@
 				DD00000C000000000000DD00 /* CachesScanner.swift */,
 				DD00000D000000000000DD00 /* FDAService.swift */,
 				DD00000E000000000000DD00 /* LogsScanner.swift */,
+				DD00000F000000000000DD00 /* LargeFilesScanner.swift */,
 			);
 			path = ScanEngine;
 			sourceTree = "<group>";
@@ -195,6 +198,7 @@
 				EE000009000000000000EE00 /* CachesScanner.swift in Sources */,
 				EE00000A000000000000EE00 /* FDAService.swift in Sources */,
 				EE00000B000000000000EE00 /* LogsScanner.swift in Sources */,
+				EE00000C000000000000EE00 /* LargeFilesScanner.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
