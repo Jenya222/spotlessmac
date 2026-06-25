@@ -17,6 +17,7 @@
 		EE000008000000000000EE00 /* ScanViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000009000000000000DD00 /* ScanViewModel.swift */; };
 		EE000009000000000000EE00 /* CachesScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00000C000000000000DD00 /* CachesScanner.swift */; };
 		EE00000A000000000000EE00 /* FDAService.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00000D000000000000DD00 /* FDAService.swift */; };
+		EE00000B000000000000EE00 /* LogsScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00000E000000000000DD00 /* LogsScanner.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -33,6 +34,7 @@
 		DD00000B000000000000DD00 /* MacLeaner.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MacLeaner.entitlements; sourceTree = "<group>"; };
 		DD00000C000000000000DD00 /* CachesScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CachesScanner.swift; sourceTree = "<group>"; };
 		DD00000D000000000000DD00 /* FDAService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FDAService.swift; sourceTree = "<group>"; };
+		DD00000E000000000000DD00 /* LogsScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogsScanner.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -101,6 +103,7 @@
 				DD000008000000000000DD00 /* SafetyRules.swift */,
 				DD00000C000000000000DD00 /* CachesScanner.swift */,
 				DD00000D000000000000DD00 /* FDAService.swift */,
+				DD00000E000000000000DD00 /* LogsScanner.swift */,
 			);
 			path = ScanEngine;
 			sourceTree = "<group>";
@@ -191,6 +194,7 @@
 				EE000008000000000000EE00 /* ScanViewModel.swift in Sources */,
 				EE000009000000000000EE00 /* CachesScanner.swift in Sources */,
 				EE00000A000000000000EE00 /* FDAService.swift in Sources */,
+				EE00000B000000000000EE00 /* LogsScanner.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
