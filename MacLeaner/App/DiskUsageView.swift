@@ -47,19 +47,22 @@ struct DiskUsageView: View {
         isLoading = true
         defer { isLoading = false }
         let home = FileManager.default.homeDirectoryForCurrentUser
-        guard let topLevel = try? FileManager.default.contentsOfDirectory(
-            at: home,
-            includingPropertiesForKeys: [.isDirectoryKey],
-            options: [.skipsHiddenFiles]
-        ) else { return }
+        let candidateNames = ["Downloads", "Movies", "Documents", "Desktop",
+                              "Music", "Pictures", "Library", "Developer", "Sites"]
+        let roots = candidateNames
+            .map { home.appending(path: $0, directoryHint: .isDirectory) }
+            .filter { FileManager.default.fileExists(atPath: $0.path(percentEncoded: false)) }
 
         var result: [FolderEntry] = []
-        for url in topLevel {
-            let size = await Task.detached(priority: .utility) {
-                Self.recursiveSize(url)
-            }.value
-            if size > 0 {
-                result.append(FolderEntry(url: url, size: size))
+        await withTaskGroup(of: FolderEntry?.self) { group in
+            for url in roots {
+                group.addTask(priority: .utility) {
+                    let size = Self.recursiveSize(url)
+                    return size > 0 ? FolderEntry(url: url, size: size) : nil
+                }
+            }
+            for await entry in group {
+                if let entry { result.append(entry) }
             }
         }
         entries = result.sorted { $0.size > $1.size }

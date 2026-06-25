@@ -26,11 +26,16 @@ struct ContentView: View {
             }
         }
         .sheet(isPresented: $showOnboarding) {
-            FDAOnboardingView {
-                hasSeenFDAOnboarding = true
-                showOnboarding = false
-                viewModel.checkFDA()
-            }
+            FDAOnboardingView(
+                onDismiss: {
+                    hasSeenFDAOnboarding = true
+                    showOnboarding = false
+                    viewModel.checkFDA()
+                },
+                onRecheck: {
+                    viewModel.checkFDA()
+                }
+            )
         }
     }
 

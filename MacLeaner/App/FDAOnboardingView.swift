@@ -2,6 +2,7 @@ import SwiftUI
 
 struct FDAOnboardingView: View {
     let onDismiss: () -> Void
+    let onRecheck: () -> Void
 
     @State private var status: FDAStatus = .unknown
 
@@ -37,6 +38,7 @@ struct FDAOnboardingView: View {
 
                 Button("Проверить ещё раз") {
                     status = FDAService.detect()
+                    onRecheck()
                 }
             }
 
