@@ -1,11 +1,102 @@
 import SwiftUI
 
+private enum AppTab: String, CaseIterable {
+    case clean = "Очистка"
+    case largeFiles = "Крупные файлы"
+    case diskUsage = "Диск"
+}
+
 struct ContentView: View {
     @State private var viewModel = ScanViewModel()
+    @State private var selectedTab: AppTab = .clean
+    @AppStorage("hasSeenFDAOnboarding") private var hasSeenFDAOnboarding = false
+    @State private var showOnboarding = false
 
     var body: some View {
         VStack(spacing: 0) {
-            toolbar
+            tabPicker
+            Divider()
+            tabContent
+        }
+        .frame(minWidth: 700, minHeight: 480)
+        .onAppear {
+            viewModel.checkFDA()
+            if !hasSeenFDAOnboarding {
+                showOnboarding = true
+            }
+        }
+        .sheet(isPresented: $showOnboarding) {
+            FDAOnboardingView {
+                hasSeenFDAOnboarding = true
+                showOnboarding = false
+                viewModel.checkFDA()
+            }
+        }
+    }
+
+    // MARK: - Tab picker
+
+    private var tabPicker: some View {
+        HStack(spacing: 12) {
+            Text("MacLeaner")
+                .font(.title2.bold())
+
+            Spacer()
+
+            Picker("Раздел", selection: $selectedTab) {
+                ForEach(AppTab.allCases, id: \.self) { tab in
+                    Text(tab.rawValue).tag(tab)
+                }
+            }
+            .pickerStyle(.segmented)
+            .frame(width: 340)
+
+            fdaBadge
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+    }
+
+    @ViewBuilder
+    private var fdaBadge: some View {
+        switch viewModel.fdaStatus {
+        case .granted:
+            Label("FDA", systemImage: "checkmark.shield.fill")
+                .font(.caption)
+                .foregroundStyle(.green)
+        case .denied:
+            Button {
+                showOnboarding = true
+            } label: {
+                Label("FDA", systemImage: "exclamationmark.shield")
+                    .font(.caption)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(.orange)
+        case .unknown:
+            EmptyView()
+        }
+    }
+
+    // MARK: - Tab content
+
+    @ViewBuilder
+    private var tabContent: some View {
+        switch selectedTab {
+        case .clean:
+            cleanTab
+        case .largeFiles:
+            LargeFilesView(viewModel: viewModel)
+        case .diskUsage:
+            DiskUsageView()
+        }
+    }
+
+    // MARK: - Clean tab (existing scan/delete flow)
+
+    private var cleanTab: some View {
+        VStack(spacing: 0) {
+            cleanToolbar
             Divider()
             if !viewModel.deletionFailures.isEmpty {
                 failureBanner
@@ -26,18 +117,10 @@ struct ContentView: View {
             Divider()
             statusBar
         }
-        .frame(minWidth: 640, minHeight: 440)
     }
 
-    // MARK: - Toolbar
-
-    private var toolbar: some View {
+    private var cleanToolbar: some View {
         HStack(spacing: 12) {
-            Text("MacLeaner")
-                .font(.title2.bold())
-
-            Spacer()
-
             if viewModel.hasSelection {
                 Text(viewModel.formattedTotalSize)
                     .foregroundStyle(.secondary)
@@ -54,6 +137,8 @@ struct ContentView: View {
                 ProgressView().controlSize(.small)
             }
 
+            Spacer()
+
             Button("Сканировать") {
                 Task { await viewModel.scan() }
             }
@@ -61,21 +146,19 @@ struct ContentView: View {
             .disabled(viewModel.isScanning || viewModel.isDeleting)
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.vertical, 10)
         .animation(.default, value: viewModel.hasSelection)
     }
 
-    // MARK: - Results list
-
     private var resultsList: some View {
-        List(viewModel.items) { item in
+        List(viewModel.cleanableItems) { item in
             ScanItemRow(item: item) {
                 viewModel.toggleSelection(item)
             }
         }
         .listStyle(.plain)
         .overlay {
-            if viewModel.items.isEmpty && !viewModel.isScanning {
+            if viewModel.cleanableItems.isEmpty && !viewModel.isScanning {
                 ContentUnavailableView(
                     "Нажмите «Сканировать»",
                     systemImage: "sparkle.magnifyingglass",
@@ -85,18 +168,16 @@ struct ContentView: View {
         }
     }
 
-    // MARK: - Status bar
-
     private var statusBar: some View {
         HStack {
-            Text("\(viewModel.items.count) элементов")
+            Text("\(viewModel.cleanableItems.count) элементов")
                 .foregroundStyle(.secondary)
             Spacer()
             if viewModel.hasSelection {
                 Button("Снять выделение") { viewModel.selectNone() }
                     .buttonStyle(.plain)
                     .foregroundStyle(Color.accentColor)
-            } else if !viewModel.items.isEmpty {
+            } else if !viewModel.cleanableItems.isEmpty {
                 Button("Выбрать все") { viewModel.selectAll() }
                     .buttonStyle(.plain)
                     .foregroundStyle(Color.accentColor)
@@ -106,8 +187,6 @@ struct ContentView: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 6)
     }
-
-    // MARK: - Failure banner
 
     private var failureBanner: some View {
         VStack(alignment: .leading, spacing: 4) {
