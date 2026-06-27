@@ -1,1 +1,26 @@
 .superpowers/
+
+# Private keys — NEVER commit
+license_private.pem
+*.pem
+*.p12
+*.p8
+
+# Xcode build artifacts
+build/
+DerivedData/
+*.xcarchive
+*.xcuserstate
+xcuserdata/
+
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Notarization outputs
+*.zip
+SpotlessMac.dmg

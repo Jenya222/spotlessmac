@@ -26,6 +26,11 @@
 		EE000011000000000000EE00 /* KeychainStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000014000000000000DD00 /* KeychainStore.swift */; };
 		EE000012000000000000EE00 /* LicenseValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000015000000000000DD00 /* LicenseValidator.swift */; };
 		EE000013000000000000EE00 /* LicenseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000016000000000000DD00 /* LicenseManager.swift */; };
+		EE000020000000000000EE00 /* InstalledApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000020000000000000DD00 /* InstalledApp.swift */; };
+		EE000021000000000000EE00 /* LeftoverItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000021000000000000DD00 /* LeftoverItem.swift */; };
+		EE000022000000000000EE00 /* UninstallEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000022000000000000DD00 /* UninstallEngine.swift */; };
+		EE000023000000000000EE00 /* UninstallViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000023000000000000DD00 /* UninstallViewModel.swift */; };
+		EE000024000000000000EE00 /* UninstallerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000024000000000000DD00 /* UninstallerView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -51,6 +56,11 @@
 		DD000014000000000000DD00 /* KeychainStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainStore.swift; sourceTree = "<group>"; };
 		DD000015000000000000DD00 /* LicenseValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LicenseValidator.swift; sourceTree = "<group>"; };
 		DD000016000000000000DD00 /* LicenseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LicenseManager.swift; sourceTree = "<group>"; };
+		DD000020000000000000DD00 /* InstalledApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstalledApp.swift; sourceTree = "<group>"; };
+		DD000021000000000000DD00 /* LeftoverItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeftoverItem.swift; sourceTree = "<group>"; };
+		DD000022000000000000DD00 /* UninstallEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UninstallEngine.swift; sourceTree = "<group>"; };
+		DD000023000000000000DD00 /* UninstallViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UninstallViewModel.swift; sourceTree = "<group>"; };
+		DD000024000000000000DD00 /* UninstallerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UninstallerView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -86,6 +96,7 @@
 				AA000004000000000000AA00 /* App */,
 				AA000005000000000000AA00 /* Models */,
 				AA000006000000000000AA00 /* ScanEngine */,
+				AA000009000000000000AA00 /* Uninstall */,
 				AA000007000000000000AA00 /* ViewModels */,
 				AA000008000000000000AA00 /* Licensing */,
 				DD00000A000000000000DD00 /* Info.plist */,
@@ -113,6 +124,7 @@
 				DD000011000000000000DD00 /* LargeFilesView.swift */,
 				DD000012000000000000DD00 /* DiskUsageView.swift */,
 				DD000013000000000000DD00 /* ActivationView.swift */,
+				DD000024000000000000DD00 /* UninstallerView.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -122,8 +134,18 @@
 			children = (
 				DD000004000000000000DD00 /* ScanCategory.swift */,
 				DD000005000000000000DD00 /* ScanItem.swift */,
+				DD000020000000000000DD00 /* InstalledApp.swift */,
+				DD000021000000000000DD00 /* LeftoverItem.swift */,
 			);
 			path = Models;
+			sourceTree = "<group>";
+		};
+		AA000009000000000000AA00 /* Uninstall */ = {
+			isa = PBXGroup;
+			children = (
+				DD000022000000000000DD00 /* UninstallEngine.swift */,
+			);
+			path = Uninstall;
 			sourceTree = "<group>";
 		};
 		AA000006000000000000AA00 /* ScanEngine */ = {
@@ -144,6 +166,7 @@
 			isa = PBXGroup;
 			children = (
 				DD000009000000000000DD00 /* ScanViewModel.swift */,
+				DD000023000000000000DD00 /* UninstallViewModel.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -235,6 +258,11 @@
 				EE000011000000000000EE00 /* KeychainStore.swift in Sources */,
 				EE000012000000000000EE00 /* LicenseValidator.swift in Sources */,
 				EE000013000000000000EE00 /* LicenseManager.swift in Sources */,
+				EE000020000000000000EE00 /* InstalledApp.swift in Sources */,
+				EE000021000000000000EE00 /* LeftoverItem.swift in Sources */,
+				EE000022000000000000EE00 /* UninstallEngine.swift in Sources */,
+				EE000023000000000000EE00 /* UninstallViewModel.swift in Sources */,
+				EE000024000000000000EE00 /* UninstallerView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

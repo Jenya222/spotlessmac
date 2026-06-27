@@ -2,6 +2,7 @@ import SwiftUI
 
 private enum AppTab: String, CaseIterable {
     case clean = "Очистка"
+    case uninstall = "Деинсталлятор"
     case largeFiles = "Крупные файлы"
     case diskUsage = "Диск"
 }
@@ -61,7 +62,7 @@ struct ContentView: View {
                 }
             }
             .pickerStyle(.segmented)
-            .frame(width: 340)
+            .frame(width: 460)
 
             licenseBadge
             fdaBadge
@@ -123,6 +124,8 @@ struct ContentView: View {
         switch selectedTab {
         case .clean:
             cleanTab
+        case .uninstall:
+            UninstallerView(licenseManager: licenseManager)
         case .largeFiles:
             LargeFilesView(viewModel: viewModel, licenseManager: licenseManager)
         case .diskUsage:
