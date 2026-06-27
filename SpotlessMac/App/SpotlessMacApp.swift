@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct MacLeanerApp: App {
+struct SpotlessMacApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()

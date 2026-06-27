@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Direct distribution via Developer ID — not App Store -->
+    <key>method</key>
+    <string>developer-id</string>
+
+    <!-- Use the "Developer ID Application" certificate already in your Keychain -->
+    <key>signingStyle</key>
+    <string>manual</string>
+    <key>signingCertificate</key>
+    <string>Developer ID Application</string>
+
+    <!-- TODO: replace with your 10-character Apple Developer Team ID
+         Find it at https://developer.apple.com/account → Membership -->
+    <key>teamID</key>
+    <string>TODO_YOUR_10_CHAR_TEAM_ID</string>
+
+    <!-- Strip Swift standard-library debug symbols from the export -->
+    <key>stripSwiftSymbols</key>
+    <true/>
+</dict>
+</plist>

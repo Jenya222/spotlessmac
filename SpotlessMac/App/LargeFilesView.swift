@@ -2,9 +2,11 @@ import SwiftUI
 
 struct LargeFilesView: View {
     var viewModel: ScanViewModel
+    var licenseManager: LicenseManager
 
     @State private var itemPendingDelete: ScanItem?
     @State private var lastFailure: DeletionFailure?
+    @State private var showActivation = false
 
     var body: some View {
         Group {
@@ -21,7 +23,11 @@ struct LargeFilesView: View {
             } else {
                 List(viewModel.largeFileItems) { item in
                     LargeFileRow(item: item) {
-                        itemPendingDelete = item
+                        if licenseManager.canClean {
+                            itemPendingDelete = item
+                        } else {
+                            showActivation = true
+                        }
                     }
                 }
                 .listStyle(.plain)
@@ -40,6 +46,9 @@ struct LargeFilesView: View {
                 itemPendingDelete = nil
                 Task {
                     lastFailure = await viewModel.deleteSingle(item)
+                    if lastFailure == nil && !licenseManager.isActivated {
+                        licenseManager.recordClean()
+                    }
                 }
             }
             Button("Отмена", role: .cancel) {
@@ -48,6 +57,11 @@ struct LargeFilesView: View {
         } message: {
             if let item = itemPendingDelete {
                 Text(item.path.path(percentEncoded: false))
+            }
+        }
+        .sheet(isPresented: $showActivation) {
+            ActivationView(licenseManager: licenseManager) {
+                showActivation = false
             }
         }
         .alert(

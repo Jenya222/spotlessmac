@@ -8,9 +8,11 @@ private enum AppTab: String, CaseIterable {
 
 struct ContentView: View {
     @State private var viewModel = ScanViewModel()
+    @State private var licenseManager = LicenseManager()
     @State private var selectedTab: AppTab = .clean
     @AppStorage("hasSeenFDAOnboarding") private var hasSeenFDAOnboarding = false
     @State private var showOnboarding = false
+    @State private var showActivation = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -37,13 +39,18 @@ struct ContentView: View {
                 }
             )
         }
+        .sheet(isPresented: $showActivation) {
+            ActivationView(licenseManager: licenseManager) {
+                showActivation = false
+            }
+        }
     }
 
     // MARK: - Tab picker
 
     private var tabPicker: some View {
         HStack(spacing: 12) {
-            Text("MacLeaner")
+            Text("SpotlessMac")
                 .font(.title2.bold())
 
             Spacer()
@@ -56,10 +63,36 @@ struct ContentView: View {
             .pickerStyle(.segmented)
             .frame(width: 340)
 
+            licenseBadge
             fdaBadge
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
+    }
+
+    @ViewBuilder
+    private var licenseBadge: some View {
+        switch licenseManager.state {
+        case .activated:
+            Label("Активировано", systemImage: "checkmark.seal.fill")
+                .font(.caption)
+                .foregroundStyle(.green)
+        case .trial(let used, let allowed):
+            if used >= allowed {
+                Button {
+                    showActivation = true
+                } label: {
+                    Label("Активировать", systemImage: "lock")
+                        .font(.caption)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.orange)
+            } else {
+                Label("Пробный", systemImage: "clock")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
     }
 
     @ViewBuilder
@@ -91,7 +124,7 @@ struct ContentView: View {
         case .clean:
             cleanTab
         case .largeFiles:
-            LargeFilesView(viewModel: viewModel)
+            LargeFilesView(viewModel: viewModel, licenseManager: licenseManager)
         case .diskUsage:
             DiskUsageView()
         }
@@ -134,7 +167,16 @@ struct ContentView: View {
             }
 
             Button("Очистить выбранное") {
-                Task { await viewModel.delete() }
+                if licenseManager.canClean {
+                    Task {
+                        await viewModel.delete()
+                        if !licenseManager.isActivated {
+                            licenseManager.recordClean()
+                        }
+                    }
+                } else {
+                    showActivation = true
+                }
             }
             .disabled(!viewModel.hasSelection || viewModel.isDeleting || viewModel.isScanning)
 

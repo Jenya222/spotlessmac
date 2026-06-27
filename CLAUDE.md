@@ -6,10 +6,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 # CLI build
-xcodebuild -project MacLeaner.xcodeproj -scheme MacLeaner -destination "platform=macOS" build CODE_SIGNING_ALLOWED=NO
+xcodebuild -project SpotlessMac.xcodeproj -scheme SpotlessMac -destination "platform=macOS" build CODE_SIGNING_ALLOWED=NO
 
 # Open in Xcode
-open MacLeaner.xcodeproj
+open SpotlessMac.xcodeproj
 ```
 
 Xcode 16.2, Swift 6.0, macOS 14 minimum target. No Mac App Store, no sandbox, Developer ID distribution.
@@ -17,10 +17,10 @@ Xcode 16.2, Swift 6.0, macOS 14 minimum target. No Mac App Store, no sandbox, De
 ## Architecture
 
 ```
-MacLeaner/App/          SwiftUI views — thin, no business logic
-MacLeaner/Models/       ScanItem, ScanCategory — value types, Sendable
-MacLeaner/ScanEngine/   Scanner protocol + ScanEngine actor + SafetyRules
-MacLeaner/ViewModels/   ScanViewModel (@Observable @MainActor)
+SpotlessMac/App/          SwiftUI views — thin, no business logic
+SpotlessMac/Models/       ScanItem, ScanCategory — value types, Sendable
+SpotlessMac/ScanEngine/   Scanner protocol + ScanEngine actor + SafetyRules
+SpotlessMac/ViewModels/   ScanViewModel (@Observable @MainActor)
 ```
 
 **Data flow:** `ContentView → ScanViewModel → ScanEngine actor → [Scanner] → [ScanItem]`

@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add Full Disk Access onboarding (Block A) and a Large Files scanner with disk-usage visualization (Block B) to MacLeaner.
+**Goal:** Add Full Disk Access onboarding (Block A) and a Large Files scanner with disk-usage visualization (Block B) to SpotlessMac.
 
 **Architecture:** FDAService detects Full Disk Access via a protected-path probe; ScanEngine.scan() receives FDA status at call time and activates/skips scanners accordingly. ContentView gains three tabs (Clean / Large Files / Disk Usage); each tab has its own view file. Large-file deletion is strictly per-item with a confirmation dialog — no batch selection.
 
@@ -18,7 +18,7 @@
 - `ScanItem.isSelected` must default to `false` for `.largeFiles` items
 - `selectAll()` must never select `.largeFiles` items
 - Batch `delete()` must never delete `.largeFiles` items (extra defense in depth)
-- Build command: `xcodebuild -project MacLeaner.xcodeproj -scheme MacLeaner -destination "platform=macOS" build CODE_SIGNING_ALLOWED=NO`
+- Build command: `xcodebuild -project SpotlessMac.xcodeproj -scheme SpotlessMac -destination "platform=macOS" build CODE_SIGNING_ALLOWED=NO`
 - Expected success output contains: `** BUILD SUCCEEDED **`
 
 ---
@@ -27,25 +27,25 @@
 
 | Action | File | Responsibility |
 |--------|------|----------------|
-| Create | `MacLeaner/ScanEngine/FDAService.swift` | `FDAStatus` enum + `FDAService.detect()` |
-| Create | `MacLeaner/ScanEngine/LogsScanner.swift` | Logs scanner (user always, system if FDA) |
-| Create | `MacLeaner/ScanEngine/LargeFilesScanner.swift` | Find files > 1 GB in whitelisted user dirs |
-| Create | `MacLeaner/App/FDAOnboardingView.swift` | Onboarding sheet: explanation, status, open settings |
-| Create | `MacLeaner/App/LargeFilesView.swift` | Large files tab: list + per-item confirmation delete |
-| Create | `MacLeaner/App/DiskUsageView.swift` | Disk usage tab: sorted folder bars |
-| Modify | `MacLeaner/Models/ScanCategory.swift` | Add `.largeFiles` case |
-| Modify | `MacLeaner/ScanEngine/SafetyRules.swift` | Add ~/Downloads, ~/Movies, ~/Documents, ~/Desktop, ~/Music, ~/Pictures |
-| Modify | `MacLeaner/ScanEngine/ScanEngine.swift` | `scan(fdaStatus:)` parameter, register new scanners |
-| Modify | `MacLeaner/ViewModels/ScanViewModel.swift` | Add `fdaStatus`, `checkFDA()`, `deleteSingle()`, guard batch ops |
-| Modify | `MacLeaner/App/ContentView.swift` | Tab enum, tab switcher, onboarding sheet trigger |
+| Create | `SpotlessMac/ScanEngine/FDAService.swift` | `FDAStatus` enum + `FDAService.detect()` |
+| Create | `SpotlessMac/ScanEngine/LogsScanner.swift` | Logs scanner (user always, system if FDA) |
+| Create | `SpotlessMac/ScanEngine/LargeFilesScanner.swift` | Find files > 1 GB in whitelisted user dirs |
+| Create | `SpotlessMac/App/FDAOnboardingView.swift` | Onboarding sheet: explanation, status, open settings |
+| Create | `SpotlessMac/App/LargeFilesView.swift` | Large files tab: list + per-item confirmation delete |
+| Create | `SpotlessMac/App/DiskUsageView.swift` | Disk usage tab: sorted folder bars |
+| Modify | `SpotlessMac/Models/ScanCategory.swift` | Add `.largeFiles` case |
+| Modify | `SpotlessMac/ScanEngine/SafetyRules.swift` | Add ~/Downloads, ~/Movies, ~/Documents, ~/Desktop, ~/Music, ~/Pictures |
+| Modify | `SpotlessMac/ScanEngine/ScanEngine.swift` | `scan(fdaStatus:)` parameter, register new scanners |
+| Modify | `SpotlessMac/ViewModels/ScanViewModel.swift` | Add `fdaStatus`, `checkFDA()`, `deleteSingle()`, guard batch ops |
+| Modify | `SpotlessMac/App/ContentView.swift` | Tab enum, tab switcher, onboarding sheet trigger |
 
 ---
 
 ### Task 1: Add `.largeFiles` to ScanCategory and expand SafetyRules
 
 **Files:**
-- Modify: `MacLeaner/Models/ScanCategory.swift`
-- Modify: `MacLeaner/ScanEngine/SafetyRules.swift`
+- Modify: `SpotlessMac/Models/ScanCategory.swift`
+- Modify: `SpotlessMac/ScanEngine/SafetyRules.swift`
 
 **Interfaces:**
 - Produces: `ScanCategory.largeFiles` (used by Tasks 4, 6, 7, 8, 9)
@@ -53,7 +53,7 @@
 
 - [ ] **Step 1: Add `.largeFiles` case to `ScanCategory`**
 
-Replace `MacLeaner/Models/ScanCategory.swift` with:
+Replace `SpotlessMac/Models/ScanCategory.swift` with:
 
 ```swift
 import Foundation
@@ -81,7 +81,7 @@ enum ScanCategory: String, CaseIterable, Identifiable, Sendable {
 
 - [ ] **Step 2: Expand `SafetyRules.allowedRoots`**
 
-Replace the `allowedRoots` computed property in `MacLeaner/ScanEngine/SafetyRules.swift`:
+Replace the `allowedRoots` computed property in `SpotlessMac/ScanEngine/SafetyRules.swift`:
 
 ```swift
 import Foundation
@@ -123,7 +123,7 @@ enum SafetyRules {
 - [ ] **Step 3: Build to verify**
 
 ```bash
-xcodebuild -project MacLeaner.xcodeproj -scheme MacLeaner \
+xcodebuild -project SpotlessMac.xcodeproj -scheme SpotlessMac \
   -destination "platform=macOS" build CODE_SIGNING_ALLOWED=NO 2>&1 | tail -5
 ```
 
@@ -132,7 +132,7 @@ Expected: `** BUILD SUCCEEDED **`
 - [ ] **Step 4: Commit**
 
 ```bash
-git add MacLeaner/Models/ScanCategory.swift MacLeaner/ScanEngine/SafetyRules.swift
+git add SpotlessMac/Models/ScanCategory.swift SpotlessMac/ScanEngine/SafetyRules.swift
 git commit -m "feat: add largeFiles category and expand SafetyRules whitelist"
 ```
 
@@ -141,7 +141,7 @@ git commit -m "feat: add largeFiles category and expand SafetyRules whitelist"
 ### Task 2: FDAService — detect Full Disk Access
 
 **Files:**
-- Create: `MacLeaner/ScanEngine/FDAService.swift`
+- Create: `SpotlessMac/ScanEngine/FDAService.swift`
 
 **Interfaces:**
 - Produces: `FDAStatus: Sendable` enum with cases `.unknown`, `.granted`, `.denied`
@@ -168,7 +168,7 @@ enum FDAService {
 - [ ] **Step 2: Build to verify**
 
 ```bash
-xcodebuild -project MacLeaner.xcodeproj -scheme MacLeaner \
+xcodebuild -project SpotlessMac.xcodeproj -scheme SpotlessMac \
   -destination "platform=macOS" build CODE_SIGNING_ALLOWED=NO 2>&1 | tail -5
 ```
 
@@ -177,7 +177,7 @@ Expected: `** BUILD SUCCEEDED **`
 - [ ] **Step 3: Commit**
 
 ```bash
-git add MacLeaner/ScanEngine/FDAService.swift
+git add SpotlessMac/ScanEngine/FDAService.swift
 git commit -m "feat: add FDAService for Full Disk Access detection"
 ```
 
@@ -186,7 +186,7 @@ git commit -m "feat: add FDAService for Full Disk Access detection"
 ### Task 3: LogsScanner — user logs always, system logs when FDA granted
 
 **Files:**
-- Create: `MacLeaner/ScanEngine/LogsScanner.swift`
+- Create: `SpotlessMac/ScanEngine/LogsScanner.swift`
 
 **Interfaces:**
 - Consumes: `ScanCategory.logs`, `ScanItem`, `FDAStatus` (Task 2)
@@ -261,7 +261,7 @@ struct LogsScanner: Scanner {
 - [ ] **Step 2: Build to verify**
 
 ```bash
-xcodebuild -project MacLeaner.xcodeproj -scheme MacLeaner \
+xcodebuild -project SpotlessMac.xcodeproj -scheme SpotlessMac \
   -destination "platform=macOS" build CODE_SIGNING_ALLOWED=NO 2>&1 | tail -5
 ```
 
@@ -270,7 +270,7 @@ Expected: `** BUILD SUCCEEDED **`
 - [ ] **Step 3: Commit**
 
 ```bash
-git add MacLeaner/ScanEngine/LogsScanner.swift
+git add SpotlessMac/ScanEngine/LogsScanner.swift
 git commit -m "feat: add LogsScanner (user logs always, /Library/Logs with FDA)"
 ```
 
@@ -279,7 +279,7 @@ git commit -m "feat: add LogsScanner (user logs always, /Library/Logs with FDA)"
 ### Task 4: LargeFilesScanner — find files >1 GB in user dirs
 
 **Files:**
-- Create: `MacLeaner/ScanEngine/LargeFilesScanner.swift`
+- Create: `SpotlessMac/ScanEngine/LargeFilesScanner.swift`
 
 **Interfaces:**
 - Consumes: `ScanCategory.largeFiles` (Task 1), expanded `SafetyRules.allowedRoots` (Task 1)
@@ -331,7 +331,7 @@ struct LargeFilesScanner: Scanner {
 - [ ] **Step 2: Build to verify**
 
 ```bash
-xcodebuild -project MacLeaner.xcodeproj -scheme MacLeaner \
+xcodebuild -project SpotlessMac.xcodeproj -scheme SpotlessMac \
   -destination "platform=macOS" build CODE_SIGNING_ALLOWED=NO 2>&1 | tail -5
 ```
 
@@ -340,7 +340,7 @@ Expected: `** BUILD SUCCEEDED **`
 - [ ] **Step 3: Commit**
 
 ```bash
-git add MacLeaner/ScanEngine/LargeFilesScanner.swift
+git add SpotlessMac/ScanEngine/LargeFilesScanner.swift
 git commit -m "feat: add LargeFilesScanner (files >1 GiB, never auto-selected)"
 ```
 
@@ -349,7 +349,7 @@ git commit -m "feat: add LargeFilesScanner (files >1 GiB, never auto-selected)"
 ### Task 5: Wire new scanners into ScanEngine + FDA parameter
 
 **Files:**
-- Modify: `MacLeaner/ScanEngine/ScanEngine.swift:8-18`
+- Modify: `SpotlessMac/ScanEngine/ScanEngine.swift:8-18`
 
 **Interfaces:**
 - Consumes: `FDAStatus` (Task 2), `LogsScanner` (Task 3), `LargeFilesScanner` (Task 4)
@@ -404,7 +404,7 @@ actor ScanEngine {
 - [ ] **Step 2: Build to verify**
 
 ```bash
-xcodebuild -project MacLeaner.xcodeproj -scheme MacLeaner \
+xcodebuild -project SpotlessMac.xcodeproj -scheme SpotlessMac \
   -destination "platform=macOS" build CODE_SIGNING_ALLOWED=NO 2>&1 | tail -5
 ```
 
@@ -413,7 +413,7 @@ Expected: `** BUILD SUCCEEDED **`
 - [ ] **Step 3: Commit**
 
 ```bash
-git add MacLeaner/ScanEngine/ScanEngine.swift
+git add SpotlessMac/ScanEngine/ScanEngine.swift
 git commit -m "feat: ScanEngine.scan() accepts FDAStatus, registers LogsScanner and LargeFilesScanner"
 ```
 
@@ -422,7 +422,7 @@ git commit -m "feat: ScanEngine.scan() accepts FDAStatus, registers LogsScanner 
 ### Task 6: Update ScanViewModel for FDA state + large-file safety
 
 **Files:**
-- Modify: `MacLeaner/ViewModels/ScanViewModel.swift`
+- Modify: `SpotlessMac/ViewModels/ScanViewModel.swift`
 
 **Interfaces:**
 - Consumes: `FDAStatus`, `FDAService.detect()` (Task 2), `ScanEngine.scan(fdaStatus:)` (Task 5)
@@ -521,7 +521,7 @@ final class ScanViewModel {
 - [ ] **Step 2: Build to verify**
 
 ```bash
-xcodebuild -project MacLeaner.xcodeproj -scheme MacLeaner \
+xcodebuild -project SpotlessMac.xcodeproj -scheme SpotlessMac \
   -destination "platform=macOS" build CODE_SIGNING_ALLOWED=NO 2>&1 | tail -5
 ```
 
@@ -530,7 +530,7 @@ Expected: `** BUILD SUCCEEDED **`
 - [ ] **Step 3: Commit**
 
 ```bash
-git add MacLeaner/ViewModels/ScanViewModel.swift
+git add SpotlessMac/ViewModels/ScanViewModel.swift
 git commit -m "feat: ScanViewModel adds fdaStatus, checkFDA, deleteSingle, guards selectAll/delete"
 ```
 
@@ -539,7 +539,7 @@ git commit -m "feat: ScanViewModel adds fdaStatus, checkFDA, deleteSingle, guard
 ### Task 7: FDAOnboardingView — onboarding sheet
 
 **Files:**
-- Create: `MacLeaner/App/FDAOnboardingView.swift`
+- Create: `SpotlessMac/App/FDAOnboardingView.swift`
 
 **Interfaces:**
 - Consumes: `FDAStatus` (Task 2), `FDAService.detect()` (Task 2)
@@ -569,7 +569,7 @@ struct FDAOnboardingView: View {
                 Text("Полный доступ к диску")
                     .font(.title2.bold())
                 Text(
-                    "MacLeaner может сканировать системные логи и кеши вне вашей домашней папки. " +
+                    "SpotlessMac может сканировать системные логи и кеши вне вашей домашней папки. " +
                     "Для этого требуется разрешение «Полный доступ к диску» в Системных настройках.\n\n" +
                     "Без этого разрешения сканирование пользовательских кешей продолжит работать."
                 )
@@ -621,7 +621,7 @@ struct FDAOnboardingView: View {
 - [ ] **Step 2: Build to verify**
 
 ```bash
-xcodebuild -project MacLeaner.xcodeproj -scheme MacLeaner \
+xcodebuild -project SpotlessMac.xcodeproj -scheme SpotlessMac \
   -destination "platform=macOS" build CODE_SIGNING_ALLOWED=NO 2>&1 | tail -5
 ```
 
@@ -630,7 +630,7 @@ Expected: `** BUILD SUCCEEDED **`
 - [ ] **Step 3: Commit**
 
 ```bash
-git add MacLeaner/App/FDAOnboardingView.swift
+git add SpotlessMac/App/FDAOnboardingView.swift
 git commit -m "feat: add FDAOnboardingView with status badge and settings deeplink"
 ```
 
@@ -639,7 +639,7 @@ git commit -m "feat: add FDAOnboardingView with status badge and settings deepli
 ### Task 8: LargeFilesView — per-item delete with confirmation
 
 **Files:**
-- Create: `MacLeaner/App/LargeFilesView.swift`
+- Create: `SpotlessMac/App/LargeFilesView.swift`
 
 **Interfaces:**
 - Consumes: `ScanViewModel.largeFileItems` (Task 6), `ScanViewModel.deleteSingle()` (Task 6)
@@ -759,7 +759,7 @@ private struct LargeFileRow: View {
 - [ ] **Step 2: Build to verify**
 
 ```bash
-xcodebuild -project MacLeaner.xcodeproj -scheme MacLeaner \
+xcodebuild -project SpotlessMac.xcodeproj -scheme SpotlessMac \
   -destination "platform=macOS" build CODE_SIGNING_ALLOWED=NO 2>&1 | tail -5
 ```
 
@@ -768,7 +768,7 @@ Expected: `** BUILD SUCCEEDED **`
 - [ ] **Step 3: Commit**
 
 ```bash
-git add MacLeaner/App/LargeFilesView.swift
+git add SpotlessMac/App/LargeFilesView.swift
 git commit -m "feat: add LargeFilesView with per-item confirmationDialog delete"
 ```
 
@@ -777,7 +777,7 @@ git commit -m "feat: add LargeFilesView with per-item confirmationDialog delete"
 ### Task 9: DiskUsageView — top-level folder visualization
 
 **Files:**
-- Create: `MacLeaner/App/DiskUsageView.swift`
+- Create: `SpotlessMac/App/DiskUsageView.swift`
 
 **Interfaces:**
 - Produces: `DiskUsageView()` — standalone tab view, no viewModel dependency
@@ -914,7 +914,7 @@ private struct FolderBarRow: View {
 - [ ] **Step 2: Build to verify**
 
 ```bash
-xcodebuild -project MacLeaner.xcodeproj -scheme MacLeaner \
+xcodebuild -project SpotlessMac.xcodeproj -scheme SpotlessMac \
   -destination "platform=macOS" build CODE_SIGNING_ALLOWED=NO 2>&1 | tail -5
 ```
 
@@ -923,7 +923,7 @@ Expected: `** BUILD SUCCEEDED **`
 - [ ] **Step 3: Commit**
 
 ```bash
-git add MacLeaner/App/DiskUsageView.swift
+git add SpotlessMac/App/DiskUsageView.swift
 git commit -m "feat: add DiskUsageView with horizontal bars proportional to folder size"
 ```
 
@@ -932,7 +932,7 @@ git commit -m "feat: add DiskUsageView with horizontal bars proportional to fold
 ### Task 10: ContentView — tab navigation + onboarding sheet trigger
 
 **Files:**
-- Modify: `MacLeaner/App/ContentView.swift`
+- Modify: `SpotlessMac/App/ContentView.swift`
 
 **Interfaces:**
 - Consumes: `ScanViewModel.fdaStatus` (Task 6), `FDAOnboardingView` (Task 7), `LargeFilesView` (Task 8), `DiskUsageView` (Task 9)
@@ -981,7 +981,7 @@ struct ContentView: View {
 
     private var tabPicker: some View {
         HStack(spacing: 12) {
-            Text("MacLeaner")
+            Text("SpotlessMac")
                 .font(.title2.bold())
 
             Spacer()
@@ -1195,7 +1195,7 @@ private struct ScanItemRow: View {
 - [ ] **Step 2: Build to verify**
 
 ```bash
-xcodebuild -project MacLeaner.xcodeproj -scheme MacLeaner \
+xcodebuild -project SpotlessMac.xcodeproj -scheme SpotlessMac \
   -destination "platform=macOS" build CODE_SIGNING_ALLOWED=NO 2>&1 | tail -5
 ```
 
@@ -1203,7 +1203,7 @@ Expected: `** BUILD SUCCEEDED **`
 
 - [ ] **Step 3: Final integration smoke test**
 
-Open the app (`open MacLeaner.xcodeproj`, build and run in Xcode) and verify:
+Open the app (`open SpotlessMac.xcodeproj`, build and run in Xcode) and verify:
 
 1. On first launch, the FDA onboarding sheet appears automatically.
 2. "Открыть Системные настройки" opens Privacy & Security → Full Disk Access.
@@ -1223,7 +1223,7 @@ Open the app (`open MacLeaner.xcodeproj`, build and run in Xcode) and verify:
 - [ ] **Step 4: Commit**
 
 ```bash
-git add MacLeaner/App/ContentView.swift
+git add SpotlessMac/App/ContentView.swift
 git commit -m "feat: add tab navigation (Clean/Large Files/Disk), FDA badge, onboarding sheet trigger"
 ```
 

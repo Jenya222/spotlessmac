@@ -1,4 +1,4 @@
-# MacLeaner
+# SpotlessMac
 
 Безопасный cleaner ненужных файлов для macOS (кеши, логи, dev-кеши, корзина).
 
@@ -7,7 +7,7 @@
 ## Архитектура
 
 ```
-MacLeaner/
+SpotlessMac/
 ├── App/            @main App + главное окно (тонкие SwiftUI-вью без логики)
 ├── Models/         ScanItem, ScanCategory — данные, Sendable
 ├── ScanEngine/     Scanner (протокол), ScanEngine (actor), SafetyRules
@@ -37,6 +37,6 @@ View → ScanViewModel.delete() → ScanEngine.delete() → FileManager.trashIte
 
 ## Сборка
 
-Открыть `MacLeaner.xcodeproj` в Xcode 16+, выбрать свою команду разработчика в настройках таргета, `Cmd+R`.
+Открыть `SpotlessMac.xcodeproj` в Xcode 16+, выбрать свою команду разработчика в настройках таргета, `Cmd+R`.
 
-CLI: `xcodebuild -project MacLeaner.xcodeproj -scheme MacLeaner -destination "platform=macOS" build`
+CLI: `xcodebuild -project SpotlessMac.xcodeproj -scheme SpotlessMac -destination "platform=macOS" build`
