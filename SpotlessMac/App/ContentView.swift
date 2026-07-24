@@ -64,7 +64,7 @@ struct ContentView: View {
         case .uninstall:
             UninstallerView(licenseManager: licenseManager)
         case .diskUsage:
-            Text("TODO: DiskOverviewView (Task 12)").frame(maxWidth: .infinity, maxHeight: .infinity)
+            DiskOverviewView(viewModel: viewModel, licenseManager: licenseManager)
         }
     }
 

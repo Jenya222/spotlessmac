@@ -40,6 +40,7 @@
 		EE00002B000000000000EE00 /* SmartCareConfirmSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00002B000000000000DD00 /* SmartCareConfirmSheet.swift */; };
 		EE00002C000000000000EE00 /* CareDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00002C000000000000DD00 /* CareDashboardView.swift */; };
 		EE00002D000000000000EE00 /* CleaningProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00002D000000000000DD00 /* CleaningProgressView.swift */; };
+		EE00002E000000000000EE00 /* DiskOverviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00002E000000000000DD00 /* DiskOverviewView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -79,6 +80,7 @@
 		DD00002B000000000000DD00 /* SmartCareConfirmSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartCareConfirmSheet.swift; sourceTree = "<group>"; };
 		DD00002C000000000000DD00 /* CareDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareDashboardView.swift; sourceTree = "<group>"; };
 		DD00002D000000000000DD00 /* CleaningProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleaningProgressView.swift; sourceTree = "<group>"; };
+		DD00002E000000000000DD00 /* DiskOverviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiskOverviewView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -148,6 +150,7 @@
 				DD00002B000000000000DD00 /* SmartCareConfirmSheet.swift */,
 				DD00002C000000000000DD00 /* CareDashboardView.swift */,
 				DD00002D000000000000DD00 /* CleaningProgressView.swift */,
+				DD00002E000000000000DD00 /* DiskOverviewView.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -299,6 +302,7 @@
 				EE00002B000000000000EE00 /* SmartCareConfirmSheet.swift in Sources */,
 				EE00002C000000000000EE00 /* CareDashboardView.swift in Sources */,
 				EE00002D000000000000EE00 /* CleaningProgressView.swift in Sources */,
+				EE00002E000000000000EE00 /* DiskOverviewView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
