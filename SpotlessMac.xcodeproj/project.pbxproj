@@ -39,6 +39,7 @@
 		EE00002A000000000000EE00 /* CareRailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00002A000000000000DD00 /* CareRailView.swift */; };
 		EE00002B000000000000EE00 /* SmartCareConfirmSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00002B000000000000DD00 /* SmartCareConfirmSheet.swift */; };
 		EE00002C000000000000EE00 /* CareDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00002C000000000000DD00 /* CareDashboardView.swift */; };
+		EE00002D000000000000EE00 /* CleaningProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00002D000000000000DD00 /* CleaningProgressView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -77,6 +78,7 @@
 		DD00002A000000000000DD00 /* CareRailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareRailView.swift; sourceTree = "<group>"; };
 		DD00002B000000000000DD00 /* SmartCareConfirmSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartCareConfirmSheet.swift; sourceTree = "<group>"; };
 		DD00002C000000000000DD00 /* CareDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareDashboardView.swift; sourceTree = "<group>"; };
+		DD00002D000000000000DD00 /* CleaningProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleaningProgressView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -145,6 +147,7 @@
 				DD00002A000000000000DD00 /* CareRailView.swift */,
 				DD00002B000000000000DD00 /* SmartCareConfirmSheet.swift */,
 				DD00002C000000000000DD00 /* CareDashboardView.swift */,
+				DD00002D000000000000DD00 /* CleaningProgressView.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -295,6 +298,7 @@
 				EE00002A000000000000EE00 /* CareRailView.swift in Sources */,
 				EE00002B000000000000EE00 /* SmartCareConfirmSheet.swift in Sources */,
 				EE00002C000000000000EE00 /* CareDashboardView.swift in Sources */,
+				EE00002D000000000000EE00 /* CleaningProgressView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

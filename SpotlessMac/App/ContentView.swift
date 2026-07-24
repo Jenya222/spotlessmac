@@ -60,7 +60,7 @@ struct ContentView: View {
                 selectedTab: $selectedTab, showActivation: $showActivation, showOnboarding: $showOnboarding
             )
         case .cleaning:
-            Text("TODO: CleaningProgressView (Task 11)").frame(maxWidth: .infinity, maxHeight: .infinity)
+            CleaningProgressView(viewModel: viewModel, licenseManager: licenseManager, selectedTab: $selectedTab)
         case .uninstall:
             UninstallerView(licenseManager: licenseManager)
         case .diskUsage:
