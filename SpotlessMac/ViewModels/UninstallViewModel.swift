@@ -75,4 +75,24 @@ final class UninstallViewModel {
     var formattedTotalSize: String {
         ByteCountFormatter.string(fromByteCount: totalSelectedSize, countStyle: .file)
     }
+
+    var totalLeftoverCount: Int { leftovers.count }
+    var totalLeftoverSize: Int64 { leftovers.reduce(0) { $0 + $1.size } }
+    var formattedTotalLeftoverSize: String {
+        ByteCountFormatter.string(fromByteCount: totalLeftoverSize, countStyle: .file)
+    }
+
+    var leftoversByLocation: [(location: String, items: [LeftoverItem])] {
+        let grouped = Dictionary(grouping: leftovers, by: \.location)
+        return grouped.keys.sorted().map { key in
+            (location: key, items: grouped[key]!.sorted { $0.size > $1.size })
+        }
+    }
+
+    // Heuristic threshold for flagging an unusually large leftover — tunable.
+    static let largeLeftoverThreshold: Int64 = 5 * 1_073_741_824
+
+    var largeLeftoverWarning: LeftoverItem? {
+        leftovers.filter { $0.size >= Self.largeLeftoverThreshold }.max { $0.size < $1.size }
+    }
 }
