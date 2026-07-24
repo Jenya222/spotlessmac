@@ -8,6 +8,6 @@ struct SpotlessMacApp: App {
         }
         .windowStyle(.titleBar)
         .windowToolbarStyle(.unified)
-        .defaultSize(width: 800, height: 540)
+        .defaultSize(width: 920, height: 604)
     }
 }

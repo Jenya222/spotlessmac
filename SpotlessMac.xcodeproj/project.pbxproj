@@ -36,6 +36,7 @@
 		EE000027000000000000EE00 /* MemoryStatsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000027000000000000DD00 /* MemoryStatsService.swift */; };
 		EE000028000000000000EE00 /* FolderSizeCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000028000000000000DD00 /* FolderSizeCalculator.swift */; };
 		EE000029000000000000EE00 /* DiskSpaceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000029000000000000DD00 /* DiskSpaceService.swift */; };
+		EE00002A000000000000EE00 /* CareRailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00002A000000000000DD00 /* CareRailView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -71,6 +72,7 @@
 		DD000027000000000000DD00 /* MemoryStatsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryStatsService.swift; sourceTree = "<group>"; };
 		DD000028000000000000DD00 /* FolderSizeCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderSizeCalculator.swift; sourceTree = "<group>"; };
 		DD000029000000000000DD00 /* DiskSpaceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiskSpaceService.swift; sourceTree = "<group>"; };
+		DD00002A000000000000DD00 /* CareRailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareRailView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -136,6 +138,7 @@
 				DD000013000000000000DD00 /* ActivationView.swift */,
 				DD000024000000000000DD00 /* UninstallerView.swift */,
 				DD000025000000000000DD00 /* Theme.swift */,
+				DD00002A000000000000DD00 /* CareRailView.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -283,6 +286,7 @@
 				EE000027000000000000EE00 /* MemoryStatsService.swift in Sources */,
 				EE000028000000000000EE00 /* FolderSizeCalculator.swift in Sources */,
 				EE000029000000000000EE00 /* DiskSpaceService.swift in Sources */,
+				EE00002A000000000000EE00 /* CareRailView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
