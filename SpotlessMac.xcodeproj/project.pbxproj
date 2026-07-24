@@ -38,6 +38,7 @@
 		EE000029000000000000EE00 /* DiskSpaceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000029000000000000DD00 /* DiskSpaceService.swift */; };
 		EE00002A000000000000EE00 /* CareRailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00002A000000000000DD00 /* CareRailView.swift */; };
 		EE00002B000000000000EE00 /* SmartCareConfirmSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00002B000000000000DD00 /* SmartCareConfirmSheet.swift */; };
+		EE00002C000000000000EE00 /* CareDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00002C000000000000DD00 /* CareDashboardView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -75,6 +76,7 @@
 		DD000029000000000000DD00 /* DiskSpaceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiskSpaceService.swift; sourceTree = "<group>"; };
 		DD00002A000000000000DD00 /* CareRailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareRailView.swift; sourceTree = "<group>"; };
 		DD00002B000000000000DD00 /* SmartCareConfirmSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartCareConfirmSheet.swift; sourceTree = "<group>"; };
+		DD00002C000000000000DD00 /* CareDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareDashboardView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -142,6 +144,7 @@
 				DD000025000000000000DD00 /* Theme.swift */,
 				DD00002A000000000000DD00 /* CareRailView.swift */,
 				DD00002B000000000000DD00 /* SmartCareConfirmSheet.swift */,
+				DD00002C000000000000DD00 /* CareDashboardView.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -291,6 +294,7 @@
 				EE000029000000000000EE00 /* DiskSpaceService.swift in Sources */,
 				EE00002A000000000000EE00 /* CareRailView.swift in Sources */,
 				EE00002B000000000000EE00 /* SmartCareConfirmSheet.swift in Sources */,
+				EE00002C000000000000EE00 /* CareDashboardView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

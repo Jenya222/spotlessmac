@@ -55,7 +55,10 @@ struct ContentView: View {
     private var tabContent: some View {
         switch selectedTab {
         case .care:
-            Text("TODO: CareDashboardView (Task 10)").frame(maxWidth: .infinity, maxHeight: .infinity)
+            CareDashboardView(
+                viewModel: viewModel, licenseManager: licenseManager,
+                selectedTab: $selectedTab, showActivation: $showActivation, showOnboarding: $showOnboarding
+            )
         case .cleaning:
             Text("TODO: CleaningProgressView (Task 11)").frame(maxWidth: .infinity, maxHeight: .infinity)
         case .uninstall:
