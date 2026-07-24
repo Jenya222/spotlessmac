@@ -35,6 +35,7 @@
 		EE000026000000000000EE00 /* HealthScore.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000026000000000000DD00 /* HealthScore.swift */; };
 		EE000027000000000000EE00 /* MemoryStatsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000027000000000000DD00 /* MemoryStatsService.swift */; };
 		EE000028000000000000EE00 /* FolderSizeCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000028000000000000DD00 /* FolderSizeCalculator.swift */; };
+		EE000029000000000000EE00 /* DiskSpaceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000029000000000000DD00 /* DiskSpaceService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -69,6 +70,7 @@
 		DD000026000000000000DD00 /* HealthScore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthScore.swift; sourceTree = "<group>"; };
 		DD000027000000000000DD00 /* MemoryStatsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryStatsService.swift; sourceTree = "<group>"; };
 		DD000028000000000000DD00 /* FolderSizeCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderSizeCalculator.swift; sourceTree = "<group>"; };
+		DD000029000000000000DD00 /* DiskSpaceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiskSpaceService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -169,6 +171,7 @@
 				DD00000F000000000000DD00 /* LargeFilesScanner.swift */,
 				DD000027000000000000DD00 /* MemoryStatsService.swift */,
 				DD000028000000000000DD00 /* FolderSizeCalculator.swift */,
+				DD000029000000000000DD00 /* DiskSpaceService.swift */,
 			);
 			path = ScanEngine;
 			sourceTree = "<group>";
@@ -279,6 +282,7 @@
 				EE000026000000000000EE00 /* HealthScore.swift in Sources */,
 				EE000027000000000000EE00 /* MemoryStatsService.swift in Sources */,
 				EE000028000000000000EE00 /* FolderSizeCalculator.swift in Sources */,
+				EE000029000000000000EE00 /* DiskSpaceService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
