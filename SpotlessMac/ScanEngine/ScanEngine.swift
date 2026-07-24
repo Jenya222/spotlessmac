@@ -37,3 +37,32 @@ actor ScanEngine {
         return failures
     }
 }
+
+enum CleaningEvent: Sendable {
+    case itemProcessed(item: ScanItem, failure: DeletionFailure?)
+}
+
+extension ScanEngine {
+    // Streams one event per item as it's trashed, so the UI can show a live
+    // ring/current-file/per-category checklist. Every item is still gated
+    // through SafetyRules.isSafe — same guarantee as delete(items:) above.
+    nonisolated func deleteWithProgress(items: [ScanItem]) -> AsyncStream<CleaningEvent> {
+        AsyncStream { continuation in
+            let task = Task {
+                let fm = FileManager.default
+                for item in items where SafetyRules.isSafe(url: item.path) {
+                    if Task.isCancelled { break }
+                    do {
+                        try fm.trashItem(at: item.path, resultingItemURL: nil)
+                        continuation.yield(.itemProcessed(item: item, failure: nil))
+                    } catch {
+                        let failure = DeletionFailure(item: item, reason: error.localizedDescription)
+                        continuation.yield(.itemProcessed(item: item, failure: failure))
+                    }
+                }
+                continuation.finish()
+            }
+            continuation.onTermination = { _ in task.cancel() }
+        }
+    }
+}
