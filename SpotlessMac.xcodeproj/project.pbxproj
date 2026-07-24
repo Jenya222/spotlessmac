@@ -34,6 +34,7 @@
 		EE000025000000000000EE00 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000025000000000000DD00 /* Theme.swift */; };
 		EE000026000000000000EE00 /* HealthScore.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000026000000000000DD00 /* HealthScore.swift */; };
 		EE000027000000000000EE00 /* MemoryStatsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000027000000000000DD00 /* MemoryStatsService.swift */; };
+		EE000028000000000000EE00 /* FolderSizeCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000028000000000000DD00 /* FolderSizeCalculator.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -67,6 +68,7 @@
 		DD000025000000000000DD00 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		DD000026000000000000DD00 /* HealthScore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthScore.swift; sourceTree = "<group>"; };
 		DD000027000000000000DD00 /* MemoryStatsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryStatsService.swift; sourceTree = "<group>"; };
+		DD000028000000000000DD00 /* FolderSizeCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderSizeCalculator.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -166,6 +168,7 @@
 				DD00000E000000000000DD00 /* LogsScanner.swift */,
 				DD00000F000000000000DD00 /* LargeFilesScanner.swift */,
 				DD000027000000000000DD00 /* MemoryStatsService.swift */,
+				DD000028000000000000DD00 /* FolderSizeCalculator.swift */,
 			);
 			path = ScanEngine;
 			sourceTree = "<group>";
@@ -275,6 +278,7 @@
 				EE000025000000000000EE00 /* Theme.swift in Sources */,
 				EE000026000000000000EE00 /* HealthScore.swift in Sources */,
 				EE000027000000000000EE00 /* MemoryStatsService.swift in Sources */,
+				EE000028000000000000EE00 /* FolderSizeCalculator.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
