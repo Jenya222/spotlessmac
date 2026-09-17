@@ -33,6 +33,7 @@ struct LargeFilesView: View {
                 .listStyle(.plain)
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .confirmationDialog(
             deleteTitle,
             isPresented: Binding(
