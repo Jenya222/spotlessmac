@@ -5,6 +5,7 @@ import Observation
 @MainActor
 final class ScanViewModel {
     typealias SmartCareDelete = ([ScanItem], CleaningCancellation) -> AsyncStream<CleaningEvent>
+    typealias ScanItems = (FDAStatus) async throws -> [ScanItem]
 
     var items: [ScanItem] = []
     var isScanning = false
@@ -30,6 +31,7 @@ final class ScanViewModel {
 
     private let engine: ScanEngine
     private let smartCareDelete: SmartCareDelete
+    private let scanItems: ScanItems
     private var cleaningTask: Task<Void, Never>?
     private var cleaningCancellation: CleaningCancellation?
 
@@ -37,10 +39,17 @@ final class ScanViewModel {
     // participates in batch delete (existing invariant, see delete() below).
     private let smartCareCategories: Set<ScanCategory> = [.userCaches, .logs]
 
-    init(engine: ScanEngine = ScanEngine(), smartCareDelete: SmartCareDelete? = nil) {
+    init(
+        engine: ScanEngine = ScanEngine(),
+        smartCareDelete: SmartCareDelete? = nil,
+        scanItems: ScanItems? = nil
+    ) {
         self.engine = engine
         self.smartCareDelete = smartCareDelete ?? { items, cancellation in
             engine.deleteWithProgress(items: items, cancellation: cancellation)
+        }
+        self.scanItems = scanItems ?? { fdaStatus in
+            try await engine.scan(fdaStatus: fdaStatus)
         }
     }
 
@@ -96,10 +105,9 @@ final class ScanViewModel {
         isScanning = true
         scanError = nil
         deletionFailures = []
-        smartCareFailures = []
         defer { isScanning = false }
         do {
-            items = try await engine.scan(fdaStatus: fdaStatus)
+            items = try await scanItems(fdaStatus)
         } catch {
             scanError = error.localizedDescription
         }
@@ -194,6 +202,7 @@ final class ScanViewModel {
         bytesFreedSoFar = 0
         completedCategories = []
         deletionFailures = []
+        smartCareFailures = []
         processedSmartCareItemIDs = []
         successfulSmartCareItemIDs = []
         failedSmartCareItemIDs = []

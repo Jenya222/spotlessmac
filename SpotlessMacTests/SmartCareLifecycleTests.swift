@@ -44,7 +44,13 @@ final class SmartCareLifecycleTests: XCTestCase {
     func testCompleteFailureDoesNotRecordTrial() async {
         let item = makeItem(size: 10)
         let failure = DeletionFailure(item: item, reason: "denied")
-        let viewModel = ScanViewModel(smartCareDelete: immediateFactory { .itemProcessed(item: $0, failure: failure) })
+        let nextItem = makeItem(size: 20, category: .logs)
+        let viewModel = ScanViewModel(
+            smartCareDelete: immediateFactory { processedItem in
+                .itemProcessed(item: processedItem, failure: processedItem.id == item.id ? failure : nil)
+            },
+            scanItems: { _ in [nextItem] }
+        )
         viewModel.items = [item]
         var recorded = 0
 
@@ -55,12 +61,18 @@ final class SmartCareLifecycleTests: XCTestCase {
         XCTAssertEqual(viewModel.smartCareOutcome, .failed)
         XCTAssertEqual(viewModel.smartCareFailures.map(\.item.id), [item.id])
 
-        viewModel.deletionFailures = []
+        await viewModel.prepareSmartCare()
         XCTAssertEqual(
             viewModel.smartCareFailures.map(\.item.id),
             [item.id],
-            "Scan state must not erase the retained Smart Care result"
+            "Preparing another run must not erase the retained Smart Care result"
         )
+
+        XCTAssertTrue(viewModel.startSmartCare(canClean: true) { recorded += 1 })
+        await waitUntilFinished(viewModel)
+        XCTAssertTrue(viewModel.smartCareFailures.isEmpty)
+        XCTAssertEqual(viewModel.smartCareOutcome, .succeeded)
+        XCTAssertEqual(recorded, 1)
     }
 
     func testZeroByteSuccessRecordsTrial() async {
