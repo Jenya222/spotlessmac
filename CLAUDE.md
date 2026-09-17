@@ -14,6 +14,43 @@ open SpotlessMac.xcodeproj
 
 Xcode 16.2, Swift 6.0, macOS 14 minimum target. No Mac App Store, no sandbox, Developer ID distribution.
 
+## Local testing: license bypass
+
+`LicenseManager.canClean` returns `true` unconditionally under `#if DEBUG`, so the
+activation dialog never blocks cleanups in Debug builds. The bypass requires the
+**Debug configuration** (Xcode sets `-DDEBUG` only there).
+
+**Preferred: `scripts/install-local-debug.sh`** — builds Debug, signs with a stable
+`Apple Development` identity (not ad-hoc), and installs to `/Applications`. Signing
+with a real certificate keeps the app's Designated Requirement constant across
+rebuilds, so the **Full Disk Access grant survives rebuilds**. Requires an `Apple
+Development` cert in Keychain (Xcode → Settings → Accounts → Manage Certificates);
+override with `SIGN_IDENTITY="Apple Development: you@example.com (TEAMID)"` if more
+than one is present.
+
+```bash
+./scripts/install-local-debug.sh
+```
+
+Plain `⌘R` in Xcode or a raw `xcodebuild -configuration Debug ... CODE_SIGNING_ALLOWED=NO`
+build (no team assigned) signs **ad-hoc** instead — TCC then keys Full Disk Access to
+the exact binary hash, so every rebuild invalidates the grant and re-triggers the FDA
+prompt. Fine for quick iteration when FDA isn't needed; use the script above whenever
+FDA-gated scanning (system logs/caches outside the home folder) needs to work reliably:
+
+```bash
+# From Xcode: open SpotlessMac.xcodeproj, then ⌘R (default scheme builds Debug)
+
+# From the terminal: build Debug, then launch the .app
+xcodebuild -project SpotlessMac.xcodeproj -scheme SpotlessMac -configuration Debug \
+  -destination "platform=macOS" -derivedDataPath build/DerivedData build CODE_SIGNING_ALLOWED=NO
+open build/DerivedData/Build/Products/Debug/SpotlessMac.app
+```
+
+`scripts/install-local.sh` and `scripts/build-release.sh` build **Release** — the
+license check stays active there, which is intended. Do not remove the `#if DEBUG`
+guard.
+
 ## Architecture
 
 ```
