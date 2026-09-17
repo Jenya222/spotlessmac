@@ -170,12 +170,12 @@ struct CleaningProgressView: View {
 
     @ViewBuilder
     private var resultDetails: some View {
-        if !viewModel.deletionFailures.isEmpty || !viewModel.unprocessedSmartCareItems.isEmpty {
+        if !viewModel.smartCareFailures.isEmpty || !viewModel.unprocessedSmartCareItems.isEmpty {
             VStack(alignment: .leading, spacing: 10) {
-                if !viewModel.deletionFailures.isEmpty {
+                if !viewModel.smartCareFailures.isEmpty {
                     Text("Ошибки удаления")
                         .font(.headline)
-                    ForEach(viewModel.deletionFailures, id: \.item.id) { failure in
+                    ForEach(viewModel.smartCareFailures, id: \.item.id) { failure in
                         VStack(alignment: .leading, spacing: 2) {
                             Text(failure.item.path.path(percentEncoded: false))
                                 .font(.caption.monospaced())

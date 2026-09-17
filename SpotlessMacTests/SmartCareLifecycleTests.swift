@@ -53,6 +53,14 @@ final class SmartCareLifecycleTests: XCTestCase {
 
         XCTAssertEqual(recorded, 0)
         XCTAssertEqual(viewModel.smartCareOutcome, .failed)
+        XCTAssertEqual(viewModel.smartCareFailures.map(\.item.id), [item.id])
+
+        viewModel.deletionFailures = []
+        XCTAssertEqual(
+            viewModel.smartCareFailures.map(\.item.id),
+            [item.id],
+            "Scan state must not erase the retained Smart Care result"
+        )
     }
 
     func testZeroByteSuccessRecordsTrial() async {
@@ -85,6 +93,57 @@ final class SmartCareLifecycleTests: XCTestCase {
         XCTAssertEqual(recorded, 1)
         XCTAssertEqual(viewModel.smartCareOutcome, .cancelled)
         XCTAssertEqual(viewModel.unprocessedSmartCareItems.map(\.id), [second.id])
+    }
+
+    func testCancellationBeforeFirstItemDoesNotRecordTrial() async {
+        let item = makeItem(size: 10)
+        let pair = AsyncStream<CleaningEvent>.makeStream()
+        let viewModel = ScanViewModel(smartCareDelete: { _, _ in pair.stream })
+        viewModel.items = [item]
+        var recorded = 0
+
+        XCTAssertTrue(viewModel.startSmartCare(canClean: true) { recorded += 1 })
+        viewModel.stopSmartCare()
+        pair.continuation.finish()
+        await waitUntilFinished(viewModel)
+
+        XCTAssertEqual(recorded, 0)
+        XCTAssertEqual(viewModel.smartCareOutcome, .cancelled)
+        XCTAssertEqual(viewModel.unprocessedSmartCareItems.map(\.id), [item.id])
+    }
+
+    func testCancellationAfterFinalItemKeepsSucceededOutcome() async {
+        let item = makeItem(size: 10)
+        let pair = AsyncStream<CleaningEvent>.makeStream()
+        let viewModel = ScanViewModel(smartCareDelete: { _, _ in pair.stream })
+        viewModel.items = [item]
+        var recorded = 0
+
+        XCTAssertTrue(viewModel.startSmartCare(canClean: true) { recorded += 1 })
+        pair.continuation.yield(.itemProcessed(item: item, failure: nil))
+        await waitUntilProcessed(viewModel, count: 1)
+        viewModel.stopSmartCare()
+        pair.continuation.finish()
+        await waitUntilFinished(viewModel)
+
+        XCTAssertEqual(recorded, 1)
+        XCTAssertEqual(viewModel.smartCareOutcome, .succeeded)
+        XCTAssertTrue(viewModel.unprocessedSmartCareItems.isEmpty)
+    }
+
+    func testTrialPolicyRejectsSequentialRunAfterFirstSuccess() async {
+        let first = makeItem(size: 10)
+        let viewModel = ScanViewModel(smartCareDelete: immediateFactory { .itemProcessed(item: $0, failure: nil) })
+        viewModel.items = [first]
+        var state = LicenseManager.LicenseState.trial(usedCleans: 0, allowed: 1)
+
+        XCTAssertTrue(viewModel.startSmartCare(canClean: LicenseManager.isCleaningAllowed(state: state)) {
+            state = .trial(usedCleans: 1, allowed: 1)
+        })
+        await waitUntilFinished(viewModel)
+
+        viewModel.items = [makeItem(size: 20)]
+        XCTAssertFalse(viewModel.startSmartCare(canClean: LicenseManager.isCleaningAllowed(state: state)) {})
     }
 
     private func makeItem(size: Int64, category: ScanCategory = .userCaches) -> ScanItem {

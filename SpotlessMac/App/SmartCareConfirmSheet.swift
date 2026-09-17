@@ -14,12 +14,12 @@ struct SmartCareConfirmSheet: View {
             Text("Найдено для очистки")
                 .font(.title3.bold())
 
-            Text(ByteCountFormatter.string(fromByteCount: viewModel.smartCareTotalBytes, countStyle: .file))
+            Text(ByteCountFormatter.string(fromByteCount: viewModel.smartCareSelectedBytes, countStyle: .file))
                 .font(.system(size: 34, weight: .heavy))
                 .foregroundStyle(Theme.textPrimary)
 
             VStack(spacing: 8) {
-                ForEach(viewModel.smartCareCategoryTotals) { total in
+                ForEach(viewModel.smartCareSelectionCategoryTotals) { total in
                     HStack {
                         Text(total.category.displayName)
                         Spacer()

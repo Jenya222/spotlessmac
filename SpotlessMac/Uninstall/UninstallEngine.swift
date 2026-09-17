@@ -6,6 +6,12 @@ struct UninstallFailure: Sendable {
 }
 
 actor UninstallEngine {
+    private let leftoverRoots: [URL]
+
+    init(leftoverRoots: [URL] = SafetyRules.uninstallLeftoverRoots) {
+        self.leftoverRoots = leftoverRoots
+    }
+
     // Lists actionable apps in /Applications and ~/Applications.
     // Apple/system apps (com.apple.*) are excluded; /System/Applications is
     // never enumerated.
@@ -40,7 +46,7 @@ actor UninstallEngine {
         var exactURLs: [(URL, String)] = []   // (url, location label)
         var nameURLs: [(URL, String)] = []
 
-        for root in SafetyRules.uninstallLeftoverRoots {
+        for root in leftoverRoots {
             let label = root.lastPathComponent
             guard let entries = try? FileManager.default.contentsOfDirectory(
                 at: root,

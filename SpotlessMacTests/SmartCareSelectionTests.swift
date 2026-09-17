@@ -30,4 +30,24 @@ final class SmartCareSelectionTests: XCTestCase {
 
         XCTAssertNil(viewModel.makeSmartCareRun())
     }
+
+    func testConfirmationTotalsIgnorePreviousRunSnapshot() async {
+        let old = ScanItem(path: URL(filePath: "/tmp/old"), size: 100, category: .userCaches)
+        let pair = AsyncStream<CleaningEvent>.makeStream()
+        let viewModel = ScanViewModel(smartCareDelete: { _, _ in pair.stream })
+        viewModel.items = [old]
+
+        XCTAssertTrue(viewModel.startSmartCare(canClean: true) {})
+        viewModel.items = [
+            ScanItem(path: URL(filePath: "/tmp/new"), size: 350, category: .logs),
+        ]
+
+        XCTAssertEqual(viewModel.smartCareSelectionCategoryTotals.map(\.totalBytes), [350])
+        pair.continuation.finish()
+        for _ in 0..<1_000 {
+            if !viewModel.isCleaning { return }
+            await Task.yield()
+        }
+        XCTFail("Timed out waiting for the retained run to finish")
+    }
 }

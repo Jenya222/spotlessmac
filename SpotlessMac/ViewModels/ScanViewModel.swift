@@ -22,6 +22,7 @@ final class ScanViewModel {
     var cleaningStartedAt: Date?
     private(set) var activeSmartCareRun: SmartCareRun?
     private(set) var smartCareOutcome: SmartCareOutcome?
+    private(set) var smartCareFailures: [DeletionFailure] = []
     private(set) var unprocessedSmartCareItems: [ScanItem] = []
     private(set) var processedSmartCareItemIDs: Set<UUID> = []
     private(set) var successfulSmartCareItemIDs: Set<UUID> = []
@@ -74,7 +75,11 @@ final class ScanViewModel {
     }
 
     var smartCareCategoryTotals: [CategoryTotal] {
-        activeSmartCareRun?.categoryTotals ?? SmartCareRun(items: smartCareSelectedItems).categoryTotals
+        activeSmartCareRun?.categoryTotals ?? smartCareSelectionCategoryTotals
+    }
+
+    var smartCareSelectionCategoryTotals: [CategoryTotal] {
+        SmartCareRun(items: smartCareSelectedItems).categoryTotals
     }
 
     var smartCareTotalBytes: Int64 {
@@ -91,6 +96,7 @@ final class ScanViewModel {
         isScanning = true
         scanError = nil
         deletionFailures = []
+        smartCareFailures = []
         defer { isScanning = false }
         do {
             items = try await engine.scan(fdaStatus: fdaStatus)
@@ -218,6 +224,7 @@ final class ScanViewModel {
                 processedSmartCareItemIDs.insert(item.id)
                 if let failure {
                     deletionFailures.append(failure)
+                    smartCareFailures.append(failure)
                     failedSmartCareItemIDs.insert(item.id)
                 } else {
                     successfulSmartCareItemIDs.insert(item.id)
@@ -231,7 +238,7 @@ final class ScanViewModel {
         unprocessedSmartCareItems = run.items.filter { !processedSmartCareItemIDs.contains($0.id) }
         smartCareOutcome = SmartCareOutcome.classify(
             successfulCount: successfulSmartCareItemIDs.count,
-            failedCount: deletionFailures.count,
+            failedCount: smartCareFailures.count,
             unprocessedCount: unprocessedSmartCareItems.count,
             cancellationRequested: cancellation.isCancelled
         )
