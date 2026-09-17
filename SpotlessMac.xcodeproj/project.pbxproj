@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		EE100001000000000000EE00 /* LeftoverMatcherTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD100002000000000000DD00 /* LeftoverMatcherTests.swift */; };
 		EE000001000000000000EE00 /* SpotlessMacApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000002000000000000DD00 /* SpotlessMacApp.swift */; };
 		EE000002000000000000EE00 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000003000000000000DD00 /* ContentView.swift */; };
 		EE000003000000000000EE00 /* ScanCategory.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000004000000000000DD00 /* ScanCategory.swift */; };
@@ -41,9 +42,12 @@
 		EE00002C000000000000EE00 /* CareDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00002C000000000000DD00 /* CareDashboardView.swift */; };
 		EE00002D000000000000EE00 /* CleaningProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00002D000000000000DD00 /* CleaningProgressView.swift */; };
 		EE00002E000000000000EE00 /* DiskOverviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00002E000000000000DD00 /* DiskOverviewView.swift */; };
+		EE00002F000000000000EE00 /* LeftoverMatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00002F000000000000DD00 /* LeftoverMatcher.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		DD100001000000000000DD00 /* SpotlessMacTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SpotlessMacTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		DD100002000000000000DD00 /* LeftoverMatcherTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeftoverMatcherTests.swift; sourceTree = "<group>"; };
 		DD000001000000000000DD00 /* SpotlessMac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SpotlessMac.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		DD000002000000000000DD00 /* SpotlessMacApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotlessMacApp.swift; sourceTree = "<group>"; };
 		DD000003000000000000DD00 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -81,9 +85,17 @@
 		DD00002C000000000000DD00 /* CareDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareDashboardView.swift; sourceTree = "<group>"; };
 		DD00002D000000000000DD00 /* CleaningProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleaningProgressView.swift; sourceTree = "<group>"; };
 		DD00002E000000000000DD00 /* DiskOverviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiskOverviewView.swift; sourceTree = "<group>"; };
+		DD00002F000000000000DD00 /* LeftoverMatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeftoverMatcher.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		BB100003000000000000BB00 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		BB000003000000000000BB00 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -98,6 +110,7 @@
 			isa = PBXGroup;
 			children = (
 				AA000003000000000000AA00 /* SpotlessMac */,
+				AA100001000000000000AA00 /* SpotlessMacTests */,
 				AA000002000000000000AA00 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -106,6 +119,7 @@
 			isa = PBXGroup;
 			children = (
 				DD000001000000000000DD00 /* SpotlessMac.app */,
+				DD100001000000000000DD00 /* SpotlessMacTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -170,8 +184,17 @@
 			isa = PBXGroup;
 			children = (
 				DD000022000000000000DD00 /* UninstallEngine.swift */,
+				DD00002F000000000000DD00 /* LeftoverMatcher.swift */,
 			);
 			path = Uninstall;
+			sourceTree = "<group>";
+		};
+		AA100001000000000000AA00 /* SpotlessMacTests */ = {
+			isa = PBXGroup;
+			children = (
+				DD100002000000000000DD00 /* LeftoverMatcherTests.swift */,
+			);
+			path = SpotlessMacTests;
 			sourceTree = "<group>";
 		};
 		AA000006000000000000AA00 /* ScanEngine */ = {
@@ -203,7 +226,35 @@
 		};
 /* End PBXGroup section */
 
+/* Begin PBXContainerItemProxy section */
+		BB100006000000000000BB00 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = FF000000000000000000FF00 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = BB000001000000000000BB00;
+			remoteInfo = SpotlessMac;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXNativeTarget section */
+		BB100001000000000000BB00 /* SpotlessMacTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CC100001000000000000CC00 /* Build configuration list for PBXNativeTarget "SpotlessMacTests" */;
+			buildPhases = (
+				BB100002000000000000BB00 /* Sources */,
+				BB100003000000000000BB00 /* Frameworks */,
+				BB100004000000000000BB00 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				BB100005000000000000BB00 /* PBXTargetDependency */,
+			);
+			name = SpotlessMacTests;
+			productName = SpotlessMacTests;
+			productReference = DD100001000000000000DD00 /* SpotlessMacTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		BB000001000000000000BB00 /* SpotlessMac */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = CC000002000000000000CC00 /* Build configuration list for PBXNativeTarget "SpotlessMac" */;
@@ -234,6 +285,10 @@
 					BB000001000000000000BB00 = {
 						CreatedOnToolsVersion = 16.2;
 					};
+					BB100001000000000000BB00 = {
+						CreatedOnToolsVersion = 16.2;
+						TestTargetID = BB000001000000000000BB00;
+					};
 				};
 			};
 			buildConfigurationList = CC000001000000000000CC00 /* Build configuration list for PBXProject "SpotlessMac" */;
@@ -250,11 +305,19 @@
 			projectRoot = "";
 			targets = (
 				BB000001000000000000BB00 /* SpotlessMac */,
+				BB100001000000000000BB00 /* SpotlessMacTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		BB100004000000000000BB00 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		BB000004000000000000BB00 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -265,6 +328,14 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		BB100002000000000000BB00 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EE100001000000000000EE00 /* LeftoverMatcherTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		BB000002000000000000BB00 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -303,12 +374,49 @@
 				EE00002C000000000000EE00 /* CareDashboardView.swift in Sources */,
 				EE00002D000000000000EE00 /* CleaningProgressView.swift in Sources */,
 				EE00002E000000000000EE00 /* DiskOverviewView.swift in Sources */,
+				EE00002F000000000000EE00 /* LeftoverMatcher.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		BB100005000000000000BB00 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = BB000001000000000000BB00 /* SpotlessMac */;
+			targetProxy = BB100006000000000000BB00 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		CC100002000000000000CC00 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGNING_ALLOWED = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.spotlessmac.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 6.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SpotlessMac.app/Contents/MacOS/SpotlessMac";
+			};
+			name = Debug;
+		};
+		CC100003000000000000CC00 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGNING_ALLOWED = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.spotlessmac.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 6.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SpotlessMac.app/Contents/MacOS/SpotlessMac";
+			};
+			name = Release;
+		};
 		CC000003000000000000CC00 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -471,6 +579,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		CC100001000000000000CC00 /* Build configuration list for PBXNativeTarget "SpotlessMacTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CC100002000000000000CC00 /* Debug */,
+				CC100003000000000000CC00 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		CC000001000000000000CC00 /* Build configuration list for PBXProject "SpotlessMac" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

@@ -49,9 +49,11 @@ actor UninstallEngine {
             ) else { continue }
             for url in entries {
                 let comp = url.lastPathComponent
-                if let bundleID, Self.matchesBundleID(comp, bundleID: bundleID) {
+                if let bundleID,
+                   LeftoverMatcher.isExact(component: comp, bundleID: bundleID, rootName: label) {
                     exactURLs.append((url, label))
-                } else if Self.matchesName(comp, displayName: displayName, fileName: bundleFileName) {
+                } else if (bundleID.map { LeftoverMatcher.isRelatedCandidate(component: comp, bundleID: $0) } ?? false)
+                            || Self.matchesName(comp, displayName: displayName, fileName: bundleFileName) {
                     nameURLs.append((url, label))
                 }
             }
@@ -110,14 +112,6 @@ actor UninstallEngine {
     }
 
     // MARK: - Matching
-
-    private static func matchesBundleID(_ component: String, bundleID: String) -> Bool {
-        component == bundleID
-            || component == "\(bundleID).plist"
-            || component == "\(bundleID).savedState"
-            || component.hasPrefix("\(bundleID).")
-            || component.hasSuffix(".\(bundleID)")   // group containers
-    }
 
     private static func matchesName(_ component: String, displayName: String, fileName: String) -> Bool {
         let stem = (component as NSString).deletingPathExtension
