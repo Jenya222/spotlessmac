@@ -17,6 +17,7 @@ struct CleaningProgressView: View {
                 VStack(alignment: .leading, spacing: 22) {
                     header
                     checklist
+                    resultDetails
                     Spacer()
                 }
                 .padding(24)
@@ -46,7 +47,7 @@ struct CleaningProgressView: View {
             .frame(width: Theme.cleaningRingSize, height: Theme.cleaningRingSize)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(viewModel.isCleaning ? "Наводим порядок…" : "Готово")
+                Text(viewModel.isCleaning ? "Наводим порядок…" : (viewModel.smartCareOutcome?.displayTitle ?? "Очистка завершена"))
                     .font(.system(size: 20, weight: .bold))
                     .foregroundStyle(Theme.textPrimary)
                 Text(progressCaption)
@@ -75,7 +76,18 @@ struct CleaningProgressView: View {
     private var progressCaption: String {
         let freed = ByteCountFormatter.string(fromByteCount: viewModel.bytesFreedSoFar, countStyle: .file)
         let total = ByteCountFormatter.string(fromByteCount: viewModel.smartCareTotalBytes, countStyle: .file)
-        return "Уже освобождено \(freed) из \(total)"
+        switch viewModel.smartCareOutcome {
+        case .failed:
+            return "Не удалось переместить выбранные объекты в Корзину"
+        case .partialFailure:
+            return "Освобождено \(freed); часть объектов удалить не удалось"
+        case .cancelled:
+            return "Освобождено \(freed); осталось объектов: \(viewModel.unprocessedSmartCareItems.count)"
+        case .succeeded:
+            return "Освобождено \(freed)"
+        case nil:
+            return "Уже освобождено \(freed) из \(total)"
+        }
     }
 
     private var checklist: some View {
@@ -88,7 +100,8 @@ struct CleaningProgressView: View {
 
     @ViewBuilder
     private func stageRow(for total: CategoryTotal) -> some View {
-        if viewModel.completedCategories.contains(total.category) {
+        switch viewModel.smartCareCategoryState(for: total.category) {
+        case .succeeded:
             HStack(spacing: 12) {
                 Image(systemName: "checkmark.circle.fill").foregroundStyle(Theme.healthGreen)
                 Text(total.category.displayName).font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.textPrimary)
@@ -100,7 +113,7 @@ struct CleaningProgressView: View {
             .padding(.horizontal, 15).padding(.vertical, 12)
             .background(Color(red: 0xF7 / 255, green: 0xFA / 255, blue: 1))
             .clipShape(RoundedRectangle(cornerRadius: Theme.radiusCard))
-        } else if viewModel.currentCleaningItem?.category == total.category {
+        case .cleaning:
             HStack(spacing: 12) {
                 ProgressView().controlSize(.small)
                 Text(total.category.displayName).font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.textPrimary)
@@ -110,7 +123,21 @@ struct CleaningProgressView: View {
             .padding(.horizontal, 15).padding(.vertical, 12)
             .background(Theme.accentGradientStart.opacity(0.08))
             .clipShape(RoundedRectangle(cornerRadius: Theme.radiusCard))
-        } else {
+        case .failed:
+            statusRow(
+                total: total,
+                icon: "exclamationmark.circle.fill",
+                color: .red,
+                status: "ошибка"
+            )
+        case .cancelled:
+            statusRow(
+                total: total,
+                icon: "stop.circle.fill",
+                color: Theme.warningOrange,
+                status: "остановлено"
+            )
+        case .pending:
             HStack(spacing: 12) {
                 Circle().fill(Theme.trackBackground).frame(width: 16, height: 16)
                 Text(total.category.displayName).font(.system(size: 13)).foregroundStyle(Theme.textSecondary)
@@ -119,6 +146,58 @@ struct CleaningProgressView: View {
             }
             .padding(.horizontal, 15).padding(.vertical, 12)
             .opacity(0.5)
+        }
+    }
+
+    private func statusRow(
+        total: CategoryTotal,
+        icon: String,
+        color: Color,
+        status: String
+    ) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon).foregroundStyle(color)
+            Text(total.category.displayName)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(Theme.textPrimary)
+            Spacer()
+            Text(status).font(.system(size: 13, weight: .semibold)).foregroundStyle(color)
+        }
+        .padding(.horizontal, 15).padding(.vertical, 12)
+        .background(color.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: Theme.radiusCard))
+    }
+
+    @ViewBuilder
+    private var resultDetails: some View {
+        if !viewModel.deletionFailures.isEmpty || !viewModel.unprocessedSmartCareItems.isEmpty {
+            VStack(alignment: .leading, spacing: 10) {
+                if !viewModel.deletionFailures.isEmpty {
+                    Text("Ошибки удаления")
+                        .font(.headline)
+                    ForEach(viewModel.deletionFailures, id: \.item.id) { failure in
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(failure.item.path.path(percentEncoded: false))
+                                .font(.caption.monospaced())
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                                .help(failure.item.path.path(percentEncoded: false))
+                            Text(failure.reason)
+                                .font(.caption)
+                                .foregroundStyle(.red)
+                        }
+                    }
+                }
+                if !viewModel.unprocessedSmartCareItems.isEmpty {
+                    Text("Не обработано объектов: \(viewModel.unprocessedSmartCareItems.count)")
+                        .font(.callout)
+                        .foregroundStyle(Theme.warningOrange)
+                }
+            }
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color(nsColor: .textBackgroundColor))
+            .clipShape(RoundedRectangle(cornerRadius: Theme.radiusCard))
         }
     }
 }

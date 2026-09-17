@@ -10,6 +10,7 @@
 		EE100001000000000000EE00 /* LeftoverMatcherTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD100002000000000000DD00 /* LeftoverMatcherTests.swift */; };
 		EE100002000000000000EE00 /* SmartCareSelectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD100003000000000000DD00 /* SmartCareSelectionTests.swift */; };
 		EE100003000000000000EE00 /* SmartCareLifecycleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD100004000000000000DD00 /* SmartCareLifecycleTests.swift */; };
+		EE100004000000000000EE00 /* SmartCareOutcomeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD100005000000000000DD00 /* SmartCareOutcomeTests.swift */; };
 		EE000001000000000000EE00 /* SpotlessMacApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000002000000000000DD00 /* SpotlessMacApp.swift */; };
 		EE000002000000000000EE00 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000003000000000000DD00 /* ContentView.swift */; };
 		EE000003000000000000EE00 /* ScanCategory.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000004000000000000DD00 /* ScanCategory.swift */; };
@@ -53,6 +54,7 @@
 		DD100002000000000000DD00 /* LeftoverMatcherTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeftoverMatcherTests.swift; sourceTree = "<group>"; };
 		DD100003000000000000DD00 /* SmartCareSelectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartCareSelectionTests.swift; sourceTree = "<group>"; };
 		DD100004000000000000DD00 /* SmartCareLifecycleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartCareLifecycleTests.swift; sourceTree = "<group>"; };
+		DD100005000000000000DD00 /* SmartCareOutcomeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartCareOutcomeTests.swift; sourceTree = "<group>"; };
 		DD000001000000000000DD00 /* SpotlessMac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SpotlessMac.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		DD000002000000000000DD00 /* SpotlessMacApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotlessMacApp.swift; sourceTree = "<group>"; };
 		DD000003000000000000DD00 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -202,6 +204,7 @@
 				DD100002000000000000DD00 /* LeftoverMatcherTests.swift */,
 				DD100003000000000000DD00 /* SmartCareSelectionTests.swift */,
 				DD100004000000000000DD00 /* SmartCareLifecycleTests.swift */,
+				DD100005000000000000DD00 /* SmartCareOutcomeTests.swift */,
 			);
 			path = SpotlessMacTests;
 			sourceTree = "<group>";
@@ -344,6 +347,7 @@
 				EE100001000000000000EE00 /* LeftoverMatcherTests.swift in Sources */,
 				EE100002000000000000EE00 /* SmartCareSelectionTests.swift in Sources */,
 				EE100003000000000000EE00 /* SmartCareLifecycleTests.swift in Sources */,
+				EE100004000000000000EE00 /* SmartCareOutcomeTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

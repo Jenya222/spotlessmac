@@ -50,6 +50,21 @@ final class ScanViewModel {
 
     var processedSmartCareItemCount: Int { processedSmartCareItemIDs.count }
 
+    func smartCareCategoryState(for category: ScanCategory) -> SmartCareCategoryState {
+        guard let run = activeSmartCareRun else { return .pending }
+        let categoryItems = run.items.filter { $0.category == category }
+        let categoryIDs = Set(categoryItems.map(\.id))
+        return SmartCareCategoryState.resolve(
+            isRunning: isCleaning,
+            isCurrent: currentCleaningItem?.category == category,
+            itemCount: categoryItems.count,
+            successfulCount: categoryIDs.intersection(successfulSmartCareItemIDs).count,
+            failedCount: categoryIDs.intersection(failedSmartCareItemIDs).count,
+            unprocessedCount: categoryIDs.intersection(Set(unprocessedSmartCareItems.map(\.id))).count,
+            outcome: smartCareOutcome
+        )
+    }
+
     var smartCareSelectedItems: [ScanItem] {
         items.filter { smartCareCategories.contains($0.category) && $0.isSelected }
     }
@@ -214,15 +229,12 @@ final class ScanViewModel {
         }
 
         unprocessedSmartCareItems = run.items.filter { !processedSmartCareItemIDs.contains($0.id) }
-        if cancellation.isCancelled, !unprocessedSmartCareItems.isEmpty {
-            smartCareOutcome = .cancelled
-        } else if deletionFailures.isEmpty, unprocessedSmartCareItems.isEmpty {
-            smartCareOutcome = .succeeded
-        } else if successfulSmartCareItemIDs.isEmpty {
-            smartCareOutcome = .failed
-        } else {
-            smartCareOutcome = .partialFailure
-        }
+        smartCareOutcome = SmartCareOutcome.classify(
+            successfulCount: successfulSmartCareItemIDs.count,
+            failedCount: deletionFailures.count,
+            unprocessedCount: unprocessedSmartCareItems.count,
+            cancellationRequested: cancellation.isCancelled
+        )
 
         if !successfulSmartCareItemIDs.isEmpty {
             recordSuccessfulClean()
