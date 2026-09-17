@@ -1,12 +1,6 @@
 import Foundation
 import Observation
 
-struct CategoryTotal: Identifiable, Sendable {
-    let category: ScanCategory
-    let totalBytes: Int64
-    var id: String { category.rawValue }
-}
-
 @Observable
 @MainActor
 final class ScanViewModel {
@@ -19,13 +13,12 @@ final class ScanViewModel {
 
     // Smart Care (dashboard one-click flow)
     var isPreparingSmartCare = false
-    var smartCareCategoryTotals: [CategoryTotal] = []
-    var smartCareTotalBytes: Int64 = 0
     var isCleaning = false
     var currentCleaningItem: ScanItem?
     var bytesFreedSoFar: Int64 = 0
     var completedCategories: Set<ScanCategory> = []
     var cleaningStartedAt: Date?
+    private(set) var activeSmartCareRun: SmartCareRun?
 
     private let engine = ScanEngine()
     private var cleaningTask: Task<Void, Never>?
@@ -38,11 +31,28 @@ final class ScanViewModel {
         smartCareTotalBytes > 0 ? min(1, Double(bytesFreedSoFar) / Double(smartCareTotalBytes)) : 0
     }
 
+    var smartCareSelectedItems: [ScanItem] {
+        items.filter { smartCareCategories.contains($0.category) && $0.isSelected }
+    }
+
+    var smartCareSelectedBytes: Int64 {
+        smartCareSelectedItems.reduce(0) { $0 + $1.size }
+    }
+
+    var smartCareCategoryTotals: [CategoryTotal] {
+        activeSmartCareRun?.categoryTotals ?? SmartCareRun(items: smartCareSelectedItems).categoryTotals
+    }
+
+    var smartCareTotalBytes: Int64 {
+        activeSmartCareRun?.totalBytes ?? smartCareSelectedBytes
+    }
+
     func checkFDA() {
         fdaStatus = FDAService.detect()
     }
 
     func scan() async {
+        guard !isCleaning else { return }
         checkFDA()
         isScanning = true
         scanError = nil
@@ -111,34 +121,35 @@ final class ScanViewModel {
         isPreparingSmartCare = true
         defer { isPreparingSmartCare = false }
         await scan()
-        let eligible = items.filter { smartCareCategories.contains($0.category) }
-        let grouped = Dictionary(grouping: eligible, by: \.category)
-        smartCareCategoryTotals = grouped
-            .map { CategoryTotal(category: $0.key, totalBytes: $0.value.reduce(0) { $0 + $1.size }) }
-            .sorted { $0.totalBytes > $1.totalBytes }
-        smartCareTotalBytes = smartCareCategoryTotals.reduce(0) { $0 + $1.totalBytes }
+    }
+
+    func makeSmartCareRun() -> SmartCareRun? {
+        let selected = smartCareSelectedItems
+        guard !selected.isEmpty else { return nil }
+        return SmartCareRun(items: selected)
     }
 
     // Called after the user confirms in the sheet. Only selected eligible
     // items are cleaned (mirrors existing per-item deselect via toggleSelection).
     func startSmartCare() {
-        cleaningTask = Task { await runSmartCare() }
+        guard !isCleaning, let run = makeSmartCareRun() else { return }
+        activeSmartCareRun = run
+        isCleaning = true
+        cleaningTask = Task { await runSmartCare(run) }
     }
 
     func stopSmartCare() {
         cleaningTask?.cancel()
     }
 
-    private func runSmartCare() async {
-        let toClean = items.filter { smartCareCategories.contains($0.category) && $0.isSelected }
-        isCleaning = true
+    private func runSmartCare(_ run: SmartCareRun) async {
         bytesFreedSoFar = 0
         completedCategories = []
         deletionFailures = []
         cleaningStartedAt = Date()
         defer { isCleaning = false; currentCleaningItem = nil }
 
-        for await event in engine.deleteWithProgress(items: toClean) {
+        for await event in engine.deleteWithProgress(items: run.items) {
             if Task.isCancelled { break }
             switch event {
             case .itemProcessed(let item, let failure):
@@ -148,8 +159,8 @@ final class ScanViewModel {
                 } else {
                     bytesFreedSoFar += item.size
                     items.removeAll { $0.id == item.id }
-                    let categoryRemaining = items.contains {
-                        $0.category == item.category && smartCareCategories.contains($0.category)
+                    let categoryRemaining = run.items.contains { runItem in
+                        runItem.category == item.category && items.contains { $0.id == runItem.id }
                     }
                     if !categoryRemaining { completedCategories.insert(item.category) }
                 }

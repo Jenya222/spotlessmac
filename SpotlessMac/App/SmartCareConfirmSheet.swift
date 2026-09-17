@@ -5,8 +5,6 @@ struct SmartCareConfirmSheet: View {
     let onConfirm: () -> Void
     let onCancel: () -> Void
 
-    @State private var showDetails = false
-
     private var eligibleItems: [ScanItem] {
         viewModel.items.filter { $0.category == .userCaches || $0.category == .logs }
     }
@@ -35,20 +33,20 @@ struct SmartCareConfirmSheet: View {
             .background(Theme.trackBackground.opacity(0.5))
             .clipShape(RoundedRectangle(cornerRadius: Theme.radiusRow))
 
-            DisclosureGroup("Показать файлы (\(eligibleItems.count))", isExpanded: $showDetails) {
-                List(eligibleItems) { item in
-                    ScanItemRow(item: item) { viewModel.toggleSelection(item) }
-                }
-                .frame(height: 220)
+            Text("Файлы для очистки (\(eligibleItems.count))")
+                .font(.callout.weight(.semibold))
+            List(eligibleItems) { item in
+                ScanItemRow(item: item) { viewModel.toggleSelection(item) }
+                    .help(item.path.path(percentEncoded: false))
             }
-            .font(.callout)
+            .frame(height: 220)
 
             HStack {
                 Button("Отмена", action: onCancel)
                 Spacer()
                 Button("Начать очистку", action: onConfirm)
                     .buttonStyle(.borderedProminent)
-                    .disabled(!eligibleItems.contains { $0.isSelected })
+                    .disabled(viewModel.smartCareSelectedItems.isEmpty || viewModel.isCleaning)
             }
         }
         .padding(24)
