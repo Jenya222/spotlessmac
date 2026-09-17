@@ -15,6 +15,14 @@ final class LicenseManager {
     private(set) var activationError: String?
 
     var canClean: Bool {
+#if DEBUG
+        return true
+#else
+        return Self.isCleaningAllowed(state: state)
+#endif
+    }
+
+    static func isCleaningAllowed(state: LicenseState) -> Bool {
         switch state {
         case .activated: return true
         case .trial(let used, let allowed): return used < allowed
