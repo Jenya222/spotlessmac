@@ -101,7 +101,14 @@ actor UninstallEngine {
     func uninstall(items: [LeftoverItem]) async -> [UninstallFailure] {
         var failures: [UninstallFailure] = []
         let fm = FileManager.default
-        for item in items where SafetyRules.isSafeToUninstall(url: item.path) {
+        for item in items {
+            guard SafetyRules.isSafeToUninstall(url: item.path) else {
+                failures.append(UninstallFailure(
+                    item: item,
+                    reason: "Путь не разрешён правилами безопасности."
+                ))
+                continue
+            }
             do {
                 try fm.trashItem(at: item.path, resultingItemURL: nil)
             } catch {

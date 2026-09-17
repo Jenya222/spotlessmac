@@ -27,7 +27,14 @@ actor ScanEngine {
     func delete(items: [ScanItem]) async -> [DeletionFailure] {
         var failures: [DeletionFailure] = []
         let fm = FileManager.default
-        for item in items where SafetyRules.isSafe(url: item.path) {
+        for item in items {
+            guard SafetyRules.isSafe(url: item.path) else {
+                failures.append(DeletionFailure(
+                    item: item,
+                    reason: "Путь не разрешён правилами безопасности."
+                ))
+                continue
+            }
             do {
                 try fm.trashItem(at: item.path, resultingItemURL: nil)
             } catch {
