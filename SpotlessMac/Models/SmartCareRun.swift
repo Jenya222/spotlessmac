@@ -22,3 +22,27 @@ struct SmartCareRun: Identifiable, Sendable {
             .sorted { $0.totalBytes > $1.totalBytes }
     }
 }
+
+enum SmartCareOutcome: Equatable, Sendable {
+    case succeeded
+    case partialFailure
+    case failed
+    case cancelled
+}
+
+final class CleaningCancellation: @unchecked Sendable {
+    private let lock = NSLock()
+    private var cancelled = false
+
+    var isCancelled: Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return cancelled
+    }
+
+    func cancel() {
+        lock.lock()
+        cancelled = true
+        lock.unlock()
+    }
+}

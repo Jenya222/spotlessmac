@@ -60,7 +60,7 @@ struct ContentView: View {
                 selectedTab: $selectedTab, showActivation: $showActivation, showOnboarding: $showOnboarding
             )
         case .cleaning:
-            CleaningProgressView(viewModel: viewModel, licenseManager: licenseManager, selectedTab: $selectedTab)
+            CleaningProgressView(viewModel: viewModel, selectedTab: $selectedTab)
         case .uninstall:
             UninstallerView(licenseManager: licenseManager)
         case .diskUsage:

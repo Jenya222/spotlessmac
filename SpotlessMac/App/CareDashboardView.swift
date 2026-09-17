@@ -44,7 +44,7 @@ struct CareDashboardView: View {
                 onConfirm: {
                     showConfirmSheet = false
                     selectedTab = .cleaning
-                    viewModel.startSmartCare()
+                    viewModel.startSmartCare(licenseManager: licenseManager)
                 },
                 onCancel: { showConfirmSheet = false }
             )

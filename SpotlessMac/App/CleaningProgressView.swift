@@ -2,10 +2,7 @@ import SwiftUI
 
 struct CleaningProgressView: View {
     var viewModel: ScanViewModel
-    var licenseManager: LicenseManager
     @Binding var selectedTab: AppTab
-
-    @AppStorage("lastSmartCareTimestamp") private var lastSmartCareTimestamp: Double = 0
 
     var body: some View {
         Group {
@@ -25,14 +22,6 @@ struct CleaningProgressView: View {
                 .padding(24)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 .background(Theme.dashboardBackground)
-            }
-        }
-        .onChange(of: viewModel.isCleaning) { _, isCleaning in
-            // Only record a completed run — not one that never started.
-            guard !isCleaning, viewModel.cleaningStartedAt != nil else { return }
-            lastSmartCareTimestamp = Date().timeIntervalSince1970
-            if viewModel.deletionFailures.isEmpty, !licenseManager.isActivated {
-                licenseManager.recordClean()
             }
         }
     }

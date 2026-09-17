@@ -46,12 +46,25 @@ extension ScanEngine {
     // Streams one event per item as it's trashed, so the UI can show a live
     // ring/current-file/per-category checklist. Every item is still gated
     // through SafetyRules.isSafe — same guarantee as delete(items:) above.
-    nonisolated func deleteWithProgress(items: [ScanItem]) -> AsyncStream<CleaningEvent> {
+    nonisolated func deleteWithProgress(
+        items: [ScanItem],
+        cancellation: CleaningCancellation
+    ) -> AsyncStream<CleaningEvent> {
         AsyncStream { continuation in
             let task = Task {
                 let fm = FileManager.default
-                for item in items where SafetyRules.isSafe(url: item.path) {
-                    if Task.isCancelled { break }
+                for item in items {
+                    if Task.isCancelled || cancellation.isCancelled { break }
+                    guard SafetyRules.isSafe(url: item.path) else {
+                        continuation.yield(.itemProcessed(
+                            item: item,
+                            failure: DeletionFailure(
+                                item: item,
+                                reason: "Путь не разрешён правилами безопасности."
+                            )
+                        ))
+                        continue
+                    }
                     do {
                         try fm.trashItem(at: item.path, resultingItemURL: nil)
                         continuation.yield(.itemProcessed(item: item, failure: nil))

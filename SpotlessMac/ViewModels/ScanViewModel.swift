@@ -4,6 +4,8 @@ import Observation
 @Observable
 @MainActor
 final class ScanViewModel {
+    typealias SmartCareDelete = ([ScanItem], CleaningCancellation) -> AsyncStream<CleaningEvent>
+
     var items: [ScanItem] = []
     var isScanning = false
     var isDeleting = false
@@ -19,17 +21,34 @@ final class ScanViewModel {
     var completedCategories: Set<ScanCategory> = []
     var cleaningStartedAt: Date?
     private(set) var activeSmartCareRun: SmartCareRun?
+    private(set) var smartCareOutcome: SmartCareOutcome?
+    private(set) var unprocessedSmartCareItems: [ScanItem] = []
+    private(set) var processedSmartCareItemIDs: Set<UUID> = []
+    private(set) var successfulSmartCareItemIDs: Set<UUID> = []
+    private(set) var failedSmartCareItemIDs: Set<UUID> = []
 
-    private let engine = ScanEngine()
+    private let engine: ScanEngine
+    private let smartCareDelete: SmartCareDelete
     private var cleaningTask: Task<Void, Never>?
+    private var cleaningCancellation: CleaningCancellation?
 
     // Real categories eligible for the one-click flow. .largeFiles never
     // participates in batch delete (existing invariant, see delete() below).
     private let smartCareCategories: Set<ScanCategory> = [.userCaches, .logs]
 
-    var cleaningProgressFraction: Double {
-        smartCareTotalBytes > 0 ? min(1, Double(bytesFreedSoFar) / Double(smartCareTotalBytes)) : 0
+    init(engine: ScanEngine = ScanEngine(), smartCareDelete: SmartCareDelete? = nil) {
+        self.engine = engine
+        self.smartCareDelete = smartCareDelete ?? { items, cancellation in
+            engine.deleteWithProgress(items: items, cancellation: cancellation)
+        }
     }
+
+    var cleaningProgressFraction: Double {
+        guard let count = activeSmartCareRun?.items.count, count > 0 else { return 0 }
+        return min(1, Double(processedSmartCareItemCount) / Double(count))
+    }
+
+    var processedSmartCareItemCount: Int { processedSmartCareItemIDs.count }
 
     var smartCareSelectedItems: [ScanItem] {
         items.filter { smartCareCategories.contains($0.category) && $0.isSelected }
@@ -131,39 +150,94 @@ final class ScanViewModel {
 
     // Called after the user confirms in the sheet. Only selected eligible
     // items are cleaned (mirrors existing per-item deselect via toggleSelection).
-    func startSmartCare() {
-        guard !isCleaning, let run = makeSmartCareRun() else { return }
+    @discardableResult
+    func startSmartCare(licenseManager: LicenseManager) -> Bool {
+        startSmartCare(canClean: licenseManager.canClean) {
+            if !licenseManager.isActivated {
+                licenseManager.recordClean()
+            }
+            UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: "lastSmartCareTimestamp")
+        }
+    }
+
+    @discardableResult
+    func startSmartCare(
+        canClean: Bool,
+        recordSuccessfulClean: @escaping @MainActor () -> Void
+    ) -> Bool {
+        guard canClean, !isCleaning, cleaningTask == nil, let run = makeSmartCareRun() else {
+            return false
+        }
         activeSmartCareRun = run
         isCleaning = true
-        cleaningTask = Task { await runSmartCare(run) }
-    }
-
-    func stopSmartCare() {
-        cleaningTask?.cancel()
-    }
-
-    private func runSmartCare(_ run: SmartCareRun) async {
         bytesFreedSoFar = 0
         completedCategories = []
         deletionFailures = []
+        processedSmartCareItemIDs = []
+        successfulSmartCareItemIDs = []
+        failedSmartCareItemIDs = []
+        unprocessedSmartCareItems = []
+        smartCareOutcome = nil
         cleaningStartedAt = Date()
-        defer { isCleaning = false; currentCleaningItem = nil }
+        let cancellation = CleaningCancellation()
+        cleaningCancellation = cancellation
+        cleaningTask = Task {
+            await runSmartCare(run, cancellation: cancellation, recordSuccessfulClean: recordSuccessfulClean)
+        }
+        return true
+    }
 
-        for await event in engine.deleteWithProgress(items: run.items) {
-            if Task.isCancelled { break }
+    func stopSmartCare() {
+        cleaningCancellation?.cancel()
+    }
+
+    private func runSmartCare(
+        _ run: SmartCareRun,
+        cancellation: CleaningCancellation,
+        recordSuccessfulClean: @escaping @MainActor () -> Void
+    ) async {
+        for await event in smartCareDelete(run.items, cancellation) {
             switch event {
             case .itemProcessed(let item, let failure):
                 currentCleaningItem = item
+                processedSmartCareItemIDs.insert(item.id)
                 if let failure {
                     deletionFailures.append(failure)
+                    failedSmartCareItemIDs.insert(item.id)
                 } else {
+                    successfulSmartCareItemIDs.insert(item.id)
                     bytesFreedSoFar += item.size
                     items.removeAll { $0.id == item.id }
-                    let categoryRemaining = run.items.contains { runItem in
-                        runItem.category == item.category && items.contains { $0.id == runItem.id }
-                    }
-                    if !categoryRemaining { completedCategories.insert(item.category) }
                 }
+                updateCompletedCategories(for: run)
+            }
+        }
+
+        unprocessedSmartCareItems = run.items.filter { !processedSmartCareItemIDs.contains($0.id) }
+        if cancellation.isCancelled, !unprocessedSmartCareItems.isEmpty {
+            smartCareOutcome = .cancelled
+        } else if deletionFailures.isEmpty, unprocessedSmartCareItems.isEmpty {
+            smartCareOutcome = .succeeded
+        } else if successfulSmartCareItemIDs.isEmpty {
+            smartCareOutcome = .failed
+        } else {
+            smartCareOutcome = .partialFailure
+        }
+
+        if !successfulSmartCareItemIDs.isEmpty {
+            recordSuccessfulClean()
+        }
+        isCleaning = false
+        currentCleaningItem = nil
+        cleaningCancellation = nil
+        cleaningTask = nil
+    }
+
+    private func updateCompletedCategories(for run: SmartCareRun) {
+        for total in run.categoryTotals {
+            let categoryIDs = Set(run.items.filter { $0.category == total.category }.map(\.id))
+            if categoryIDs.isSubset(of: successfulSmartCareItemIDs) {
+                completedCategories.insert(total.category)
             }
         }
     }
