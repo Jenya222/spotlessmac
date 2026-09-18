@@ -16,6 +16,7 @@
 		EE100007000000000000EE00 /* StorageRecoveryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD100008000000000000DD00 /* StorageRecoveryTests.swift */; };
 		EE100008000000000000EE00 /* DockerScanParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD100009000000000000DD00 /* DockerScanParserTests.swift */; };
 		EE100009000000000000EE00 /* DockerClientTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD10000A000000000000DD00 /* DockerClientTests.swift */; };
+		EE10000A000000000000EE00 /* DockerCleanupViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD10000B000000000000DD00 /* DockerCleanupViewModelTests.swift */; };
 		EE000001000000000000EE00 /* SpotlessMacApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000002000000000000DD00 /* SpotlessMacApp.swift */; };
 		EE000002000000000000EE00 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000003000000000000DD00 /* ContentView.swift */; };
 		EE000003000000000000EE00 /* ScanCategory.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000004000000000000DD00 /* ScanCategory.swift */; };
@@ -60,6 +61,7 @@
 		EE000036000000000000EE00 /* DockerScanParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000036000000000000DD00 /* DockerScanParser.swift */; };
 		EE000037000000000000EE00 /* DockerCommandRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000037000000000000DD00 /* DockerCommandRunner.swift */; };
 		EE000038000000000000EE00 /* DockerClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000038000000000000DD00 /* DockerClient.swift */; };
+		EE000039000000000000EE00 /* DockerCleanupViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000039000000000000DD00 /* DockerCleanupViewModel.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -73,6 +75,7 @@
 		DD100008000000000000DD00 /* StorageRecoveryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageRecoveryTests.swift; sourceTree = "<group>"; };
 		DD100009000000000000DD00 /* DockerScanParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DockerScanParserTests.swift; sourceTree = "<group>"; };
 		DD10000A000000000000DD00 /* DockerClientTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DockerClientTests.swift; sourceTree = "<group>"; };
+		DD10000B000000000000DD00 /* DockerCleanupViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DockerCleanupViewModelTests.swift; sourceTree = "<group>"; };
 		DD000001000000000000DD00 /* SpotlessMac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SpotlessMac.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		DD000002000000000000DD00 /* SpotlessMacApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotlessMacApp.swift; sourceTree = "<group>"; };
 		DD000003000000000000DD00 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -120,6 +123,7 @@
 		DD000036000000000000DD00 /* DockerScanParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DockerScanParser.swift; sourceTree = "<group>"; };
 		DD000037000000000000DD00 /* DockerCommandRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DockerCommandRunner.swift; sourceTree = "<group>"; };
 		DD000038000000000000DD00 /* DockerClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DockerClient.swift; sourceTree = "<group>"; };
+		DD000039000000000000DD00 /* DockerCleanupViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DockerCleanupViewModel.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -234,6 +238,7 @@
 				DD000036000000000000DD00 /* DockerScanParser.swift */,
 				DD000037000000000000DD00 /* DockerCommandRunner.swift */,
 				DD000038000000000000DD00 /* DockerClient.swift */,
+				DD000039000000000000DD00 /* DockerCleanupViewModel.swift */,
 			);
 			path = Docker;
 			sourceTree = "<group>";
@@ -250,6 +255,7 @@
 				DD100008000000000000DD00 /* StorageRecoveryTests.swift */,
 				DD100009000000000000DD00 /* DockerScanParserTests.swift */,
 				DD10000A000000000000DD00 /* DockerClientTests.swift */,
+				DD10000B000000000000DD00 /* DockerCleanupViewModelTests.swift */,
 			);
 			path = SpotlessMacTests;
 			sourceTree = "<group>";
@@ -400,6 +406,7 @@
 				EE100007000000000000EE00 /* StorageRecoveryTests.swift in Sources */,
 				EE100008000000000000EE00 /* DockerScanParserTests.swift in Sources */,
 				EE100009000000000000EE00 /* DockerClientTests.swift in Sources */,
+				EE10000A000000000000EE00 /* DockerCleanupViewModelTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -451,6 +458,7 @@
 				EE000036000000000000EE00 /* DockerScanParser.swift in Sources */,
 				EE000037000000000000EE00 /* DockerCommandRunner.swift in Sources */,
 				EE000038000000000000EE00 /* DockerClient.swift in Sources */,
+				EE000039000000000000EE00 /* DockerCleanupViewModel.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
