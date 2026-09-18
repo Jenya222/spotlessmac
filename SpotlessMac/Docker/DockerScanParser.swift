@@ -15,6 +15,8 @@ enum DockerScanParser {
         let volumes = try decoder.decode([VolumeInspect].self, from: volumeJSON)
 
         let referencedImageIDs = Set(containers.map { normalizeImageID($0.image) })
+        let stoppedContainerIDs = Set(containers.filter { !$0.state.running }.map(\.id))
+        var unreferencedImageIDs: Set<String> = []
         var resources: [DockerResource] = []
 
         for container in containers where !container.state.running {
@@ -34,6 +36,7 @@ enum DockerScanParser {
         for image in images {
             let normalizedID = normalizeImageID(image.id)
             guard !referencedImageIDs.contains(normalizedID) else { continue }
+            unreferencedImageIDs.insert(normalizedID)
             let tags = (image.repoTags ?? []).filter { $0 != "<none>:<none>" }
             let isDangling = tags.isEmpty
             resources.append(DockerResource(
@@ -97,6 +100,8 @@ enum DockerScanParser {
         return DockerScanSnapshot(
             resources: resources,
             referencedImageIDs: referencedImageIDs,
+            stoppedContainerIDs: stoppedContainerIDs,
+            unreferencedImageIDs: unreferencedImageIDs,
             danglingVolumeNames: danglingVolumeNames,
             reclaimableBuildCacheIDs: reclaimableCacheIDs
         )

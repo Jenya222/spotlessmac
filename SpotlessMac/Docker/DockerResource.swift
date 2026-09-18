@@ -51,7 +51,8 @@ struct DockerResource: Identifiable, Hashable, Sendable {
 struct DockerScanSnapshot: Sendable {
     var resources: [DockerResource]
     let referencedImageIDs: Set<String>
+    let stoppedContainerIDs: Set<String>
+    let unreferencedImageIDs: Set<String>
     let danglingVolumeNames: Set<String>
     let reclaimableBuildCacheIDs: Set<String>
 }
-
