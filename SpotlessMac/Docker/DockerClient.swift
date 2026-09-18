@@ -270,7 +270,7 @@ actor DockerClient {
             guard let builder = snapshot.buildxBuilder else { return nil }
             let exactID = NSRegularExpression.escapedPattern(for: resource.id)
             return prefix + [
-                "buildx", "prune", "--builder", builder.name, "--force",
+                "buildx", "prune", "--builder", builder.name, "--all", "--force",
                 "--filter", "id=^\(exactID)$", "--filter", "until=168h",
             ]
         }

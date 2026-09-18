@@ -136,7 +136,7 @@ final class DockerClientTests: XCTestCase {
             ["--context", "desktop-linux", "container", "rm", "container-id"],
             ["--context", "desktop-linux", "image", "rm", "sha256:image-id"],
             ["--context", "desktop-linux", "volume", "rm", "volume-name"],
-            ["--context", "desktop-linux", "buildx", "prune", "--builder", "desktop-linux", "--force", "--filter", "id=^cache-id$", "--filter", "until=168h"],
+            ["--context", "desktop-linux", "buildx", "prune", "--builder", "desktop-linux", "--all", "--force", "--filter", "id=^cache-id$", "--filter", "until=168h"],
         ])
     }
 
