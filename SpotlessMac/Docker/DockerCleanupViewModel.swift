@@ -96,37 +96,56 @@ final class DockerCleanupViewModel {
         failures = []
         defer { isDeleting = false }
 
-        let deletionFailures = await deleteDocker(selection.resources, selection.scanSnapshot)
+        var deletionFailures = await deleteDocker(selection.resources, selection.scanSnapshot)
+        let didRescan = await loadScan()
+        if didRescan {
+            for resource in selection.resources where resources.contains(where: {
+                $0.id == resource.id && $0.kind == resource.kind
+            }) {
+                let alreadyFailed = deletionFailures.contains {
+                    $0.resource.id == resource.id && $0.resource.kind == resource.kind
+                }
+                if !alreadyFailed {
+                    deletionFailures.append(DockerDeletionFailure(
+                        resource: resource,
+                        reason: "Docker сохранил ресурс, потому что он используется связанным объектом."
+                    ))
+                }
+            }
+        }
         failures = deletionFailures
         let successCount = max(0, selection.resources.count - deletionFailures.count)
         if successCount > 0 {
             recordSuccessfulClean()
         }
-        await loadScan()
         return .completed(successCount: successCount)
     }
 
-    private func loadScan() async {
+    @discardableResult
+    private func loadScan() async -> Bool {
         do {
             let result = try await scanDocker()
             latestSnapshot = result.snapshot
             resources = result.snapshot.resources
             availability = .ready(serverVersion: result.serverVersion)
+            return true
         } catch DockerCommandError.executableNotFound {
             latestSnapshot = nil
             resources = []
             availability = .cliMissing
+            return false
         } catch DockerCommandError.failed(_, let stderr, _) {
             latestSnapshot = nil
             resources = []
             availability = .daemonUnavailable(
                 message: stderr.isEmpty ? "Docker Desktop не отвечает." : stderr
             )
+            return false
         } catch {
             latestSnapshot = nil
             resources = []
             availability = .daemonUnavailable(message: error.localizedDescription)
+            return false
         }
     }
 }
-

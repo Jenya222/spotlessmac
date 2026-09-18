@@ -92,6 +92,40 @@ final class DockerCleanupViewModelTests: XCTestCase {
         XCTAssertEqual(remainingScans, 0)
     }
 
+    func testResourceRetainedAfterSuccessfulCommandIsReportedAsFailure() async {
+        let initial = makeSnapshot()
+        let scanQueue = DockerScanQueue([
+            DockerClientScanResult(serverVersion: "29.4.1", snapshot: initial),
+            DockerClientScanResult(serverVersion: "29.4.1", snapshot: initial),
+        ])
+        let viewModel = DockerCleanupViewModel(
+            scanDocker: { try await scanQueue.next() },
+            deleteDocker: { _, _ in [] }
+        )
+        var recordedCleans = 0
+        let didScan = await viewModel.scan()
+        XCTAssertTrue(didScan)
+        let selection = try! XCTUnwrap(viewModel.makeCleanupSnapshot())
+
+        let result = await viewModel.deleteConfirmed(
+            selection,
+            volumeAcknowledged: true,
+            canClean: true,
+            recordSuccessfulClean: { recordedCleans += 1 }
+        )
+
+        guard case .completed(let successCount) = result else {
+            return XCTFail("Expected a completed Docker cleanup")
+        }
+        XCTAssertEqual(successCount, 0)
+        XCTAssertEqual(recordedCleans, 0)
+        XCTAssertEqual(viewModel.failures.count, 1)
+        guard let failure = viewModel.failures.first else {
+            return XCTFail("A retained resource must be reported")
+        }
+        XCTAssertTrue(failure.reason.contains("сохранил"))
+    }
+
     func testCleanupRejectsLicenseAndConcurrentRequestAtAdmission() async {
         let initial = makeSnapshot()
         let deletionStarted = AsyncStream<Void>.makeStream()
