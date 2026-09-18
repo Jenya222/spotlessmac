@@ -27,25 +27,49 @@ enum DockerCommandRunner {
         guard let executableURL = locateExecutable() else {
             throw DockerCommandError.executableNotFound
         }
-        return try await Task.detached(priority: .userInitiated) {
-            let process = Process()
-            let output = Pipe()
-            let error = Pipe()
-            process.executableURL = executableURL
-            process.arguments = arguments
-            process.standardOutput = output
-            process.standardError = error
-            try process.run()
-            process.waitUntilExit()
-            let outputData = output.fileHandleForReading.readDataToEndOfFile()
-            let errorData = error.fileHandleForReading.readDataToEndOfFile()
-            return DockerCommandResult(
-                stdout: String(decoding: outputData, as: UTF8.self),
-                stderr: String(decoding: errorData, as: UTF8.self)
-                    .trimmingCharacters(in: .whitespacesAndNewlines),
-                exitCode: process.terminationStatus
-            )
-        }.value
+        return try await run(executableURL: executableURL, arguments: arguments)
+    }
+
+    static func run(
+        executableURL: URL,
+        arguments: [String]
+    ) async throws -> DockerCommandResult {
+        let runningProcess = RunningDockerProcess()
+        let result = try await withTaskCancellationHandler {
+            try await Task.detached(priority: .userInitiated) {
+                try Task.checkCancellation()
+                let process = Process()
+                let output = Pipe()
+                let error = Pipe()
+                process.executableURL = executableURL
+                process.arguments = arguments
+                process.standardOutput = output
+                process.standardError = error
+                try process.run()
+
+                if runningProcess.attach(process) {
+                    process.terminate()
+                }
+
+                async let outputData = output.fileHandleForReading.readToEnd()
+                async let errorData = error.fileHandleForReading.readToEnd()
+
+                try? output.fileHandleForWriting.close()
+                try? error.fileHandleForWriting.close()
+                process.waitUntilExit()
+                let (capturedOutput, capturedError) = try await (outputData, errorData)
+                return DockerCommandResult(
+                    stdout: String(decoding: capturedOutput ?? Data(), as: UTF8.self),
+                    stderr: String(decoding: capturedError ?? Data(), as: UTF8.self)
+                        .trimmingCharacters(in: .whitespacesAndNewlines),
+                    exitCode: process.terminationStatus
+                )
+            }.value
+        } onCancel: {
+            runningProcess.cancel()
+        }
+        try Task.checkCancellation()
+        return result
     }
 
     static func locateExecutable(
@@ -64,3 +88,26 @@ enum DockerCommandRunner {
     }
 }
 
+private final class RunningDockerProcess: @unchecked Sendable {
+    private let lock = NSLock()
+    private var process: Process?
+    private var cancelled = false
+
+    /// Returns true when cancellation won the race before the process attached.
+    func attach(_ process: Process) -> Bool {
+        lock.withLock {
+            self.process = process
+            return cancelled
+        }
+    }
+
+    func cancel() {
+        let process = lock.withLock {
+            cancelled = true
+            return self.process
+        }
+        if process?.isRunning == true {
+            process?.terminate()
+        }
+    }
+}

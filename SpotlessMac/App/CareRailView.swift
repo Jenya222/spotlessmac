@@ -7,6 +7,7 @@ extension AppTab {
         case .cleaning: return "wand.and.stars"
         case .uninstall: return "trash"
         case .diskUsage: return "chart.pie"
+        case .docker: return "shippingbox"
         }
     }
     var shortLabel: String {
@@ -15,6 +16,7 @@ extension AppTab {
         case .cleaning: return "Чистка"
         case .uninstall: return "Прогр."
         case .diskUsage: return "Диск"
+        case .docker: return "Docker"
         }
     }
 }

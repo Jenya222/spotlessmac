@@ -75,7 +75,7 @@ enum DockerScanParser {
         var reclaimableCacheIDs: Set<String> = []
         for record in parseBuildCache(buildCacheJSON) {
             guard record.reclaimable,
-                  let lastAccessedAt = parseDate(record.lastAccessedAt),
+                  let lastAccessedAt = parseDate(record.lastAccessedAt, relativeTo: now),
                   now.timeIntervalSince(lastAccessedAt) >= minimumCacheAge else { continue }
             reclaimableCacheIDs.insert(record.id)
             resources.append(DockerResource(
@@ -119,13 +119,51 @@ enum DockerScanParser {
         }
     }
 
-    private static func parseDate(_ value: String?) -> Date? {
+    private static func parseDate(_ value: String?, relativeTo now: Date? = nil) -> Date? {
         guard let value, !value.hasPrefix("0001-") else { return nil }
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         if let date = formatter.date(from: value) { return date }
         formatter.formatOptions = [.withInternetDateTime]
-        return formatter.date(from: value)
+        if let date = formatter.date(from: value) { return date }
+
+        guard let now else { return nil }
+        let normalized = value.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        if normalized.hasPrefix("less than a second") { return now }
+
+        let words = normalized
+            .replacingOccurrences(of: "about ", with: "")
+            .split(separator: " ")
+        guard words.count >= 3, words.last == "ago" else { return nil }
+        let quantity: Double
+        if words[0] == "a" || words[0] == "an" {
+            quantity = 1
+        } else if let parsed = Double(words[0]) {
+            quantity = parsed
+        } else {
+            return nil
+        }
+
+        let unit = words[1]
+        let secondsPerUnit: TimeInterval
+        if unit.hasPrefix("second") {
+            secondsPerUnit = 1
+        } else if unit.hasPrefix("minute") {
+            secondsPerUnit = 60
+        } else if unit.hasPrefix("hour") {
+            secondsPerUnit = 3_600
+        } else if unit.hasPrefix("day") {
+            secondsPerUnit = 86_400
+        } else if unit.hasPrefix("week") {
+            secondsPerUnit = 7 * 86_400
+        } else if unit.hasPrefix("month") {
+            secondsPerUnit = 30 * 86_400
+        } else if unit.hasPrefix("year") {
+            secondsPerUnit = 365 * 86_400
+        } else {
+            return nil
+        }
+        return now.addingTimeInterval(-quantity * secondsPerUnit)
     }
 
     private static func shortID(_ value: String) -> String {
@@ -204,12 +242,57 @@ private struct BuildCacheRecord: Decodable {
     let lastAccessedAt: String?
     let description: String?
 
-    enum CodingKeys: String, CodingKey {
-        case id = "ID"
-        case reclaimable = "Reclaimable"
-        case size = "Size"
-        case lastAccessedAt = "LastAccessedAt"
-        case description = "Description"
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: FlexibleCodingKey.self)
+        id = try container.decode(String.self, forKey: "ID")
+
+        if let value = try? container.decode(Bool.self, forKey: "Reclaimable") {
+            reclaimable = value
+        } else {
+            reclaimable = try container.decode(String.self, forKey: "Reclaimable")
+                .lowercased() == "true"
+        }
+
+        if let value = try? container.decode(String.self, forKey: "Size") {
+            size = value
+        } else if let value = try? container.decode(Int64.self, forKey: "Size") {
+            size = String(value)
+        } else {
+            size = String(try container.decode(Double.self, forKey: "Size"))
+        }
+
+        lastAccessedAt = ["LastAccessedAt", "LastAccessed", "LastUsedAt"]
+            .lazy
+            .compactMap { try? container.decodeIfPresent(String.self, forKey: FlexibleCodingKey($0)) }
+            .first ?? nil
+        description = try container.decodeIfPresent(String.self, forKey: "Description")
+    }
+}
+
+private struct FlexibleCodingKey: CodingKey {
+    let stringValue: String
+    let intValue: Int? = nil
+
+    init(_ stringValue: String) {
+        self.stringValue = stringValue
+    }
+
+    init?(stringValue: String) {
+        self.init(stringValue)
+    }
+
+    init?(intValue: Int) {
+        return nil
+    }
+}
+
+private extension KeyedDecodingContainer where Key == FlexibleCodingKey {
+    func decode<T: Decodable>(_ type: T.Type, forKey key: String) throws -> T {
+        try decode(type, forKey: FlexibleCodingKey(key))
+    }
+
+    func decodeIfPresent<T: Decodable>(_ type: T.Type, forKey key: String) throws -> T? {
+        try decodeIfPresent(type, forKey: FlexibleCodingKey(key))
     }
 }
 

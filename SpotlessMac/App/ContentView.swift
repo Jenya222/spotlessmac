@@ -5,10 +5,12 @@ enum AppTab: String, CaseIterable {
     case cleaning = "Чистка"
     case uninstall = "Программы"
     case diskUsage = "Диск"
+    case docker = "Docker"
 }
 
 struct ContentView: View {
     @State private var viewModel = ScanViewModel()
+    @State private var dockerViewModel = DockerCleanupViewModel()
     @State private var licenseManager = LicenseManager()
     @State private var selectedTab: AppTab = .care
     @AppStorage("hasSeenFDAOnboarding") private var hasSeenFDAOnboarding = false
@@ -65,6 +67,8 @@ struct ContentView: View {
             UninstallerView(licenseManager: licenseManager)
         case .diskUsage:
             DiskOverviewView(viewModel: viewModel, licenseManager: licenseManager)
+        case .docker:
+            DockerCleanupView(viewModel: dockerViewModel, licenseManager: licenseManager)
         }
     }
 

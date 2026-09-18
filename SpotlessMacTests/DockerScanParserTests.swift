@@ -86,4 +86,25 @@ final class DockerScanParserTests: XCTestCase {
 
         XCTAssertFalse(snapshot.resources.contains { $0.kind == .image })
     }
+
+    func testBuildCacheAcceptsDockerJSONFieldVariants() throws {
+        let buildCache = """
+        {"ID":"cache-string","Reclaimable":"true","Size":2500000,"LastAccessed":"2026-09-01T10:00:00Z","Description":"string bool"}
+        {"ID":"cache-relative","Reclaimable":true,"Size":"3MB","LastUsedAt":"10 days ago","Description":"relative time"}
+        {"ID":"cache-recent","Reclaimable":true,"Size":"4MB","LastUsedAt":"20 hours ago"}
+        {"ID":"cache-never-used","Reclaimable":true,"Size":"5MB","LastUsedAt":""}
+        {"ID":"cache-false","Reclaimable":"false","Size":"1MB","LastAccessed":"2026-08-01T10:00:00Z"}
+        """
+
+        let snapshot = try DockerScanParser.makeSnapshot(
+            containerJSON: Data("[]".utf8),
+            imageJSON: Data("[]".utf8),
+            volumeJSON: Data("[]".utf8),
+            buildCacheJSON: buildCache,
+            now: try XCTUnwrap(ISO8601DateFormatter().date(from: "2026-09-18T10:00:00Z"))
+        )
+
+        XCTAssertEqual(snapshot.resources.map(\.id), ["cache-relative", "cache-string"])
+        XCTAssertEqual(snapshot.resources.map(\.size), [3_000_000, 2_500_000])
+    }
 }

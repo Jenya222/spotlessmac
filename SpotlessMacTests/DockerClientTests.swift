@@ -2,6 +2,36 @@ import XCTest
 @testable import SpotlessMac
 
 final class DockerClientTests: XCTestCase {
+    func testCommandRunnerDrainsLargeOutputWithoutBlocking() async throws {
+        let result = try await DockerCommandRunner.run(
+            executableURL: URL(filePath: "/usr/bin/perl"),
+            arguments: ["-e", #"print "x" x 200_000"#]
+        )
+
+        XCTAssertEqual(result.exitCode, 0)
+        XCTAssertEqual(result.stdout.utf8.count, 200_000)
+        XCTAssertTrue(result.stderr.isEmpty)
+    }
+
+    func testCommandRunnerTerminatesProcessWhenCancelled() async throws {
+        let task = Task {
+            try await DockerCommandRunner.run(
+                executableURL: URL(filePath: "/usr/bin/yes"),
+                arguments: []
+            )
+        }
+
+        try await Task.sleep(for: .milliseconds(50))
+        task.cancel()
+
+        do {
+            _ = try await task.value
+            XCTFail("Expected cancellation")
+        } catch is CancellationError {
+            // Expected.
+        }
+    }
+
     func testScanUsesReadOnlyCommandsAndSkipsInspectForEmptyCollections() async throws {
         let recorder = DockerCommandRecorder(responses: [
             "version --format {{json .Server}}": .success(#"{"Version":"29.4.1"}"#),
