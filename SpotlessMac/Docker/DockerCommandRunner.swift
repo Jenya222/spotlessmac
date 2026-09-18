@@ -9,6 +9,7 @@ struct DockerCommandResult: Sendable {
 enum DockerCommandError: LocalizedError, Sendable {
     case executableNotFound
     case failed(arguments: [String], stderr: String, exitCode: Int32)
+    case invalidOutput(String)
 
     var errorDescription: String? {
         switch self {
@@ -16,6 +17,8 @@ enum DockerCommandError: LocalizedError, Sendable {
             "Docker CLI не найден. Установите Docker Desktop."
         case .failed(_, let stderr, _):
             stderr.isEmpty ? "Docker завершил команду с ошибкой." : stderr
+        case .invalidOutput(let message):
+            message
         }
     }
 }

@@ -34,11 +34,11 @@
 - Produces: `DockerResource`, `DockerResourceKind`, `DockerRisk`, `DockerAvailability`, `DockerScanSnapshot`.
 - Produces: `DockerScanParser.makeSnapshot(containerJSON:imageJSON:volumeJSON:buildCacheJSON:now:) throws -> DockerScanSnapshot`.
 
-- [ ] **Step 1: Write failing parser and classification tests** using complete inspect-array fixtures. Assert that running containers and referenced images are absent, dangling images and old reclaimable cache are selected, tagged images/stopped containers are unselected, and volumes are marked critical and unselected.
-- [ ] **Step 2: Run** `xcodebuild ... -only-testing:SpotlessMacTests/DockerScanParserTests` and verify compilation fails because the Docker types are missing.
-- [ ] **Step 3: Implement models and parser** with normalized `sha256:` IDs, ISO-8601 dates, byte sizes from numeric inspect fields, and tolerant Buildx JSON-lines parsing.
-- [ ] **Step 4: Re-run the targeted tests** and require zero failures.
-- [ ] **Step 5: Commit** `test/feat: add Docker scan classification` with the tests and minimal passing implementation.
+- [x] **Step 1: Write failing parser and classification tests** using complete inspect-array fixtures. Assert that running containers and referenced images are absent, dangling images and old reclaimable cache are selected, tagged images/stopped containers are unselected, and volumes are marked critical and unselected.
+- [x] **Step 2: Run** `xcodebuild ... -only-testing:SpotlessMacTests/DockerScanParserTests` and verify compilation fails because the Docker types are missing.
+- [x] **Step 3: Implement models and parser** with normalized `sha256:` IDs, ISO-8601 dates, byte sizes from numeric inspect fields, and tolerant Buildx JSON-lines parsing.
+- [x] **Step 4: Re-run the targeted tests** and require zero failures.
+- [x] **Step 5: Commit** `test/feat: add Docker scan classification` with the tests and minimal passing implementation.
 
 ### Task 2: Docker command boundary and exact deletion
 
@@ -53,13 +53,13 @@
 - Produces: `DockerCommandResult`, `DockerCommandError`, `DockerClient.scan()`, and `DockerClient.delete(_:)`.
 - Injected boundary: `typealias RunDockerCommand = @Sendable ([String]) async throws -> DockerCommandResult`.
 
-- [ ] **Step 1: Write failing client tests** with an actor-backed fake runner. Assert the exact read command sequence, that empty ID sets skip inspect calls, and that deletion emits only `container rm ID`, `image rm ID`, `volume rm NAME`, or `buildx prune --force --filter id=ID`.
-- [ ] **Step 2: Add negative tests** proving running-container, referenced-image, non-dangling-volume, and non-reclaimable-cache snapshots are rejected before the runner executes.
-- [ ] **Step 3: Run targeted tests** and verify failure because `DockerClient` does not exist.
-- [ ] **Step 4: Implement the process runner** with known executable candidates, no shell, captured UTF-8 output, cancellation termination, and stderr-based errors.
-- [ ] **Step 5: Implement `DockerClient`** with read-only discovery, per-resource safety revalidation from scan metadata, exact arguments, and per-resource failures.
-- [ ] **Step 6: Re-run Task 1 and Task 2 tests** and require zero failures.
-- [ ] **Step 7: Commit** `feat: add safe Docker command client`.
+- [x] **Step 1: Write failing client tests** with an actor-backed fake runner. Assert the exact read command sequence, that empty ID sets skip inspect calls, and that deletion emits only exact resource commands.
+- [x] **Step 2: Add negative tests** proving running-container, referenced-image, non-dangling-volume, and non-reclaimable-cache snapshots are rejected before the runner executes.
+- [x] **Step 3: Run targeted tests** and verify failure because `DockerClient` does not exist.
+- [x] **Step 4: Implement the process runner** with known executable candidates, no shell, captured UTF-8 output, cancellation termination, and stderr-based errors.
+- [x] **Step 5: Implement `DockerClient`** with read-only discovery, pinned context/builder identities, per-resource safety revalidation, exact arguments, and per-resource failures.
+- [x] **Step 6: Re-run Task 1 and Task 2 tests** and require zero failures.
+- [x] **Step 7: Commit** `feat: add safe Docker command client`.
 
 ### Task 3: Observable cleanup flow and licensing
 
@@ -72,11 +72,11 @@
 - Consumes: `DockerClient.scan()` and `DockerClient.delete(_:)` via injected async closures.
 - Produces: `scan()`, `toggle(_:)`, `makeCleanupSnapshot()`, `deleteConfirmed(_:licenseManager:)`, `isScanning`, `isDeleting`, `availability`, `resources`, and `failures`.
 
-- [ ] **Step 1: Write failing state-flow tests** asserting default selections, immutable confirmation snapshots, busy rejection, separate volume acknowledgment, success-only trial recording, and rescan after cleanup.
-- [ ] **Step 2: Run targeted tests** and verify failure because the view model is missing.
-- [ ] **Step 3: Implement the minimal main-actor view model** with serialized operations and license admission immediately before deletion.
-- [ ] **Step 4: Re-run targeted tests** and require zero failures.
-- [ ] **Step 5: Commit** `feat: add Docker cleanup state flow`.
+- [x] **Step 1: Write failing state-flow tests** asserting default selections, immutable confirmation snapshots, busy rejection, separate volume acknowledgment, success-only trial recording, and rescan after cleanup.
+- [x] **Step 2: Run targeted tests** and verify failure because the view model is missing.
+- [x] **Step 3: Implement the minimal main-actor view model** with serialized operations and license admission immediately before deletion.
+- [x] **Step 4: Re-run targeted tests** and require zero failures.
+- [x] **Step 5: Commit** `feat: add Docker cleanup state flow`.
 
 ### Task 4: Dedicated Docker SwiftUI section
 
@@ -90,12 +90,12 @@
 - Consumes: `DockerCleanupViewModel` and shared `LicenseManager`.
 - Produces: `AppTab.docker` and a complete scan/preview/confirmation/results flow.
 
-- [ ] **Step 1: Add `.docker` to `AppTab`** and route it to a state-owned `DockerCleanupViewModel`.
-- [ ] **Step 2: Implement the status UI** for missing CLI, stopped daemon, scanning, empty results, and populated results.
-- [ ] **Step 3: Implement category rows and totals** with safe defaults, search, explicit reasons, IDs, sizes, and risk labels.
-- [ ] **Step 4: Implement immutable confirmation sheets** listing all exact targets; require a second typed warning sheet when volumes are included.
-- [ ] **Step 5: Build Debug** and fix Swift 6/SwiftUI diagnostics without weakening the safety checks.
-- [ ] **Step 6: Commit** `feat: add Docker cleanup interface`.
+- [x] **Step 1: Add `.docker` to `AppTab`** and route it to a state-owned `DockerCleanupViewModel`.
+- [x] **Step 2: Implement the status UI** for missing CLI, stopped daemon, scanning, empty results, and populated results.
+- [x] **Step 3: Implement category rows and totals** with safe defaults, search, explicit reasons, IDs, sizes, and risk labels.
+- [x] **Step 4: Implement immutable confirmation sheets** listing all exact targets; require a second typed warning sheet when volumes are included.
+- [x] **Step 5: Build Debug** and fix Swift 6/SwiftUI diagnostics without weakening the safety checks.
+- [x] **Step 6: Commit** `feat: add Docker cleanup interface`.
 
 ### Task 5: Verification and integration
 
@@ -105,9 +105,9 @@
 **Interfaces:**
 - Produces a merge-ready `feature/docker-cleanup` branch.
 
-- [ ] **Step 1: Run the full XCTest suite** with a fresh DerivedData directory.
-- [ ] **Step 2: Run universal Release build** with code signing disabled.
-- [ ] **Step 3: Launch the exact Debug app** and verify the daemon-unavailable state on this Mac; use fixture-backed previews for the populated state and do not click a destructive confirmation.
-- [ ] **Step 4: Run `git diff --check` and focused code review** for command injection, running-resource exclusion, confirmation snapshot correctness, volume handling, licensing, and Swift concurrency.
-- [ ] **Step 5: Fix every P1/P2 finding with a failing regression test first**, then repeat verification.
-- [ ] **Step 6: Use `superpowers:finishing-a-development-branch`** to integrate the approved result into `main` and remove the owned worktree after merged tests pass.
+- [x] **Step 1: Run the full XCTest suite** with a fresh DerivedData directory.
+- [x] **Step 2: Run universal Release build** with code signing disabled.
+- [x] **Step 3: Launch the exact Debug app** and verify a live populated scan, search, immutable preview, and typed volume warning without clicking the destructive confirmation.
+- [x] **Step 4: Run `git diff --check` and focused code review** for command injection, running-resource exclusion, confirmation snapshot correctness, volume handling, licensing, and Swift concurrency.
+- [x] **Step 5: Fix every P1/P2 finding with a failing regression test first**, then repeat verification.
+- [x] **Step 6: Use `superpowers:finishing-a-development-branch`** to integrate the approved result into `main` and remove the owned worktree after merged tests pass.

@@ -24,7 +24,8 @@ Docker-managed resources cannot be moved to the macOS Trash. The user approved a
 - Delete containers with `docker container rm <exact-id>`.
 - Delete images with `docker image rm <exact-id>` only after proving no inspected container references the image ID.
 - Delete volumes with `docker volume rm <exact-name>` only when `docker volume ls --filter dangling=true` returned the name.
-- Delete build cache with `docker buildx prune --force --filter id=<exact-id>` only for records reported as reclaimable. `--force` here suppresses the interactive prompt; it does not expand the selected record set.
+- Pin the Docker context name and endpoint plus the Buildx builder identity in the immutable scan snapshot. Every command uses the pinned context, and both identities are revalidated before deletion.
+- Delete build cache with `docker buildx prune --builder <builder> --force --filter id=^<escaped-id>$ --filter until=168h` only for records reported as reclaimable. The anchored filter prevents partial ID matches, the age filter rechecks staleness at deletion time, and `--force` only suppresses the interactive prompt.
 - Capture an immutable resource snapshot and show every name, ID, size when known, and reason before running any command.
 - Volumes are never preselected and require a separate warning confirmation.
 - Stopped containers and unused tagged images are never preselected.
@@ -40,7 +41,7 @@ Docker-managed resources cannot be moved to the macOS Trash. The user approved a
 
 ## Discovery and classification
 
-The scan first runs `docker version --format {{json .Server}}`. A missing executable produces an installation state; a command failure produces a daemon-unavailable state with a Docker Desktop launch action.
+The scan resolves `docker context show`, records its endpoint, and prefixes daemon commands with `--context <name>` before running `docker version --format {{json .Server}}`. A missing executable produces an installation state; a command failure produces a daemon-unavailable state with a Docker Desktop launch action.
 
 When the daemon is available:
 
@@ -50,7 +51,7 @@ When the daemon is available:
 4. `docker image inspect <ids...>` returns tags, creation time, and byte size.
 5. Images whose normalized ID is absent from all inspected containers are unused. Untagged unused images are dangling and selected by default; tagged unused images require review.
 6. `docker volume ls --filter dangling=true --quiet` returns unused volume names; `docker volume inspect <names...>` adds creation time and labels.
-7. `docker buildx du --format json` returns cache records. Only reclaimable records last accessed at least seven days ago are shown and selected.
+7. `docker buildx ls --format json` captures the current builder and its worker IDs. `docker buildx du --builder <name> --format json` returns its cache records. Only reclaimable records last accessed at least seven days ago are shown and selected.
 
 An empty ID list skips its inspect command.
 
@@ -64,11 +65,11 @@ The existing license policy applies at cleanup admission and records one clean o
 
 ## Error handling
 
-Nonzero Docker exit status is presented using stderr without exposing environment variables or Docker configuration contents. A disappearing resource is treated as a successful no-op only when the daemon reports “No such”; other conflicts remain failures. Unsupported Buildx output hides build-cache candidates while preserving containers, images, and volumes.
+Nonzero Docker exit status is presented using stderr without exposing environment variables or Docker configuration contents. Every nonzero removal result remains a failure, including missing-resource and missing-builder errors. Unsupported Buildx output hides build-cache candidates while preserving containers, images, and volumes.
 
 ## Validation
 
-- Unit tests cover executable lookup, inspect parsing, referenced-image exclusion, default selection, cache age/reclaimability, exact command construction, volume safeguards, and busy admission.
+- Unit tests cover process cancellation and large output, inspect parsing, referenced-image exclusion, default selection, cache age/reclaimability, exact command construction, context and builder drift, volume safeguards, and busy admission.
 - Existing tests remain green.
 - Debug and Release builds pass with code signing disabled.
-- Manual UI QA covers the current machine's daemon-unavailable state and fixture-backed populated previews without invoking deletion.
+- Manual UI QA covers a real populated Docker environment, search, immutable preview, and the typed volume warning without invoking deletion. CLI-missing and daemon-unavailable states are covered by injected tests.

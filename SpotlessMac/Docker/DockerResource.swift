@@ -48,6 +48,17 @@ struct DockerResource: Identifiable, Hashable, Sendable {
     }
 }
 
+struct DockerContextIdentity: Equatable, Sendable {
+    let name: String
+    let endpoint: String
+}
+
+struct DockerBuildxIdentity: Equatable, Sendable {
+    let name: String
+    let driver: String
+    let nodeIdentities: Set<String>
+}
+
 struct DockerScanSnapshot: Sendable {
     var resources: [DockerResource]
     let referencedImageIDs: Set<String>
@@ -55,4 +66,26 @@ struct DockerScanSnapshot: Sendable {
     let unreferencedImageIDs: Set<String>
     let danglingVolumeNames: Set<String>
     let reclaimableBuildCacheIDs: Set<String>
+    let dockerContext: DockerContextIdentity?
+    let buildxBuilder: DockerBuildxIdentity?
+
+    init(
+        resources: [DockerResource],
+        referencedImageIDs: Set<String>,
+        stoppedContainerIDs: Set<String>,
+        unreferencedImageIDs: Set<String>,
+        danglingVolumeNames: Set<String>,
+        reclaimableBuildCacheIDs: Set<String>,
+        dockerContext: DockerContextIdentity? = nil,
+        buildxBuilder: DockerBuildxIdentity? = nil
+    ) {
+        self.resources = resources
+        self.referencedImageIDs = referencedImageIDs
+        self.stoppedContainerIDs = stoppedContainerIDs
+        self.unreferencedImageIDs = unreferencedImageIDs
+        self.danglingVolumeNames = danglingVolumeNames
+        self.reclaimableBuildCacheIDs = reclaimableBuildCacheIDs
+        self.dockerContext = dockerContext
+        self.buildxBuilder = buildxBuilder
+    }
 }

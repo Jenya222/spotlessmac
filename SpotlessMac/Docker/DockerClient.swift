@@ -12,49 +12,76 @@ struct DockerDeletionFailure: Sendable {
 
 actor DockerClient {
     private let run: RunDockerCommand
-    private let now: Date
+    private let now: @Sendable () async -> Date
 
     init(
         run: @escaping RunDockerCommand = { try await DockerCommandRunner.run(arguments: $0) },
-        now: Date = Date()
+        now: @escaping @Sendable () async -> Date = { Date() }
     ) {
         self.run = run
         self.now = now
     }
 
+    init(
+        run: @escaping RunDockerCommand = { try await DockerCommandRunner.run(arguments: $0) },
+        now: Date
+    ) {
+        self.run = run
+        self.now = { now }
+    }
+
     func scan() async throws -> DockerClientScanResult {
-        let versionOutput = try await checked(["version", "--format", "{{json .Server}}"])
+        let contextName = try await checked(["context", "show"])
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !contextName.isEmpty else {
+            throw DockerCommandError.invalidOutput("Docker не сообщил текущий context.")
+        }
+        let context = try await inspectContext(named: contextName)
+
+        let versionOutput = try await checked(in: context, ["version", "--format", "{{json .Server}}"])
         let serverVersion = parseServerVersion(versionOutput)
 
         let containerIDs = try await identifiers(
-            from: checked(["container", "ls", "--all", "--quiet", "--no-trunc"])
+            from: checked(in: context, ["container", "ls", "--all", "--quiet", "--no-trunc"])
         )
         let containerJSON = try await inspectJSON(
             prefix: ["container", "inspect", "--size"],
-            identifiers: containerIDs
+            identifiers: containerIDs,
+            context: context
         )
 
         let imageIDs = try await identifiers(
-            from: checked(["image", "ls", "--all", "--quiet", "--no-trunc"])
+            from: checked(in: context, ["image", "ls", "--all", "--quiet", "--no-trunc"])
         )
         let imageJSON = try await inspectJSON(
             prefix: ["image", "inspect"],
-            identifiers: imageIDs
+            identifiers: imageIDs,
+            context: context
         )
 
         let volumeNames = try await identifiers(
-            from: checked(["volume", "ls", "--filter", "dangling=true", "--quiet"])
+            from: checked(in: context, ["volume", "ls", "--filter", "dangling=true", "--quiet"])
         )
         let volumeJSON = try await inspectJSON(
             prefix: ["volume", "inspect"],
-            identifiers: volumeNames
+            identifiers: volumeNames,
+            context: context
         )
 
         let buildCacheJSON: String
+        var buildxBuilder: DockerBuildxIdentity?
         do {
-            buildCacheJSON = try await checked(["buildx", "du", "--format", "json"])
+            buildxBuilder = try await currentBuildxBuilder(in: context)
+            if let buildxBuilder {
+                buildCacheJSON = try await checked(in: context, [
+                    "buildx", "du", "--builder", buildxBuilder.name, "--format", "json",
+                ])
+            } else {
+                buildCacheJSON = ""
+            }
         } catch {
             // Buildx is optional. Its absence must not hide core Docker results.
+            buildxBuilder = nil
             buildCacheJSON = ""
         }
 
@@ -63,7 +90,9 @@ actor DockerClient {
             imageJSON: imageJSON,
             volumeJSON: volumeJSON,
             buildCacheJSON: buildCacheJSON,
-            now: now
+            now: await now(),
+            dockerContext: context,
+            buildxBuilder: buildxBuilder
         )
         return DockerClientScanResult(serverVersion: serverVersion, snapshot: snapshot)
     }
@@ -73,17 +102,67 @@ actor DockerClient {
         from snapshot: DockerScanSnapshot
     ) async -> [DockerDeletionFailure] {
         var failures: [DockerDeletionFailure] = []
+        var confirmed: [DockerResource] = []
         for resource in resources {
-            guard let arguments = deletionArguments(for: resource, snapshot: snapshot) else {
+            guard isConfirmed(resource, by: snapshot) else {
                 failures.append(DockerDeletionFailure(
                     resource: resource,
                     reason: "Ресурс не подтверждён последним безопасным сканированием."
                 ))
                 continue
             }
+            confirmed.append(resource)
+        }
+        guard !confirmed.isEmpty else { return failures }
+
+        guard let expectedContext = snapshot.dockerContext else {
+            return failures + confirmed.map {
+                DockerDeletionFailure(resource: $0, reason: "Docker context не закреплён снимком проверки.")
+            }
+        }
+
+        do {
+            let currentContext = try await inspectContext(named: expectedContext.name)
+            guard currentContext == expectedContext else {
+                return failures + confirmed.map {
+                    DockerDeletionFailure(
+                        resource: $0,
+                        reason: "Docker context изменился после проверки. Выполните сканирование снова."
+                    )
+                }
+            }
+        } catch {
+            return failures + confirmed.map { DockerDeletionFailure(resource: $0, reason: error.localizedDescription) }
+        }
+
+        var builderIsValid = true
+        if confirmed.contains(where: { $0.kind == .buildCache }) {
+            do {
+                guard let expectedBuilder = snapshot.buildxBuilder,
+                      let currentBuilder = try await buildxBuilder(
+                        named: expectedBuilder.name,
+                        in: expectedContext
+                      ),
+                      currentBuilder == expectedBuilder else {
+                    builderIsValid = false
+                    throw DockerCommandError.invalidOutput(
+                        "Buildx builder изменился после проверки. Выполните сканирование снова."
+                    )
+                }
+            } catch {
+                builderIsValid = false
+                let cacheResources = confirmed.filter { $0.kind == .buildCache }
+                failures += cacheResources.map {
+                    DockerDeletionFailure(resource: $0, reason: error.localizedDescription)
+                }
+            }
+        }
+
+        for resource in confirmed where resource.kind != .buildCache || builderIsValid {
+            guard let arguments = deletionArguments(for: resource, snapshot: snapshot) else { continue }
             do {
                 let result = try await run(arguments)
-                if result.exitCode != 0 && !isAlreadyAbsent(result) {
+                if result.exitCode != 0 {
                     failures.append(DockerDeletionFailure(
                         resource: resource,
                         reason: result.stderr.isEmpty ? "Docker не смог удалить ресурс." : result.stderr
@@ -97,6 +176,25 @@ actor DockerClient {
             }
         }
         return failures
+    }
+
+    private func inspectContext(named name: String) async throws -> DockerContextIdentity {
+        let output = try await checked([
+            "context", "inspect", name, "--format", "{{json .Endpoints.docker.Host}}",
+        ])
+        guard let data = output.data(using: .utf8),
+              let endpoint = try? JSONDecoder().decode(String.self, from: data),
+              !endpoint.isEmpty else {
+            throw DockerCommandError.invalidOutput("Docker context \(name) не содержит endpoint.")
+        }
+        return DockerContextIdentity(name: name, endpoint: endpoint)
+    }
+
+    private func checked(
+        in context: DockerContextIdentity,
+        _ arguments: [String]
+    ) async throws -> String {
+        try await checked(["--context", context.name] + arguments)
     }
 
     private func checked(_ arguments: [String]) async throws -> String {
@@ -120,9 +218,13 @@ actor DockerClient {
         }
     }
 
-    private func inspectJSON(prefix: [String], identifiers: [String]) async throws -> Data {
+    private func inspectJSON(
+        prefix: [String],
+        identifiers: [String],
+        context: DockerContextIdentity
+    ) async throws -> Data {
         guard !identifiers.isEmpty else { return Data("[]".utf8) }
-        return Data(try await checked(prefix + identifiers).utf8)
+        return Data(try await checked(in: context, prefix + identifiers).utf8)
     }
 
     private func parseServerVersion(_ output: String) -> String? {
@@ -133,31 +235,107 @@ actor DockerClient {
         return object["Version"] as? String
     }
 
+    private func isConfirmed(
+        _ resource: DockerResource,
+        by snapshot: DockerScanSnapshot
+    ) -> Bool {
+        switch resource.kind {
+        case .container:
+            return snapshot.stoppedContainerIDs.contains(resource.id)
+        case .image:
+            let normalizedID = DockerScanParser.normalizeImageID(resource.id)
+            return snapshot.unreferencedImageIDs.contains(normalizedID)
+                && !snapshot.referencedImageIDs.contains(normalizedID)
+        case .volume:
+            return snapshot.danglingVolumeNames.contains(resource.id)
+        case .buildCache:
+            return snapshot.reclaimableBuildCacheIDs.contains(resource.id)
+        }
+    }
+
     private func deletionArguments(
         for resource: DockerResource,
         snapshot: DockerScanSnapshot
     ) -> [String]? {
+        guard let context = snapshot.dockerContext else { return nil }
+        let prefix = ["--context", context.name]
         switch resource.kind {
         case .container:
-            guard snapshot.stoppedContainerIDs.contains(resource.id) else { return nil }
-            return ["container", "rm", resource.id]
+            return prefix + ["container", "rm", resource.id]
         case .image:
-            let normalizedID = DockerScanParser.normalizeImageID(resource.id)
-            guard snapshot.unreferencedImageIDs.contains(normalizedID),
-                  !snapshot.referencedImageIDs.contains(normalizedID) else { return nil }
-            return ["image", "rm", normalizedID]
+            return prefix + ["image", "rm", DockerScanParser.normalizeImageID(resource.id)]
         case .volume:
-            guard snapshot.danglingVolumeNames.contains(resource.id) else { return nil }
-            return ["volume", "rm", resource.id]
+            return prefix + ["volume", "rm", resource.id]
         case .buildCache:
-            guard snapshot.reclaimableBuildCacheIDs.contains(resource.id) else { return nil }
-            return ["buildx", "prune", "--force", "--filter", "id=\(resource.id)"]
+            guard let builder = snapshot.buildxBuilder else { return nil }
+            let exactID = NSRegularExpression.escapedPattern(for: resource.id)
+            return prefix + [
+                "buildx", "prune", "--builder", builder.name, "--force",
+                "--filter", "id=^\(exactID)$", "--filter", "until=168h",
+            ]
         }
     }
 
-    private func isAlreadyAbsent(_ result: DockerCommandResult) -> Bool {
-        let message = "\(result.stdout)\n\(result.stderr)".lowercased()
-        return message.contains("no such") || message.contains("not found")
+    private func currentBuildxBuilder(
+        in context: DockerContextIdentity
+    ) async throws -> DockerBuildxIdentity? {
+        let builders = try await buildxBuilders(in: context)
+        return builders.first { $0.isCurrent }?.identity
+    }
+
+    private func buildxBuilder(
+        named name: String,
+        in context: DockerContextIdentity
+    ) async throws -> DockerBuildxIdentity? {
+        let builders = try await buildxBuilders(in: context)
+        return builders.first { $0.identity.name == name }?.identity
+    }
+
+    private func buildxBuilders(
+        in context: DockerContextIdentity
+    ) async throws -> [BuildxListRecord] {
+        let output = try await checked(in: context, ["buildx", "ls", "--format", "json"])
+        let decoder = JSONDecoder()
+        return output.split(whereSeparator: \.isNewline).compactMap {
+            try? decoder.decode(BuildxListRecord.self, from: Data($0.utf8))
+        }
     }
 }
 
+private struct BuildxListRecord: Decodable {
+    let current: Bool
+    let driver: String
+    let name: String
+    let nodes: [BuildxNode]
+
+    var isCurrent: Bool { current }
+
+    var identity: DockerBuildxIdentity {
+        DockerBuildxIdentity(
+            name: name,
+            driver: driver,
+            nodeIdentities: Set(nodes.flatMap { node in
+                node.ids.map { "\(node.name)|\(node.endpoint)|\($0)" }
+            })
+        )
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case current = "Current"
+        case driver = "Driver"
+        case name = "Name"
+        case nodes = "Nodes"
+    }
+}
+
+private struct BuildxNode: Decodable {
+    let endpoint: String
+    let ids: [String]
+    let name: String
+
+    enum CodingKeys: String, CodingKey {
+        case endpoint = "Endpoint"
+        case ids = "IDs"
+        case name = "Name"
+    }
+}

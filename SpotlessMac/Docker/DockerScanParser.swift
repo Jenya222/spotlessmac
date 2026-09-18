@@ -7,7 +7,9 @@ enum DockerScanParser {
         volumeJSON: Data,
         buildCacheJSON: String,
         now: Date,
-        minimumCacheAge: TimeInterval = 7 * 86_400
+        minimumCacheAge: TimeInterval = 7 * 86_400,
+        dockerContext: DockerContextIdentity? = nil,
+        buildxBuilder: DockerBuildxIdentity? = nil
     ) throws -> DockerScanSnapshot {
         let decoder = JSONDecoder()
         let containers = try decoder.decode([ContainerInspect].self, from: containerJSON)
@@ -103,7 +105,9 @@ enum DockerScanParser {
             stoppedContainerIDs: stoppedContainerIDs,
             unreferencedImageIDs: unreferencedImageIDs,
             danglingVolumeNames: danglingVolumeNames,
-            reclaimableBuildCacheIDs: reclaimableCacheIDs
+            reclaimableBuildCacheIDs: reclaimableCacheIDs,
+            dockerContext: dockerContext,
+            buildxBuilder: buildxBuilder
         )
     }
 
