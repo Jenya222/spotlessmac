@@ -10,6 +10,16 @@ final class SafetyRulesTests: XCTestCase {
         XCTAssertFalse(SafetyRules.isSafe(url: sibling))
     }
 
+    func testCleanerAllowsChildrenOfDeveloperCacheRootsOnly() {
+        let root = SafetyRules.developerCacheRoots[0]
+        let child = root.appending(path: "Project/Build/output.o")
+        let sibling = root.deletingLastPathComponent()
+            .appending(path: root.lastPathComponent + "-backup/output.o")
+
+        XCTAssertTrue(SafetyRules.isSafe(url: child))
+        XCTAssertFalse(SafetyRules.isSafe(url: sibling))
+    }
+
     func testBatchDeleteReportsUnsafePathAsFailure() async {
         let item = ScanItem(path: URL(filePath: "/System/unsafe"), size: 1, category: .userCaches)
 

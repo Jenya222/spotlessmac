@@ -13,9 +13,7 @@ struct CareDashboardView: View {
     @State private var showConfirmSheet = false
 
     private var cleanableBytes: Int64 {
-        viewModel.items
-            .filter { $0.category == .userCaches || $0.category == .logs }
-            .reduce(0) { $0 + $1.size }
+        viewModel.cleanableItems.reduce(0) { $0 + $1.size }
     }
     private var healthScore: Int {
         HealthScoreCalculator.compute(
@@ -84,7 +82,7 @@ struct CareDashboardView: View {
             .buttonStyle(.plain)
             .disabled(viewModel.isScanning || viewModel.isPreparingSmartCare)
 
-            Text("Проверит кеши и логи — \(ByteCountFormatter.string(fromByteCount: cleanableBytes, countStyle: .file)) можно освободить")
+            Text("Проверит безопасные кеши и логи — \(ByteCountFormatter.string(fromByteCount: cleanableBytes, countStyle: .file)) можно освободить")
                 .font(.system(size: 12))
                 .foregroundStyle(Theme.textTertiary)
             Spacer()

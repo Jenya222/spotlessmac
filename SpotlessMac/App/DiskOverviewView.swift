@@ -9,6 +9,7 @@ struct DiskOverviewView: View {
     @State private var showDrillDown = false
     @State private var drillDownURL: URL = FileManager.default.homeDirectoryForCurrentUser
     @State private var showLargeFiles = false
+    @State private var showStorageRecovery = false
 
     var body: some View {
         ScrollView {
@@ -18,6 +19,7 @@ struct DiskOverviewView: View {
                     segmentedBar(overview)
                     legend(overview)
                 }
+                storageRecoveryCard
                 largestFoldersSection
             }
             .padding(24)
@@ -42,6 +44,70 @@ struct DiskOverviewView: View {
             }
             .frame(width: 640, height: 480)
         }
+        .sheet(isPresented: $showStorageRecovery, onDismiss: refreshDiskOverview) {
+            StorageRecoveryView(viewModel: viewModel, licenseManager: licenseManager)
+        }
+    }
+
+    private var storageRecoveryCard: some View {
+        HStack(spacing: 16) {
+            Image(systemName: "externaldrive.fill.badge.exclamationmark")
+                .font(.system(size: 24, weight: .semibold))
+                .foregroundStyle(Theme.warningOrange)
+                .frame(width: 48, height: 48)
+                .background(Theme.warningBackground)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Освободить место")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(Theme.textPrimary)
+                if viewModel.items.isEmpty {
+                    Text("Найдём кеши, старые установщики и крупные файлы в безопасных папках.")
+                        .font(.system(size: 12))
+                        .foregroundStyle(Theme.textSecondary)
+                } else {
+                    Text(recoverySummary)
+                        .font(.system(size: 12))
+                        .foregroundStyle(Theme.textSecondary)
+                }
+            }
+
+            Spacer()
+
+            Button {
+                Task {
+                    if viewModel.items.isEmpty { await viewModel.scan() }
+                    showStorageRecovery = true
+                }
+            } label: {
+                if viewModel.isScanning {
+                    ProgressView().controlSize(.small)
+                } else {
+                    Label(
+                        viewModel.items.isEmpty ? "Найти файлы" : "Посмотреть результаты",
+                        systemImage: "magnifyingglass"
+                    )
+                }
+            }
+            .buttonStyle(.borderedProminent)
+            .disabled(viewModel.isScanning || viewModel.isCleaning)
+        }
+        .padding(16)
+        .background(Color(nsColor: .textBackgroundColor))
+        .overlay(RoundedRectangle(cornerRadius: Theme.radiusCard).stroke(Theme.warningBorder))
+        .clipShape(RoundedRectangle(cornerRadius: Theme.radiusCard))
+    }
+
+    private var recoverySummary: String {
+        let safeBytes = viewModel.cleanableItems.reduce(Int64(0)) { $0 + $1.size }
+        let reviewCount = viewModel.items.filter { !$0.category.isBatchCleanable }.count
+        let safe = ByteCountFormatter.string(fromByteCount: safeBytes, countStyle: .file)
+        return "Безопасно очистить: \(safe) · проверить файлов: \(reviewCount)"
+    }
+
+    private func refreshDiskOverview() {
+        Task { overview = await DiskSpaceService.overview() }
     }
 
     private var header: some View {
@@ -55,7 +121,12 @@ struct DiskOverviewView: View {
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(Theme.textSecondary)
             }
-            Button("Показать крупные файлы") { showLargeFiles = true }
+            Button("Показать крупные файлы") {
+                Task {
+                    if viewModel.items.isEmpty { await viewModel.scan() }
+                    showLargeFiles = true
+                }
+            }
                 .buttonStyle(.bordered)
         }
     }

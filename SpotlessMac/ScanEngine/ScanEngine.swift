@@ -5,25 +5,37 @@ struct DeletionFailure: Sendable {
     let reason: String
 }
 
+enum DeletionRequestResult: Sendable {
+    case completed([DeletionFailure])
+    case busy
+}
+
 actor ScanEngine {
     func scan(fdaStatus: FDAStatus) async throws -> [ScanItem] {
         let scanners: [any Scanner] = [
             CachesScanner(),
             LogsScanner(fdaGranted: fdaStatus == .granted),
+            DeveloperCachesScanner(),
+            OldInstallersScanner(),
             LargeFilesScanner(),
         ]
         var results: [ScanItem] = []
         for scanner in scanners {
-            let items = try await scanner.scan()
-            results.append(contentsOf: items)
+            do {
+                let items = try await scanner.scan()
+                results.append(contentsOf: items)
+            } catch {
+                // A denied or unreadable source must not hide results from
+                // the remaining safe roots.
+                continue
+            }
         }
-        return results
+        return ScanResultMerger.deduplicate(results)
     }
 
     // Non-throwing: per-item failures collected and returned.
     // Only FileManager.trashItem is used — never removeItem.
-    // Large files (.largeFiles category) must never reach this method via batch delete;
-    // use deleteSingle() in ScanViewModel for them.
+    // Review-only files must reach this method only after a per-item preview.
     func delete(items: [ScanItem]) async -> [DeletionFailure] {
         var failures: [DeletionFailure] = []
         let fm = FileManager.default
@@ -42,6 +54,26 @@ actor ScanEngine {
             }
         }
         return failures
+    }
+}
+
+enum ScanResultMerger {
+    static func deduplicate(_ items: [ScanItem]) -> [ScanItem] {
+        var result: [ScanItem] = []
+        var indexByPath: [String: Int] = [:]
+
+        for item in items {
+            let key = item.path.standardizedFileURL.path(percentEncoded: false)
+            if let index = indexByPath[key] {
+                if result[index].category == .largeFiles && item.category == .oldInstallers {
+                    result[index] = item
+                }
+            } else {
+                indexByPath[key] = result.count
+                result.append(item)
+            }
+        }
+        return result
     }
 }
 

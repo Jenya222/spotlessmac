@@ -31,6 +31,25 @@ final class SmartCareSelectionTests: XCTestCase {
         XCTAssertNil(viewModel.makeSmartCareRun())
     }
 
+    func testSmartCareIncludesDeveloperCachesButExcludesReviewOnlyFiles() {
+        let developerCache = ScanItem(
+            path: URL(filePath: "/tmp/DerivedData"),
+            size: 120,
+            category: .developerCaches
+        )
+        let installer = ScanItem(
+            path: URL(filePath: "/tmp/Installer.dmg"),
+            size: 500,
+            category: .oldInstallers,
+            isSelected: true
+        )
+        let viewModel = ScanViewModel()
+        viewModel.items = [developerCache, installer]
+
+        XCTAssertEqual(viewModel.smartCareSelectedItems.map(\.id), [developerCache.id])
+        XCTAssertEqual(viewModel.selectedItems.map(\.id), [developerCache.id])
+    }
+
     func testConfirmationTotalsIgnorePreviousRunSnapshot() async {
         let old = ScanItem(path: URL(filePath: "/tmp/old"), size: 100, category: .userCaches)
         let pair = AsyncStream<CleaningEvent>.makeStream()

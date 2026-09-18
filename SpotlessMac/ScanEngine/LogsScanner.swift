@@ -2,16 +2,26 @@ import Foundation
 
 struct LogsScanner: Scanner {
     let fdaGranted: Bool
+    let userRoot: URL
+    let systemRoot: URL
     let category: ScanCategory = .logs
+
+    init(
+        fdaGranted: Bool,
+        userRoot: URL? = nil,
+        systemRoot: URL = URL(filePath: "/Library/Logs", directoryHint: .isDirectory)
+    ) {
+        self.fdaGranted = fdaGranted
+        self.userRoot = userRoot ?? FileManager.default.homeDirectoryForCurrentUser
+            .appending(path: "Library/Logs", directoryHint: .isDirectory)
+        self.systemRoot = systemRoot
+    }
 
     func scan() async throws -> [ScanItem] {
         var results: [ScanItem] = []
-        let home = FileManager.default.homeDirectoryForCurrentUser
-        let userLogs = home.appending(path: "Library/Logs", directoryHint: .isDirectory)
-        results += try scanDir(userLogs)
+        results += try scanDir(userRoot)
         if fdaGranted {
-            let systemLogs = URL(filePath: "/Library/Logs", directoryHint: .isDirectory)
-            results += try scanDir(systemLogs)
+            results += try scanDir(systemRoot)
         }
         return results.sorted { $0.size > $1.size }
     }
@@ -22,14 +32,21 @@ struct LogsScanner: Scanner {
         }
         let entries = try FileManager.default.contentsOfDirectory(
             at: url,
-            includingPropertiesForKeys: [.isDirectoryKey],
+            includingPropertiesForKeys: [.isDirectoryKey, .contentModificationDateKey],
             options: [.skipsHiddenFiles]
         )
         var items: [ScanItem] = []
         for entry in entries {
             let size = try recursiveSize(entry)
             if size > 0 {
-                items.append(ScanItem(path: entry, size: size, category: .logs))
+                let modifiedAt = try? entry.resourceValues(forKeys: [.contentModificationDateKey])
+                    .contentModificationDate
+                items.append(ScanItem(
+                    path: entry,
+                    size: size,
+                    category: .logs,
+                    modifiedAt: modifiedAt
+                ))
             }
         }
         return items

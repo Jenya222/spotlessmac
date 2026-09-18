@@ -17,12 +17,16 @@ struct LargeFilesView: View {
                     ContentUnavailableView(
                         "Крупных файлов не найдено",
                         systemImage: "archivebox",
-                        description: Text("Файлов размером более 1 ГБ не обнаружено")
+                        description: Text("Файлов размером от 500 МБ не обнаружено")
                     )
                 }
             } else {
                 List(viewModel.largeFileItems) { item in
-                    LargeFileRow(item: item) {
+                    LargeFileRow(
+                        item: item,
+                        isDeleteDisabled: viewModel.isDeleting || viewModel.isCleaning || viewModel.isScanning
+                    ) {
+                        guard !viewModel.isDeleting, !viewModel.isCleaning, !viewModel.isScanning else { return }
                         if licenseManager.canClean {
                             itemPendingDelete = item
                         } else {
@@ -46,6 +50,10 @@ struct LargeFilesView: View {
                 guard let item = itemPendingDelete else { return }
                 itemPendingDelete = nil
                 Task {
+                    guard licenseManager.canClean else {
+                        showActivation = true
+                        return
+                    }
                     lastFailure = await viewModel.deleteSingle(item)
                     if lastFailure == nil && !licenseManager.isActivated {
                         licenseManager.recordClean()
@@ -88,6 +96,7 @@ struct LargeFilesView: View {
 
 private struct LargeFileRow: View {
     let item: ScanItem
+    let isDeleteDisabled: Bool
     let onDelete: () -> Void
 
     var body: some View {
@@ -115,6 +124,7 @@ private struct LargeFileRow: View {
             }
             .buttonStyle(.plain)
             .foregroundStyle(.red.opacity(0.8))
+            .disabled(isDeleteDisabled)
         }
         .contentShape(Rectangle())
     }

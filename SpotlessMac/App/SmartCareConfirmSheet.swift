@@ -6,7 +6,7 @@ struct SmartCareConfirmSheet: View {
     let onCancel: () -> Void
 
     private var eligibleItems: [ScanItem] {
-        viewModel.items.filter { $0.category == .userCaches || $0.category == .logs }
+        viewModel.cleanableItems
     }
 
     var body: some View {

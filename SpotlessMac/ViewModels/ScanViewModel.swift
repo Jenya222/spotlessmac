@@ -6,6 +6,7 @@ import Observation
 final class ScanViewModel {
     typealias SmartCareDelete = ([ScanItem], CleaningCancellation) -> AsyncStream<CleaningEvent>
     typealias ScanItems = (FDAStatus) async throws -> [ScanItem]
+    typealias DeleteItems = ([ScanItem]) async -> [DeletionFailure]
 
     var items: [ScanItem] = []
     var isScanning = false
@@ -32,17 +33,18 @@ final class ScanViewModel {
     private let engine: ScanEngine
     private let smartCareDelete: SmartCareDelete
     private let scanItems: ScanItems
+    private let deleteItems: DeleteItems
     private var cleaningTask: Task<Void, Never>?
     private var cleaningCancellation: CleaningCancellation?
 
-    // Real categories eligible for the one-click flow. .largeFiles never
-    // participates in batch delete (existing invariant, see delete() below).
-    private let smartCareCategories: Set<ScanCategory> = [.userCaches, .logs]
+    // Only rebuildable data participates in the one-click flow.
+    private let smartCareCategories: Set<ScanCategory> = [.userCaches, .developerCaches, .logs]
 
     init(
         engine: ScanEngine = ScanEngine(),
         smartCareDelete: SmartCareDelete? = nil,
-        scanItems: ScanItems? = nil
+        scanItems: ScanItems? = nil,
+        deleteItems: DeleteItems? = nil
     ) {
         self.engine = engine
         self.smartCareDelete = smartCareDelete ?? { items, cancellation in
@@ -50,6 +52,9 @@ final class ScanViewModel {
         }
         self.scanItems = scanItems ?? { fdaStatus in
             try await engine.scan(fdaStatus: fdaStatus)
+        }
+        self.deleteItems = deleteItems ?? { items in
+            await engine.delete(items: items)
         }
     }
 
@@ -100,7 +105,7 @@ final class ScanViewModel {
     }
 
     func scan() async {
-        guard !isCleaning else { return }
+        guard !isCleaning, !isDeleting else { return }
         checkFDA()
         isScanning = true
         scanError = nil
@@ -113,27 +118,29 @@ final class ScanViewModel {
         }
     }
 
-    // Batch delete — never touches .largeFiles (defense in depth).
-    func delete() async {
+    // Serializes all manual destructive operations and deletes exactly the
+    // snapshot that was shown in the confirmation UI.
+    func delete(items targetItems: [ScanItem]) async -> DeletionRequestResult {
+        guard !isDeleting, !isCleaning else { return .busy }
         isDeleting = true
         defer { isDeleting = false }
         deletionFailures = []
-        let toDelete = selectedItems.filter { $0.category != .largeFiles }
-        let failures = await engine.delete(items: toDelete)
+        let failures = await deleteItems(targetItems)
         deletionFailures = failures
         let failedIDs = Set(failures.map(\.item.id))
-        let successIDs = Set(toDelete.map(\.id)).subtracting(failedIDs)
+        let successIDs = Set(targetItems.map(\.id)).subtracting(failedIDs)
         items.removeAll { successIDs.contains($0.id) }
+        return .completed(failures)
     }
 
     // Per-item delete for large files. Returns failure if trashing failed.
     func deleteSingle(_ item: ScanItem) async -> DeletionFailure? {
-        let failures = await engine.delete(items: [item])
-        if let failure = failures.first {
-            return failure
+        switch await delete(items: [item]) {
+        case .completed(let failures):
+            return failures.first
+        case .busy:
+            return DeletionFailure(item: item, reason: "Дождитесь завершения текущей очистки.")
         }
-        items.removeAll { $0.id == item.id }
-        return nil
     }
 
     func toggleSelection(_ item: ScanItem) {
@@ -141,17 +148,17 @@ final class ScanViewModel {
         items[idx].isSelected.toggle()
     }
 
-    // Never selects .largeFiles items.
+    // Review-only findings are never selected for batch cleanup.
     func selectAll() {
         items.indices.forEach { idx in
-            if items[idx].category != .largeFiles {
+            if items[idx].category.isBatchCleanable {
                 items[idx].isSelected = true
             }
         }
     }
     func selectNone() { items.indices.forEach { items[$0].isSelected = false } }
 
-    var cleanableItems: [ScanItem] { items.filter { $0.category != .largeFiles } }
+    var cleanableItems: [ScanItem] { items.filter { $0.category.isBatchCleanable } }
     var largeFileItems: [ScanItem] { items.filter { $0.category == .largeFiles } }
     var selectedItems: [ScanItem] { cleanableItems.filter(\.isSelected) }
     var totalSelectedSize: Int64 { selectedItems.reduce(0) { $0 + $1.size } }
@@ -194,7 +201,7 @@ final class ScanViewModel {
         canClean: Bool,
         recordSuccessfulClean: @escaping @MainActor () -> Void
     ) -> Bool {
-        guard canClean, !isCleaning, cleaningTask == nil, let run = makeSmartCareRun() else {
+        guard canClean, !isCleaning, !isDeleting, cleaningTask == nil, let run = makeSmartCareRun() else {
             return false
         }
         activeSmartCareRun = run

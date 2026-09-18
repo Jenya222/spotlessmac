@@ -1,6 +1,14 @@
 import Foundation
 
 enum SafetyRules {
+    static let developerCacheRoots: [URL] = {
+        let home = FileManager.default.homeDirectoryForCurrentUser
+        return [
+            home.appending(path: "Library/Developer/Xcode/DerivedData", directoryHint: .isDirectory),
+            home.appending(path: "Library/Developer/CoreSimulator/Caches", directoryHint: .isDirectory),
+        ]
+    }()
+
     static let allowedRoots: [URL] = {
         let home = FileManager.default.homeDirectoryForCurrentUser
         return [
@@ -14,7 +22,7 @@ enum SafetyRules {
             home.appending(path: "Pictures",          directoryHint: .isDirectory),
             URL(filePath: "/Library/Caches", directoryHint: .isDirectory),
             URL(filePath: "/Library/Logs",   directoryHint: .isDirectory),
-        ]
+        ] + developerCacheRoots
     }()
 
     static let forbiddenPrefixes: [String] = [
@@ -25,8 +33,11 @@ enum SafetyRules {
     ]
 
     static func isSafe(url: URL) -> Bool {
-        let path = url.path(percentEncoded: false)
-        guard allowedRoots.contains(where: { path.hasPrefix($0.path(percentEncoded: false)) }) else {
+        let path = canonicalPath(url)
+        guard allowedRoots.contains(where: { root in
+            let rootPath = canonicalPath(root)
+            return path == rootPath || path.hasPrefix(rootPath + "/")
+        }) else {
             return false
         }
         return !forbiddenPrefixes.contains(where: { path.hasPrefix($0) })
@@ -90,5 +101,9 @@ enum SafetyRules {
 
     private static func trimSlash(_ s: String) -> String {
         s.hasSuffix("/") ? String(s.dropLast()) : s
+    }
+
+    private static func canonicalPath(_ url: URL) -> String {
+        trimSlash(url.standardizedFileURL.resolvingSymlinksInPath().path(percentEncoded: false))
     }
 }

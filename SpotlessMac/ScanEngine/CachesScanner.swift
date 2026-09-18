@@ -2,20 +2,31 @@ import Foundation
 
 struct CachesScanner: Scanner {
     let category: ScanCategory = .userCaches
+    let root: URL
+
+    init(root: URL? = nil) {
+        self.root = root ?? FileManager.default.homeDirectoryForCurrentUser
+            .appending(path: "Library/Caches", directoryHint: .isDirectory)
+    }
 
     func scan() async throws -> [ScanItem] {
-        let cachesURL = FileManager.default.homeDirectoryForCurrentUser
-            .appending(path: "Library/Caches", directoryHint: .isDirectory)
         let entries = try FileManager.default.contentsOfDirectory(
-            at: cachesURL,
-            includingPropertiesForKeys: [.isDirectoryKey],
+            at: root,
+            includingPropertiesForKeys: [.isDirectoryKey, .contentModificationDateKey],
             options: [.skipsHiddenFiles]
         )
         var results: [ScanItem] = []
         for url in entries {
             let size = try recursiveSize(url)
             if size > 0 {
-                results.append(ScanItem(path: url, size: size, category: .userCaches))
+                let modifiedAt = try? url.resourceValues(forKeys: [.contentModificationDateKey])
+                    .contentModificationDate
+                results.append(ScanItem(
+                    path: url,
+                    size: size,
+                    category: .userCaches,
+                    modifiedAt: modifiedAt
+                ))
             }
         }
         return results.sorted { $0.size > $1.size }
