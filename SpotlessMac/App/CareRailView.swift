@@ -31,10 +31,15 @@ struct CareRailView: View {
                 railButton(for: tab)
             }
             Spacer()
-            Image(systemName: "gearshape")
-                .font(.system(size: 15))
-                .frame(width: Theme.moduleTileSize, height: Theme.moduleTileSize)
-                .foregroundStyle(Color(white: 0.55))
+            SettingsLink {
+                Image(systemName: "gearshape")
+                    .font(.system(size: 15))
+                    .frame(width: Theme.moduleTileSize, height: Theme.moduleTileSize)
+                    .foregroundStyle(Color(white: 0.55))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Настройки")
+            .help("Настройки")
         }
         .padding(.vertical, 14)
         .frame(width: Theme.railWidth)
