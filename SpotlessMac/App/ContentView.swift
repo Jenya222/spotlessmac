@@ -6,13 +6,22 @@ enum AppTab: String, CaseIterable {
     case uninstall = "Программы"
     case diskUsage = "Диск"
     case docker = "Docker"
+    case settings = "Настройки"
+
+    static let mainTabs: [AppTab] = [.care, .cleaning, .uninstall, .diskUsage, .docker]
+
+    static func launchTab(from defaults: UserDefaults = .standard) -> AppTab {
+        guard let value = defaults.string(forKey: "launchTab"),
+              let tab = AppTab(rawValue: value), tab != .settings else { return .care }
+        return tab
+    }
 }
 
 struct ContentView: View {
     @State private var viewModel = ScanViewModel()
     @State private var dockerViewModel = DockerCleanupViewModel()
     @State private var licenseManager = LicenseManager()
-    @State private var selectedTab: AppTab = .care
+    @Binding var selectedTab: AppTab
     @AppStorage("hasSeenFDAOnboarding") private var hasSeenFDAOnboarding = false
     @State private var showOnboarding = false
     @State private var showActivation = false
@@ -24,11 +33,13 @@ struct ContentView: View {
         }
         .frame(minWidth: 920, minHeight: 604)
         .overlay(alignment: .topTrailing) {
-            HStack(spacing: 10) {
-                licenseBadge
-                fdaBadge
+            if selectedTab != .settings {
+                HStack(spacing: 10) {
+                    licenseBadge
+                    fdaBadge
+                }
+                .padding(10)
             }
-            .padding(10)
         }
         .onAppear {
             viewModel.checkFDA()
@@ -69,6 +80,13 @@ struct ContentView: View {
             DiskOverviewView(viewModel: viewModel, licenseManager: licenseManager)
         case .docker:
             DockerCleanupView(viewModel: dockerViewModel, licenseManager: licenseManager)
+        case .settings:
+            SpotlessMacSettingsView(
+                viewModel: viewModel,
+                licenseManager: licenseManager,
+                showActivation: $showActivation,
+                showOnboarding: $showOnboarding
+            )
         }
     }
 

@@ -8,6 +8,7 @@ extension AppTab {
         case .uninstall: return "trash"
         case .diskUsage: return "chart.pie"
         case .docker: return "shippingbox"
+        case .settings: return "gearshape"
         }
     }
     var shortLabel: String {
@@ -17,6 +18,7 @@ extension AppTab {
         case .uninstall: return "Прогр."
         case .diskUsage: return "Диск"
         case .docker: return "Docker"
+        case .settings: return "Настройки"
         }
     }
 }
@@ -27,15 +29,19 @@ struct CareRailView: View {
     var body: some View {
         VStack(spacing: 6) {
             logoTile
-            ForEach(AppTab.allCases, id: \.self) { tab in
+            ForEach(AppTab.mainTabs, id: \.self) { tab in
                 railButton(for: tab)
             }
             Spacer()
-            SettingsLink {
+            Button {
+                selectedTab = .settings
+            } label: {
                 Image(systemName: "gearshape")
                     .font(.system(size: 15))
                     .frame(width: Theme.moduleTileSize, height: Theme.moduleTileSize)
-                    .foregroundStyle(Color(white: 0.55))
+                    .foregroundStyle(selectedTab == .settings ? .white : Color(white: 0.55))
+                    .background(selectedTab == .settings ? Color.white.opacity(0.14) : Color.clear)
+                    .clipShape(RoundedRectangle(cornerRadius: 11))
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Настройки")

@@ -63,6 +63,7 @@
 		EE000038000000000000EE00 /* DockerClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000038000000000000DD00 /* DockerClient.swift */; };
 		EE000039000000000000EE00 /* DockerCleanupViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000039000000000000DD00 /* DockerCleanupViewModel.swift */; };
 		EE00003A000000000000EE00 /* DockerCleanupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00003A000000000000DD00 /* DockerCleanupView.swift */; };
+		EE00003B000000000000EE00 /* SpotlessMacSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00003B000000000000DD00 /* SpotlessMacSettingsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -126,6 +127,7 @@
 		DD000038000000000000DD00 /* DockerClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DockerClient.swift; sourceTree = "<group>"; };
 		DD000039000000000000DD00 /* DockerCleanupViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DockerCleanupViewModel.swift; sourceTree = "<group>"; };
 		DD00003A000000000000DD00 /* DockerCleanupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DockerCleanupView.swift; sourceTree = "<group>"; };
+		DD00003B000000000000DD00 /* SpotlessMacSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotlessMacSettingsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -208,6 +210,7 @@
 				DD00002E000000000000DD00 /* DiskOverviewView.swift */,
 				DD000034000000000000DD00 /* StorageRecoveryView.swift */,
 				DD00003A000000000000DD00 /* DockerCleanupView.swift */,
+				DD00003B000000000000DD00 /* SpotlessMacSettingsView.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -458,6 +461,7 @@
 				EE000033000000000000EE00 /* StorageRecoveryQuery.swift in Sources */,
 				EE000034000000000000EE00 /* StorageRecoveryView.swift in Sources */,
 				EE00003A000000000000EE00 /* DockerCleanupView.swift in Sources */,
+				EE00003B000000000000EE00 /* SpotlessMacSettingsView.swift in Sources */,
 				EE000035000000000000EE00 /* DockerResource.swift in Sources */,
 				EE000036000000000000EE00 /* DockerScanParser.swift in Sources */,
 				EE000037000000000000EE00 /* DockerCommandRunner.swift in Sources */,
