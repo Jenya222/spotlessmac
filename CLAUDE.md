@@ -77,6 +77,7 @@ These invariants must be preserved in all changes:
 3. **Preview before delete** — user must see paths and sizes before any deletion is triggered.
 4. **`SafetyRules.isSafe(_:)` gates every delete call** in `ScanEngine.delete()`.
 5. **Never touch:** `/System`, `/private/var/vm` (swap), `/dev`, `/cores`, or anything outside the whitelist.
+6. **Assistant never deletes or quits** — `SpotlessMac/Assistant/` has no access to deletion, process-quit (Memory section), process-spawn or Docker/uninstall APIs. Its only outward effect is the `stagePlan` closure, which marks existing scan items for the user's review. Enforced by `AssistantIsolationTests`; never weaken its token list.
 
 ## Adding a new scanner
 
@@ -97,3 +98,4 @@ See `CachesScanner.swift` as the canonical pattern:
 | `ScanEngine/ScanEngine.swift` | Registers scanners; only place `trashItem` calls live |
 | `ScanEngine/Scanner.swift` | Protocol all scanners implement |
 | `ViewModels/ScanViewModel.swift` | Only ViewModel; drives scan + delete from the UI |
+| `Assistant/AssistantViewModel.swift` | AI cleanup assistant; receives only a snapshot closure and `stagePlan` |

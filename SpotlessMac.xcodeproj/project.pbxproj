@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		C38A4C574052859A9AE474AB /* AssistantIsolationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E97CDA7D1B975456FB641EE /* AssistantIsolationTests.swift */; };
 		1ABF981BE6CB80095542636D /* AssistantViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DC98D18391E2F37F39A3D6F /* AssistantViewModel.swift */; };
 		EA7E392EBFB12035F333D0A9 /* AssistantViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9E7E47D6EF36792EBFD458C /* AssistantViewModelTests.swift */; };
 		777F6EC9427B160A34FCCD12 /* ConversationStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95F35774C814FFBEE9EE789C /* ConversationStore.swift */; };
@@ -149,6 +150,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		6E97CDA7D1B975456FB641EE /* AssistantIsolationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantIsolationTests.swift; sourceTree = "<group>"; };
 		2DC98D18391E2F37F39A3D6F /* AssistantViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantViewModel.swift; sourceTree = "<group>"; };
 		E9E7E47D6EF36792EBFD458C /* AssistantViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantViewModelTests.swift; sourceTree = "<group>"; };
 		95F35774C814FFBEE9EE789C /* ConversationStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationStore.swift; sourceTree = "<group>"; };
@@ -469,6 +471,7 @@
 		AA100001000000000000AA00 /* SpotlessMacTests */ = {
 			isa = PBXGroup;
 			children = (
+				6E97CDA7D1B975456FB641EE /* AssistantIsolationTests.swift */,
 				E9E7E47D6EF36792EBFD458C /* AssistantViewModelTests.swift */,
 				2DAD9062E054609A3D289B00 /* ConversationStoreTests.swift */,
 				AF3CFD3F729863EA9A7EDB3B /* AssistantToolboxTests.swift */,
@@ -666,6 +669,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C38A4C574052859A9AE474AB /* AssistantIsolationTests.swift in Sources */,
 				EA7E392EBFB12035F333D0A9 /* AssistantViewModelTests.swift in Sources */,
 				1BC1E4AF95FBCA4E8348743D /* ConversationStoreTests.swift in Sources */,
 				234ACB8F42A82FD0A707F7CD /* AssistantToolboxTests.swift in Sources */,
