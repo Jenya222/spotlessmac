@@ -38,6 +38,10 @@ struct ContentView: View {
             tabContent
         }
         .frame(minWidth: 920, minHeight: 604)
+        .environment(\.askAssistant, AskAssistantAction { focus in
+            selectedTab = .assistant
+            assistant?.ask(about: focus)
+        })
         .overlay(alignment: .topTrailing) {
             if selectedTab != .settings && selectedTab != .assistant {
                 HStack(spacing: 10) {

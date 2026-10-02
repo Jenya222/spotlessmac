@@ -6,6 +6,7 @@ struct StorageRecoveryView: View {
     var licenseManager: LicenseManager
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.askAssistant) private var askAssistant
     @State private var searchText = ""
     @State private var sort: StorageRecoverySort = .sizeDescending
     @State private var itemPendingDelete: ScanItem?
@@ -201,7 +202,8 @@ struct StorageRecoveryView: View {
                                 onDelete: { requestDelete(item) },
                                 onReveal: {
                                     NSWorkspace.shared.activateFileViewerSelecting([item.path])
-                                }
+                                },
+                                onAsk: askAssistant.map { (action: AskAssistantAction) -> () -> Void in { ask(item, action) } }
                             )
                         }
                     } header: {
@@ -267,6 +269,14 @@ struct StorageRecoveryView: View {
             Spacer()
             Text(ByteCountFormatter.string(fromByteCount: total, countStyle: .file))
                 .monospacedDigit()
+        }
+    }
+
+    private func ask(_ item: ScanItem, _ action: AskAssistantAction) {
+        dismiss()
+        Task {
+            let activity = await OwnerActivityChecker.check(item)
+            action(AssistantSnapshotBuilder.focus(for: item, ownerActivity: activity))
         }
     }
 
@@ -339,6 +349,7 @@ private struct StorageRecoveryRow: View {
     let onToggle: () -> Void
     let onDelete: () -> Void
     let onReveal: () -> Void
+    var onAsk: (() -> Void)? = nil
 
     var body: some View {
         HStack(spacing: 12) {
@@ -388,6 +399,7 @@ private struct StorageRecoveryRow: View {
                 Button { NSWorkspace.shared.open(item.path) } label: { Image(systemName: "play.circle") }
                     .help("Прослушать запись")
             }
+            if let onAsk { AskAssistantButton(action: onAsk) }
             Button(action: onReveal) {
                 Image(systemName: "folder")
             }
@@ -406,6 +418,9 @@ private struct StorageRecoveryRow: View {
         }
         .padding(.vertical, 4)
         .help(item.path.path(percentEncoded: false))
+        .contextMenu {
+            if let onAsk { Button("Спросить ассистента", systemImage: "sparkles", action: onAsk) }
+        }
     }
 
     private var icon: String {

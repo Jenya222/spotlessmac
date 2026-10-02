@@ -5,6 +5,7 @@ struct UninstallerView: View {
     @Bindable var viewModel: UninstallViewModel
     var licenseManager: LicenseManager
 
+    @Environment(\.askAssistant) private var askAssistant
     @State private var showConfirmation = false
     @State private var showActivation = false
     @State private var pendingItems: [LeftoverItem] = []
@@ -130,9 +131,14 @@ struct UninstallerView: View {
                 ForEach(viewModel.leftoversByLocation, id: \.location) { group in
                     Section(group.location) {
                         ForEach(group.items) { item in
-                            LeftoverRow(item: item, isFlagged: item.size >= UninstallViewModel.largeLeftoverThreshold) {
-                                viewModel.toggleSelection(item)
-                            }
+                            LeftoverRow(
+                                item: item,
+                                isFlagged: item.size >= UninstallViewModel.largeLeftoverThreshold,
+                                onToggle: { viewModel.toggleSelection(item) },
+                                onAsk: askAssistant.map { (action: AskAssistantAction) -> () -> Void in
+                                    { action(AssistantSnapshotBuilder.focus(for: item, appName: viewModel.selectedApp?.name)) }
+                                }
+                            )
                         }
                     }
                 }
@@ -270,6 +276,7 @@ private struct LeftoverRow: View {
     let item: LeftoverItem
     let isFlagged: Bool
     let onToggle: () -> Void
+    var onAsk: (() -> Void)? = nil
 
     var body: some View {
         HStack(spacing: 10) {
@@ -287,11 +294,16 @@ private struct LeftoverRow: View {
 
             Spacer()
 
+            if let onAsk { AskAssistantButton(action: onAsk) }
+
             Text(item.formattedSize)
                 .monospacedDigit()
                 .foregroundStyle(isFlagged ? Theme.warningOrange : .secondary)
         }
         .contentShape(Rectangle())
         .onTapGesture(perform: onToggle)
+        .contextMenu {
+            if let onAsk { Button("Спросить ассистента", systemImage: "sparkles", action: onAsk) }
+        }
     }
 }

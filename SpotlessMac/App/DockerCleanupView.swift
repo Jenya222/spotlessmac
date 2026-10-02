@@ -5,6 +5,7 @@ struct DockerCleanupView: View {
     var viewModel: DockerCleanupViewModel
     var licenseManager: LicenseManager
 
+    @Environment(\.askAssistant) private var askAssistant
     @State private var searchText = ""
     @State private var confirmationSelection: DockerCleanupSelection?
     @State private var showActivation = false
@@ -191,7 +192,10 @@ struct DockerCleanupView: View {
                         DockerResourceRow(
                             resource: resource,
                             disabled: viewModel.isScanning || viewModel.isDeleting,
-                            onToggle: { viewModel.toggle(resource) }
+                            onToggle: { viewModel.toggle(resource) },
+                            onAsk: askAssistant.map { (action: AskAssistantAction) -> () -> Void in
+                                { action(AssistantSnapshotBuilder.focus(for: resource)) }
+                            }
                         )
                     }
                 } header: {
@@ -325,6 +329,7 @@ private struct DockerResourceRow: View {
     let resource: DockerResource
     let disabled: Bool
     let onToggle: () -> Void
+    var onAsk: (() -> Void)? = nil
 
     var body: some View {
         HStack(spacing: 12) {
@@ -367,6 +372,8 @@ private struct DockerResourceRow: View {
                     .foregroundStyle(.secondary)
             }
 
+            if let onAsk { AskAssistantButton(action: onAsk) }
+
             Text(resource.formattedSize)
                 .font(.callout.monospacedDigit())
                 .foregroundStyle(.secondary)
@@ -377,6 +384,9 @@ private struct DockerResourceRow: View {
         .onTapGesture {
             guard !disabled else { return }
             onToggle()
+        }
+        .contextMenu {
+            if let onAsk { Button("Спросить ассистента", systemImage: "sparkles", action: onAsk) }
         }
     }
 
