@@ -52,7 +52,7 @@ New folder `SpotlessMac/Assistant/`.
 | `OpenAICompatibleClient` | `POST {base}/v1/chat/completions`, `stream: true`, SSE (`data:` / `[DONE]`), accumulates chunked `tool_calls`. Models from `GET {base}/v1/models`. |
 | `HTTPTransport` | Injectable protocol over `URLSession.bytes(for:)`; stub in tests. Sets `URLRequest.timeoutInterval` explicitly. |
 | `LLMError` | `missingAPIKey`, `unauthorized`, `modelNotFound`, `rateLimited`, `toolsUnsupported`, `connectionRefused`, `timedOut`, `httpStatus(code, body)`, `decodingFailed`, `streamInterrupted`; each maps to a Russian user message. |
-| `SystemSnapshot` | `Sendable` value type: volume overview, FDA status, scan timestamp, per-category totals, up to 150 largest `ScanItem`s with short IDs (`c1…`), Docker summary, leftovers summary, last `CleanupReport`. Contains no references to live objects. |
+| `SystemSnapshot` | `Sendable` value type: volume overview, FDA status, scan timestamp, per-category totals, up to 150 largest `ScanItem`s with short IDs (`c1…`), Docker summary, leftovers summary, last `CleanupReport`, read-only memory info (pressure, used/physical, swap, top-5 user apps). Contains no references to live objects. |
 | `SnapshotBuilder` | `@MainActor`; builds a `SystemSnapshot` from `ScanViewModel`, `DockerCleanupViewModel`, `UninstallViewModel`, `StorageAnalysisViewModel` (read-only access). Lives **outside** `Assistant/` (in `ViewModels/`) since it touches app view models. |
 | `SnapshotRenderer` | Renders snapshot as Russian text for a system message; trims item list to a ~8k-token budget (≈4 chars/token). |
 | `PathRedactor` | Cloud-only redaction (see §6). Keeps an in-memory reverse map per conversation. |
@@ -103,7 +103,7 @@ CLAUDE.md "Safety rules" gains rule 6: *Assistant never deletes or quits — the
 ### Assistant tab
 - `AppTab.assistant` (raw value «Ассистент»), rail icon `sparkles`, short label «Помощь»; included in `mainTabs` (and therefore in the launch-tab picker).
 - Header in house style (48pt gradient tile, 23pt title, subtitle «провайдер · модель»), button «Новый диалог».
-- **«Что можно улучшить»** panel, computed locally from the snapshot (no LLM call): large developer caches, Docker reclaimable space, leftovers of removed apps, stale scan (> 3 days), missing FDA. Tapping a row sends a prepared question. No scan yet → «Запустить сканирование» button (calls existing scan via a closure in `ContentView`, not from `Assistant/`).
+- **«Что можно улучшить»** panel, computed locally from the snapshot (no LLM call): large developer caches, Docker reclaimable space, leftovers of removed apps, stale scan (> 3 days), missing FDA, memory pressure warning/critical or swap ≥ 1 GB. Tapping a row sends a prepared question. No scan yet → «Запустить сканирование» button (calls existing scan via a closure in `ContentView`, not from `Assistant/`).
 - Suggestion chips: «Почему диск заполнен?», «Освободи 20 ГБ безопасно», «Что можно удалить из Docker?», «Хватит ли места на обновление macOS?».
 - Messages: streamed text, block markdown, status line during tool calls («Смотрю кэши разработки…»), caption «модель · время».
 - Plan card: «План: N элементов · X», reason, «Пропущено: …», buttons «Открыть в превью» / «Отклонить».
@@ -141,6 +141,7 @@ c1 | ~/Library/Developer/Xcode/DerivedData | 9,8 ГБ | developerCaches | rebuil
 Docker: виртуальный диск 48 ГБ, можно освободить 6 ГБ; образы 12, тома 3 (2 — dataLoss).
 Остатки приложений: 3 (exact: 2, nameOnly: 1), 1,2 ГБ.
 Последняя очистка: в корзину 3,4 ГБ, наблюдаемый прирост 3,1 ГБ.
+Память: давление высокое, занято 15 ГБ из 16 ГБ, своп 4 ГБ. Больше всего памяти занимают: Xcode — 6 ГБ, Google Chrome — 3 ГБ.
 ```
 - ≤ 150 items, trimmed further above ~8k tokens; with tools the model can fetch more via `list_items`.
 - History: last 20 messages; only the current snapshot is sent, never old ones.
@@ -178,6 +179,11 @@ XCTest with stubbed `HTTPTransport` and fake `APIKeyStoring`:
 
 Manual: `scripts/install-local-debug.sh`; Ollama Cloud (`gpt-oss:20b`), local Ollama with a tool-capable model and a tool-less model, LM Studio (OpenAI-compatible); verify a model attempting `delete_file` is refused and logged.
 
+## 8a. Memory context (added after the Memory section landed on main)
+
+- `AssistantMemoryCache` (in `ViewModels/`) takes a `MemoryMonitor().sample()` before every answer (`Dependencies.refreshContext`) and when the Assistant tab appears; the snapshot maps it to `MemoryInfo` (pressure, used/physical, swap, top-5 user apps).
+- The assistant may only advise which app to close; quitting stays manual in the «Память» tab. The guard forbids `MemoryViewModel`, `AppTerminator`, `NSRunningApplication`, `terminate(`, `forceTerminate`, `kill(` in `SpotlessMac/Assistant/`.
+
 ## 9. Out of scope (v1)
 
 - Plans for Docker resources and app leftovers (explanations only).
@@ -186,3 +192,4 @@ Manual: `scripts/install-local-debug.sh`; Ollama Cloud (`gpt-oss:20b`), local Ol
 - Multiple conversations / history list.
 - Separate framework target for the Assistant module (stronger compile-time isolation; revisit later).
 - Rescans or scope changes driven by the model.
+- Quitting apps or processes from the assistant (advice only).

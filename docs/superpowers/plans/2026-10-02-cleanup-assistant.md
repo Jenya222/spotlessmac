@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add an LLM-powered cleanup assistant to SpotlessMac: a settings card (Ollama Cloud / local Ollama / OpenAI-compatible, token, model), a chat tab that sees the current scan snapshot, "Ask assistant" on result rows, and plans the user reviews in the existing «Освободить место» preview — with no code path from the assistant to any deletion API.
+**Goal:** Add an LLM-powered cleanup assistant to SpotlessMac: a settings card (Ollama Cloud / local Ollama / OpenAI-compatible, token, model), a chat tab that sees the current scan snapshot and memory state (read-only), "Ask assistant" on result rows, and plans the user reviews in the existing «Освободить место» preview — with no code path from the assistant to any deletion API.
 
 **Architecture:** A self-contained `SpotlessMac/Assistant/` module (settings, two streaming LLM clients behind `LLMClient`, immutable `SystemSnapshot`, closed tool set, plan parser/resolver, conversation store, `AssistantViewModel`). The module receives only a snapshot closure and a `stagePlan` closure that toggles selection; a source-guard test forbids deletion/process APIs inside the module. Views live in `SpotlessMac/App/`, the snapshot builder in `SpotlessMac/ViewModels/`.
 
@@ -27,6 +27,7 @@ The working tree has many **uncommitted user changes** (ContentView, ScanViewMod
 - Cloud (= `AssistantSettings.sendsDataOffDevice`) paths are redacted; local Ollama gets full paths.
 - Keychain account for the token: `assistantAPIKey`. UserDefaults keys: `assistantSettings`, `assistantToolSupport`, `assistantCloudDisclosureAccepted`. Conversation file: `~/Library/Application Support/SpotlessMac/assistant-conversation.json`.
 - Use `Color.accentColor` explicitly (not `.accentColor`) in `foregroundStyle` (CLAUDE.md Swift 6 tip).
+- Memory data is read-only context: pressure, used/physical, swap, top-5 user apps by footprint. The assistant may *advise* which app to close; quitting stays a manual action in the «Память» tab (`MemoryViewModel` quit flow), which the Assistant module may never reference.
 
 ## Review Focus
 
@@ -35,6 +36,7 @@ The working tree has many **uncommitted user changes** (ContentView, ScanViewMod
 3. Personal paths with spaces and Cyrillic (`~/Documents/Мой проект/…`) → fully redacted by `redact(_:)`, restored in the answer (test in Task 6).
 4. "Новый диалог" pressed while an answer is still streaming → no crash, no stale message reappears, streaming flag resets (test in Task 11).
 5. Server returns 200 but the stream drops before `done` → partial text kept, message marked `interrupted` with an error text (tests in Tasks 3 and 11).
+6. Memory sample unavailable or stale (Memory tab never opened) → context says «данные не получены», no crash; a fresh sample is taken before every answer (tests in Tasks 7, 11, 13).
 
 ---
 
@@ -1499,7 +1501,8 @@ git commit -m "feat(assistant): client factory and connection check"
   - `extension CleanupDisposition { var code: String }` (`rebuildable|redownload|personalData|inspectOnly`)
   - `struct SnapshotItem: Equatable, Sendable { shortID: String; itemID: UUID; path: String; bytes: Int64; category: ScanCategory; disposition: CleanupDisposition; reason: String; modifiedAt: Date?; owner: String?; var isBatchCleanable: Bool }`
   - `struct CategorySummary { category; bytes; count }`, `struct VolumeInfo { var name; totalBytes; availableBytes; freeFraction }`, `struct DockerKindSummary { kindName; count; bytes; dataLossCount }`, `struct DockerInfo { status; virtualDiskBytes: Int64?; reclaimableBytes: Int64?; kinds }`, `struct LeftoverInfo { appName; count; exactCount; nameOnlyCount; bytes }`, `struct LastCleanupInfo { trashedBytes; observedFreeSpaceDelta: Int64? }` — all `Equatable, Sendable`.
-  - `struct SystemSnapshot: Equatable, Sendable { takenAt; volume; fullDiskAccess: Bool?; lastScanAt: Date?; categories; items; docker; leftovers; lastCleanup; hasScan; item(shortID:) }`
+  - `enum MemoryLoad: String { normal, warning, critical, unknown; label }`, `struct MemoryAppInfo { name: String; bytes: Int64 }`, `struct MemoryInfo { load: MemoryLoad; usedBytes; physicalBytes; swapUsedBytes; topApps: [MemoryAppInfo] }` — all `Equatable, Sendable`. (Own types: the Assistant module does not depend on `SpotlessMac/Memory/`.)
+  - `struct SystemSnapshot: Equatable, Sendable { takenAt; volume; fullDiskAccess: Bool?; lastScanAt: Date?; categories; items; docker; leftovers; lastCleanup; memory: MemoryInfo?; hasScan; item(shortID:) }`
   - `struct AssistantFocus: Equatable, Sendable { title: String; path: String; facts: [String] }`
   - `struct PathRedactor: Sendable { init(homePath:); mutating redact(_:) -> String; mutating redactText(_:) -> String; restore(_:) -> String; static personalRoots }`
   - Test fixture: `SystemSnapshot.sample()`, `SystemSnapshot.testHome`, `SystemSnapshot.testDate`.
@@ -1546,7 +1549,9 @@ extension SystemSnapshot {
             docker: DockerInfo(status: "Docker запущен", virtualDiskBytes: 48_000_000_000, reclaimableBytes: 6_000_000_000,
                                kinds: [DockerKindSummary(kindName: "Неиспользуемые образы", count: 12, bytes: 5_000_000_000, dataLossCount: 0)]),
             leftovers: nil,
-            lastCleanup: nil
+            lastCleanup: nil,
+            memory: MemoryInfo(load: .normal, usedBytes: 12_000_000_000, physicalBytes: 16_000_000_000, swapUsedBytes: 0,
+                               topApps: [MemoryAppInfo(name: "Xcode", bytes: 4_000_000_000), MemoryAppInfo(name: "Google Chrome", bytes: 2_500_000_000)])
         )
     }
 }
@@ -1695,6 +1700,33 @@ struct LastCleanupInfo: Equatable, Sendable {
     let observedFreeSpaceDelta: Int64?
 }
 
+enum MemoryLoad: String, Equatable, Sendable {
+    case normal, warning, critical, unknown
+
+    var label: String {
+        switch self {
+        case .normal: "нормальное"
+        case .warning: "высокое"
+        case .critical: "критическое"
+        case .unknown: "неизвестно"
+        }
+    }
+}
+
+struct MemoryAppInfo: Equatable, Sendable {
+    let name: String
+    let bytes: Int64
+}
+
+// Read-only memory context. Quitting apps is never available to the assistant.
+struct MemoryInfo: Equatable, Sendable {
+    let load: MemoryLoad
+    let usedBytes: Int64
+    let physicalBytes: Int64
+    let swapUsedBytes: Int64
+    let topApps: [MemoryAppInfo]
+}
+
 // Immutable copy of what the assistant may know. Holds no references to live objects.
 struct SystemSnapshot: Equatable, Sendable {
     var takenAt: Date
@@ -1706,6 +1738,7 @@ struct SystemSnapshot: Equatable, Sendable {
     var docker: DockerInfo?
     var leftovers: LeftoverInfo?
     var lastCleanup: LastCleanupInfo?
+    var memory: MemoryInfo?
 
     var hasScan: Bool { lastScanAt != nil }
 
@@ -1809,7 +1842,7 @@ git commit -m "feat(assistant): system snapshot model and path redaction"
 **Interfaces:**
 - Consumes: Task 6 snapshot types.
 - Produces:
-  - `enum SnapshotRenderer { static maxItems = 150; static maxCharacters = 32_000; render(_:formatPath:) -> String; itemLine(_:formatPath:) -> String; itemCard(_:formatPath:) -> String; bytes(_:) -> String; date(_:) -> String; dateTime(_:) -> String; percent(_:) -> String }`
+  - `enum SnapshotRenderer { static maxItems = 150; static maxCharacters = 32_000; render(_:formatPath:) -> String; itemLine(_:formatPath:) -> String; itemCard(_:formatPath:) -> String; bytes(_:) -> String; memoryBytes(_:) -> String; date(_:) -> String; dateTime(_:) -> String; percent(_:) -> String }`
   - `enum AssistantPrompt { static func system(toolsEnabled: Bool) -> String }`
 
 - [ ] **Step 1: Write failing tests**
@@ -1859,6 +1892,15 @@ final class SnapshotRendererTests: XCTestCase {
         XCTAssertTrue(text.contains("list_items"))
     }
 
+    func testRendersMemory() {
+        let text = SnapshotRenderer.render(.sample()) { $0 }
+        XCTAssertTrue(text.contains("Память: давление нормальное"))
+        XCTAssertTrue(text.contains("Xcode —"))
+        var noMemory = SystemSnapshot.sample()
+        noMemory.memory = nil
+        XCTAssertTrue(SnapshotRenderer.render(noMemory) { $0 }.contains("Память: данные не получены"))
+    }
+
     func testItemCard() {
         let item = SystemSnapshot.sample().items[3]
         let card = SnapshotRenderer.itemCard(item) { $0 }
@@ -1871,6 +1913,7 @@ final class SnapshotRendererTests: XCTestCase {
         let fallback = AssistantPrompt.system(toolsEnabled: false)
         XCTAssertTrue(fallback.contains("```spotless-plan"))
         XCTAssertTrue(fallback.contains("не можешь ничего удалить"))
+        XCTAssertTrue(fallback.contains("вкладке «Память»"))
         let tools = AssistantPrompt.system(toolsEnabled: true)
         XCTAssertTrue(tools.contains("propose_plan"))
         XCTAssertFalse(tools.contains("```spotless-plan"))
@@ -1959,6 +2002,16 @@ enum SnapshotRenderer {
             let delta = cleanup.observedFreeSpaceDelta.map(bytes) ?? "не измерен"
             lines.append("Последняя очистка: в Корзину перемещено \(bytes(cleanup.trashedBytes)), наблюдаемый прирост свободного места \(delta).")
         }
+        if let memory = snapshot.memory {
+            var line = "Память: давление \(memory.load.label), занято \(memoryBytes(memory.usedBytes)) из \(memoryBytes(memory.physicalBytes)), своп \(memoryBytes(memory.swapUsedBytes))."
+            if !memory.topApps.isEmpty {
+                line += " Больше всего памяти занимают: "
+                    + memory.topApps.map { "\($0.name) — \(memoryBytes($0.bytes))" }.joined(separator: ", ") + "."
+            }
+            lines.append(line)
+        } else {
+            lines.append("Память: данные не получены.")
+        }
         return lines.joined(separator: "\n")
     }
 
@@ -1983,6 +2036,10 @@ enum SnapshotRenderer {
 
     static func bytes(_ value: Int64) -> String {
         ByteCountFormatter.string(fromByteCount: value, countStyle: .file)
+    }
+
+    static func memoryBytes(_ value: Int64) -> String {
+        ByteCountFormatter.string(fromByteCount: value, countStyle: .memory)
     }
 
     static func date(_ value: Date) -> String { format(value, "yyyy-MM-dd") }
@@ -2013,6 +2070,7 @@ enum AssistantPrompt {
     - Ты не можешь ничего удалить и не можешь запускать команды. Ты только объясняешь и предлагаешь план; удаление выполняет сам пользователь в окне «Освободить место» после проверки списка.
     - Всё, что пользователь удаляет через SpotlessMac, перемещается в Корзину и может быть восстановлено.
     - Никогда не советуй удалять /System, файл подкачки (/private/var/vm), личные данные (политика personalData) и элементы «только просмотр» (inspectOnly).
+    - Ты не можешь закрывать программы. Если памяти не хватает, объясни причину и посоветуй, что закрыть; закрывает пользователь сам во вкладке «Память». Файл подкачки удалять нельзя — своп освобождается сам после закрытия программ.
     - Опирайся только на снимок системы и результаты инструментов. Если элемента нет в данных — скажи «не знаю», не придумывай пути и размеры.
     - Пути вида <папка-N> — обезличенные папки пользователя; используй их как есть.
     Ответ о конкретном элементе: сначала вердикт («безопасно», «осторожно» или «не трогать»), затем что это и что произойдёт после удаления (что пересоздастся, что придётся скачать заново, что потеряется).
@@ -2775,6 +2833,7 @@ git commit -m "feat(assistant): conversation messages and persistence"
           var stagePlan: @MainActor (AssistantPlan) -> Void
           var conversationStore: ConversationStore?
           var homePath: String
+          var refreshContext: @MainActor () async -> Void = {}   // e.g. take a fresh memory sample
           var now: @MainActor () -> Date = { Date() }
       }
       static let maxToolRounds = 4
@@ -2789,6 +2848,7 @@ git commit -m "feat(assistant): conversation messages and persistence"
       var isCloudDisclosurePresented: Bool
       var isConfigured: Bool
       func currentSnapshot() -> SystemSnapshot
+      func refreshContext() async
       func reloadSettings()
       func send(_ text: String? = nil)        // nil = send `draft`
       func ask(about focus: AssistantFocus)
@@ -3037,6 +3097,30 @@ final class AssistantViewModelTests: XCTestCase {
         XCTAssertEqual(restored.messages.map(\.text), ["привет", "ok"])
     }
 
+    func testRefreshesContextBeforeEachAnswer() async {
+        settingsStore = AssistantSettingsStore(defaults: makeDefaults())
+        var settings = AssistantSettings()
+        settings.switchProvider(to: .ollamaLocal)
+        settingsStore.save(settings)
+        // Reference box: closures may be inferred @Sendable, so no captured `var`s.
+        @MainActor final class Context { var refreshes = 0; var memory: MemoryInfo? }
+        let context = Context()
+        let client = FakeLLMClient([.events([.text("ok"), .done])])
+        let vm = AssistantViewModel(dependencies: .init(
+            settingsStore: settingsStore, keyStore: FakeKeyStore(), makeClient: { _, _ in client },
+            snapshot: { var s = SystemSnapshot.sample(); s.memory = context.memory; return s },
+            stagePlan: { _ in }, conversationStore: nil, homePath: SystemSnapshot.testHome,
+            refreshContext: {
+                context.refreshes += 1
+                context.memory = MemoryInfo(load: .critical, usedBytes: 15_000_000_000, physicalBytes: 16_000_000_000,
+                                            swapUsedBytes: 6_000_000_000, topApps: [])
+            }
+        ))
+        await sendAndWait(vm, "Почему тормозит?")
+        XCTAssertEqual(context.refreshes, 1)
+        XCTAssertTrue(client.requests[0].messages[1].content.contains("давление критическое"))
+    }
+
     func testIsConfiguredRequiresKeyForCloud() {
         settingsStore = AssistantSettingsStore(defaults: makeDefaults())
         let vm = AssistantViewModel(dependencies: .init(
@@ -3077,6 +3161,8 @@ final class AssistantViewModel {
         var stagePlan: @MainActor (AssistantPlan) -> Void
         var conversationStore: ConversationStore?
         var homePath: String
+        // Refreshes read-only context (memory sample) before each answer.
+        var refreshContext: @MainActor () async -> Void = {}
         var now: @MainActor () -> Date = { Date() }
     }
 
@@ -3110,6 +3196,8 @@ final class AssistantViewModel {
     }
 
     func currentSnapshot() -> SystemSnapshot { deps.snapshot() }
+
+    func refreshContext() async { await deps.refreshContext() }
 
     func reloadSettings() {
         settings = deps.settingsStore.load()
@@ -3246,6 +3334,7 @@ final class AssistantViewModel {
             persist()
         }
         let redacts = settings.sendsDataOffDevice
+        await deps.refreshContext()
         let snapshot = Self.prepared(deps.snapshot(), redacts: redacts)
         do {
             let client = try deps.makeClient(settings, deps.keyStore.readKey())
@@ -3390,7 +3479,7 @@ Run:
 scripts/xcodeproj-add.py app Assistant SpotlessMac/Assistant/AssistantViewModel.swift
 scripts/test.sh AssistantViewModelTests
 ```
-Expected: `Executed 16 tests, with 0 failures`. If `testStopMarksMessageStopped` is flaky because the hanging stream is not cancelled, verify that `FakeLLMClient.Step.hang` relies on consumer cancellation; `AsyncThrowingStream` ends iteration when the consuming task is cancelled, and `try Task.checkCancellation()` then throws `CancellationError`.
+Expected: `Executed 17 tests, with 0 failures`. If `testStopMarksMessageStopped` is flaky because the hanging stream is not cancelled, verify that `FakeLLMClient.Step.hang` relies on consumer cancellation; `AsyncThrowingStream` ends iteration when the consuming task is cancelled, and `try Task.checkCancellation()` then throws `CancellationError`.
 
 - [ ] **Step 5: Commit**
 
@@ -3519,10 +3608,11 @@ git commit -m "test(assistant): enforce no-delete isolation; document safety rul
 - Create: `SpotlessMacTests/AssistantStagingTests.swift`
 
 **Interfaces:**
-- Consumes: snapshot types (Task 6), `SnapshotRenderer` (Task 7).
+- Consumes: snapshot types (Task 6), `SnapshotRenderer` (Task 7), `MemorySample`/`MemoryMonitor` from `SpotlessMac/Memory/` (on `main`), `MemoryFixtures` (existing test helper).
 - Produces:
   - `ScanViewModel`: `struct AssistantStaging: Equatable { count: Int; bytes: Int64 }`, `private(set) var lastScanAt: Date?`, `private(set) var assistantStaging: AssistantStaging?`, `var recoveryPreviewRequested: Bool`, `@discardableResult func stageSelection(_ ids: Set<UUID>) -> AssistantStaging`, `func clearAssistantStaging()`
-  - `@MainActor enum AssistantSnapshotBuilder { make(scan:docker:uninstall:volume:now:) -> SystemSnapshot; readVolume() -> VolumeInfo?; focus(for: ScanItem, ownerActivity: OwnerActivity?) -> AssistantFocus; focus(for: LeftoverItem, appName: String?) -> AssistantFocus; focus(for: DockerResource) -> AssistantFocus }`
+  - `@MainActor enum AssistantSnapshotBuilder { make(scan:docker:uninstall:memory:volume:now:) -> SystemSnapshot; memoryInfo(_: MemorySample) -> MemoryInfo; readVolume() -> VolumeInfo?; focus(for: ScanItem, ownerActivity: OwnerActivity?) -> AssistantFocus; focus(for: LeftoverItem, appName: String?) -> AssistantFocus; focus(for: DockerResource) -> AssistantFocus }`
+  - `@Observable @MainActor final class AssistantMemoryCache { private(set) var latest: MemorySample?; init(sample:); func refresh() async }` (in `AssistantSnapshotBuilder.swift`)
   - `struct Improvement: Equatable, Identifiable, Sendable { enum Action { ask(String), scan }; id; icon; title; detail; action }`, `enum ImprovementAdvisor { static func suggestions(for: SystemSnapshot) -> [Improvement] }`
 
 - [ ] **Step 1: Write failing tests**
@@ -3575,12 +3665,49 @@ final class AssistantStagingTests: XCTestCase {
         let tieA = item("a-tie", 50, .userCaches)
         let tieB = item("b-tie", 50, .userCaches)
         let vm = await scannedViewModel([small, tieB, big, tieA])
-        let snapshot = AssistantSnapshotBuilder.make(scan: vm, docker: nil, uninstall: nil, volume: nil, now: SystemSnapshot.testDate)
+        let snapshot = AssistantSnapshotBuilder.make(scan: vm, docker: nil, uninstall: nil, memory: nil, volume: nil, now: SystemSnapshot.testDate)
         XCTAssertEqual(snapshot.items.map(\.shortID), ["c1", "c2", "c3", "c4"])
         XCTAssertEqual(snapshot.items.map(\.itemID), [big.id, tieA.id, tieB.id, small.id])
         XCTAssertEqual(snapshot.categories.first?.category, .developerCaches)
         XCTAssertNotNil(snapshot.lastScanAt)
         XCTAssertEqual(snapshot.items[0].path, "/Users/tester/Library/Caches/big")
+    }
+
+    func testMemoryInfoKeepsTopUserAppsOnly() {
+        let kernel = AppMemoryGroup(id: "kernel", displayName: "kernel_task", kind: .system, bundlePath: nil,
+                                    processes: [MemoryFixtures.process(0, footprint: 8 << 30)])
+        let groups = [
+            MemoryFixtures.userGroup("/Applications/Slack.app", processes: [MemoryFixtures.process(2, footprint: 1 << 30)]),
+            kernel,
+            MemoryFixtures.userGroup("/Applications/Xcode.app", processes: [MemoryFixtures.process(1, footprint: 4 << 30)]),
+        ]
+        let sample = MemorySample(date: SystemSnapshot.testDate,
+                                  system: MemoryFixtures.system(swapUsed: 2 << 30, pressure: .warning),
+                                  groups: groups, runningApps: [])
+        let info = AssistantSnapshotBuilder.memoryInfo(sample)
+        XCTAssertEqual(info.load, .warning)
+        XCTAssertEqual(info.swapUsedBytes, 2 << 30)
+        XCTAssertEqual(info.physicalBytes, 16 << 30)
+        XCTAssertEqual(info.topApps.map(\.name), ["Xcode", "Slack"])
+    }
+
+    func testMemoryCacheRefreshes() async {
+        let sample = MemoryFixtures.sample(at: SystemSnapshot.testDate)
+        let cache = AssistantMemoryCache(sample: { sample })
+        XCTAssertNil(cache.latest)
+        await cache.refresh()
+        XCTAssertEqual(cache.latest, sample)
+    }
+
+    func testAdvisorSuggestsMemoryUnderPressureOnly() {
+        var snapshot = SystemSnapshot.sample()
+        XCTAssertFalse(ImprovementAdvisor.suggestions(for: snapshot).contains { $0.id == "memory" })
+        snapshot.memory = MemoryInfo(load: .normal, usedBytes: 10, physicalBytes: 20, swapUsedBytes: 3_000_000_000, topApps: [])
+        XCTAssertTrue(ImprovementAdvisor.suggestions(for: snapshot).contains { $0.id == "memory" })
+        snapshot.memory = MemoryInfo(load: .critical, usedBytes: 10, physicalBytes: 20, swapUsedBytes: 0, topApps: [])
+        let memory = ImprovementAdvisor.suggestions(for: snapshot).first { $0.id == "memory" }
+        XCTAssertEqual(memory?.title, "Критическая нехватка памяти")
+        XCTAssertEqual(memory?.action, .ask("Почему не хватает памяти и какие программы стоит закрыть?"))
     }
 
     func testFocusForScanItem() {
@@ -3699,6 +3826,7 @@ enum AssistantSnapshotBuilder {
         scan: ScanViewModel,
         docker: DockerCleanupViewModel?,
         uninstall: UninstallViewModel?,
+        memory: MemorySample?,
         volume: VolumeInfo?,
         now: Date
     ) -> SystemSnapshot {
@@ -3731,7 +3859,29 @@ enum AssistantSnapshotBuilder {
             leftovers: uninstall.flatMap(leftoverInfo),
             lastCleanup: scan.cleanupReport.map {
                 LastCleanupInfo(trashedBytes: $0.trashedBytes, observedFreeSpaceDelta: $0.observedFreeSpaceDelta)
-            }
+            },
+            memory: memory.map(memoryInfo)
+        )
+    }
+
+    static func memoryInfo(_ sample: MemorySample) -> MemoryInfo {
+        let load: MemoryLoad = switch sample.system.pressure {
+        case .normal: .normal
+        case .warning: .warning
+        case .critical: .critical
+        case .unknown: .unknown
+        }
+        let topApps = sample.groups
+            .filter { $0.kind == .userApp }
+            .sorted { $0.footprint > $1.footprint }
+            .prefix(5)
+            .map { MemoryAppInfo(name: $0.displayName, bytes: Int64(clamping: $0.footprint)) }
+        return MemoryInfo(
+            load: load,
+            usedBytes: Int64(clamping: sample.system.used),
+            physicalBytes: Int64(clamping: sample.system.physical),
+            swapUsedBytes: Int64(clamping: sample.system.swapUsed),
+            topApps: Array(topApps)
         )
     }
 
@@ -3820,6 +3970,22 @@ enum AssistantSnapshotBuilder {
         )
     }
 }
+
+// Latest read-only memory sample for the assistant's context (independent of the Memory tab's polling).
+@Observable
+@MainActor
+final class AssistantMemoryCache {
+    private(set) var latest: MemorySample?
+    private let sample: @Sendable () async -> MemorySample
+
+    init(sample: @escaping @Sendable () async -> MemorySample = { await MemoryMonitor().sample() }) {
+        self.sample = sample
+    }
+
+    func refresh() async {
+        latest = await sample()
+    }
+}
 ```
 
 `SpotlessMac/Assistant/ImprovementAdvisor.swift`:
@@ -3855,6 +4021,19 @@ enum ImprovementAdvisor {
                 title: "Мало свободного места: \(SnapshotRenderer.percent(volume.freeFraction))",
                 detail: "Свободно \(SnapshotRenderer.bytes(volume.availableBytes)) из \(SnapshotRenderer.bytes(volume.totalBytes))",
                 action: .ask("Почему диск заполнен и что освободить в первую очередь?")
+            )))
+        }
+        if let memory = snapshot.memory,
+           memory.load == .warning || memory.load == .critical || memory.swapUsedBytes >= gigabyte {
+            let title = switch memory.load {
+            case .critical: "Критическая нехватка памяти"
+            case .warning: "Высокое давление памяти"
+            default: "Используется своп: \(SnapshotRenderer.memoryBytes(memory.swapUsedBytes))"
+            }
+            weighted.append((Int64.max - 1, Improvement(
+                id: "memory", icon: "memorychip", title: title,
+                detail: "Занято \(SnapshotRenderer.memoryBytes(memory.usedBytes)) из \(SnapshotRenderer.memoryBytes(memory.physicalBytes))",
+                action: .ask("Почему не хватает памяти и какие программы стоит закрыть?")
             )))
         }
         if snapshot.fullDiskAccess == false {
@@ -4266,6 +4445,7 @@ struct AssistantView: View {
         }
         .background(Theme.dashboardBackground.opacity(0.38))
         .onAppear { viewModel.reloadSettings() }
+        .task { await viewModel.refreshContext() }
         .sheet(isPresented: $viewModel.isCloudDisclosurePresented) {
             CloudDisclosureSheet(
                 onAccept: viewModel.acceptCloudDisclosure,
@@ -4482,6 +4662,7 @@ git commit -m "feat(assistant): chat views, plan card, cloud disclosure"
 In `ContentView`, after `@State private var licenseManager = LicenseManager()` add:
 ```swift
     @State private var uninstallViewModel = UninstallViewModel()
+    @State private var assistantMemory = AssistantMemoryCache()
     @State private var assistant: AssistantViewModel?
 ```
 Change the badge overlay condition from `if selectedTab != .settings {` to:
@@ -4524,13 +4705,14 @@ Add to `ContentView` (after `tabContent`):
         let scan = viewModel
         let docker = dockerViewModel
         let uninstall = uninstallViewModel
+        let memory = assistantMemory
         let tab = $selectedTab
         return AssistantViewModel(dependencies: .init(
             settingsStore: AssistantSettingsStore(),
             keyStore: KeychainAPIKeyStore(),
             makeClient: { settings, key in try LLMClientFactory.make(settings: settings, apiKey: key) },
             snapshot: {
-                AssistantSnapshotBuilder.make(scan: scan, docker: docker, uninstall: uninstall,
+                AssistantSnapshotBuilder.make(scan: scan, docker: docker, uninstall: uninstall, memory: memory.latest,
                                               volume: AssistantSnapshotBuilder.readVolume(), now: Date())
             },
             stagePlan: { plan in
@@ -4538,7 +4720,8 @@ Add to `ContentView` (after `tabContent`):
                 tab.wrappedValue = .diskUsage
             },
             conversationStore: ConversationStore(fileURL: ConversationStore.defaultFileURL()),
-            homePath: NSHomeDirectory()
+            homePath: NSHomeDirectory(),
+            refreshContext: { await memory.refresh() }
         ))
     }
 ```
@@ -4806,7 +4989,8 @@ Run `./scripts/install-local-debug.sh` (or `open build/DerivedData/Build/Product
 1. The rail shows «Помощь» (sparkles); the tab shows «Подключите модель» until configured.
 2. Settings → «АССИСТЕНТ»: switching provider changes URL/model; token field hidden for local Ollama; «Проверить подключение» shows a result.
 3. With local Ollama running (`ollama serve`, a pulled model): ask «Почему диск заполнен?» — text streams, «Стоп» works.
-4. Ask «Освободи 5 ГБ безопасно» after a scan → plan card → «Открыть в превью» switches to «Диск», opens «Освободить место» with the «Выбрано ассистентом» banner; nothing was deleted (Trash unchanged).
+4. Ask «Почему тормозит Mac?» — the answer mentions memory pressure / the heaviest apps and suggests closing them in «Память» (it never claims to close anything itself).
+5. Ask «Освободи 5 ГБ безопасно» after a scan → plan card → «Открыть в превью» switches to «Диск», opens «Освободить место» with the «Выбрано ассистентом» banner; nothing was deleted (Trash unchanged).
 
 - [ ] **Step 8: Commit**
 
