@@ -7,6 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D6C07DEC10B49A2FAA5D1658 /* AssistantView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3806CFF47B5F6997893713EA /* AssistantView.swift */; };
+		EF09753AF7E85149CEA82638 /* AssistantMessageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4057900B379CDA0455F53DAE /* AssistantMessageView.swift */; };
+		DBA59E6A0C404FCB16E85152 /* AssistantMarkdownView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21A0DC3BD607D444DD7FFDAE /* AssistantMarkdownView.swift */; };
+		033EF54BA39370EF46D39F88 /* AssistantMarkdownBlocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4059926F73DD59390D2F5E32 /* AssistantMarkdownBlocks.swift */; };
+		1094F353D245DEB8CF50B548 /* AssistantMarkdownBlocksTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 883B7BC5984CA99AFE8ABD0A /* AssistantMarkdownBlocksTests.swift */; };
 		D3DEBDA3F614CA6F4FE40F7B /* ImprovementAdvisor.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEC7B4A1C54695EC954AB036 /* ImprovementAdvisor.swift */; };
 		8DDC6E238CF2D0059E32C5F0 /* AssistantSnapshotBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32D2A813BD046A1665978CC1 /* AssistantSnapshotBuilder.swift */; };
 		12A549D05D662DEA6A967FEB /* AssistantStagingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80A45EA0025233CABF58A5CA /* AssistantStagingTests.swift */; };
@@ -153,6 +158,11 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		3806CFF47B5F6997893713EA /* AssistantView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantView.swift; sourceTree = "<group>"; };
+		4057900B379CDA0455F53DAE /* AssistantMessageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantMessageView.swift; sourceTree = "<group>"; };
+		21A0DC3BD607D444DD7FFDAE /* AssistantMarkdownView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantMarkdownView.swift; sourceTree = "<group>"; };
+		4059926F73DD59390D2F5E32 /* AssistantMarkdownBlocks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantMarkdownBlocks.swift; sourceTree = "<group>"; };
+		883B7BC5984CA99AFE8ABD0A /* AssistantMarkdownBlocksTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantMarkdownBlocksTests.swift; sourceTree = "<group>"; };
 		FEC7B4A1C54695EC954AB036 /* ImprovementAdvisor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImprovementAdvisor.swift; sourceTree = "<group>"; };
 		32D2A813BD046A1665978CC1 /* AssistantSnapshotBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantSnapshotBuilder.swift; sourceTree = "<group>"; };
 		80A45EA0025233CABF58A5CA /* AssistantStagingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantStagingTests.swift; sourceTree = "<group>"; };
@@ -323,6 +333,7 @@
 		B2B489C2435F0FB76091E6B5 /* Assistant */ = {
 			isa = PBXGroup;
 			children = (
+				4059926F73DD59390D2F5E32 /* AssistantMarkdownBlocks.swift */,
 				FEC7B4A1C54695EC954AB036 /* ImprovementAdvisor.swift */,
 				2DC98D18391E2F37F39A3D6F /* AssistantViewModel.swift */,
 				95F35774C814FFBEE9EE789C /* ConversationStore.swift */,
@@ -413,6 +424,9 @@
 		AA000004000000000000AA00 /* App */ = {
 			isa = PBXGroup;
 			children = (
+				3806CFF47B5F6997893713EA /* AssistantView.swift */,
+				4057900B379CDA0455F53DAE /* AssistantMessageView.swift */,
+				21A0DC3BD607D444DD7FFDAE /* AssistantMarkdownView.swift */,
 				053C94B4BEE5C8ABDB853F96 /* MemoryQuitSheet.swift */,
 				21A751DFC984DBD2A5DFB6E0 /* MemoryView.swift */,
 				DD000002000000000000DD00 /* SpotlessMacApp.swift */,
@@ -478,6 +492,7 @@
 		AA100001000000000000AA00 /* SpotlessMacTests */ = {
 			isa = PBXGroup;
 			children = (
+				883B7BC5984CA99AFE8ABD0A /* AssistantMarkdownBlocksTests.swift */,
 				80A45EA0025233CABF58A5CA /* AssistantStagingTests.swift */,
 				6E97CDA7D1B975456FB641EE /* AssistantIsolationTests.swift */,
 				E9E7E47D6EF36792EBFD458C /* AssistantViewModelTests.swift */,
@@ -678,6 +693,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1094F353D245DEB8CF50B548 /* AssistantMarkdownBlocksTests.swift in Sources */,
 				12A549D05D662DEA6A967FEB /* AssistantStagingTests.swift in Sources */,
 				C38A4C574052859A9AE474AB /* AssistantIsolationTests.swift in Sources */,
 				EA7E392EBFB12035F333D0A9 /* AssistantViewModelTests.swift in Sources */,
@@ -731,6 +747,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D6C07DEC10B49A2FAA5D1658 /* AssistantView.swift in Sources */,
+				EF09753AF7E85149CEA82638 /* AssistantMessageView.swift in Sources */,
+				DBA59E6A0C404FCB16E85152 /* AssistantMarkdownView.swift in Sources */,
+				033EF54BA39370EF46D39F88 /* AssistantMarkdownBlocks.swift in Sources */,
 				D3DEBDA3F614CA6F4FE40F7B /* ImprovementAdvisor.swift in Sources */,
 				8DDC6E238CF2D0059E32C5F0 /* AssistantSnapshotBuilder.swift in Sources */,
 				1ABF981BE6CB80095542636D /* AssistantViewModel.swift in Sources */,
