@@ -20,7 +20,7 @@ The working tree has many **uncommitted user changes** (ContentView, ScanViewMod
 - UI strings are Russian, hard-coded in `Text`/labels (no String Catalog), matching existing views.
 - The Xcode project does NOT auto-include files. Register every new file: `scripts/xcodeproj-add.py app <Group> <path>` for app code, `scripts/xcodeproj-add.py tests SpotlessMacTests <path>` for tests. Groups used: `Assistant` (created on first use), `App`, `ViewModels`.
 - Tests are XCTest (`final class …: XCTestCase`, `@testable import SpotlessMac`). Run via `scripts/test.sh <TestClass> …` (created in Task 1).
-- Safety rules from CLAUDE.md stay intact; new rule 6: **the Assistant module never deletes**. Nothing under `SpotlessMac/Assistant/` may contain any of: `trashItem`, `removeItem`, `moveItem`, `copyItem`, `unlink(`, `FileManager` (except `ConversationStore.swift`), `Process(`, `NSWorkspace`, `ScanEngine`, `ScanViewModel`, `DockerCleanupViewModel`, `DockerClient`, `DockerCommandRunner`, `UninstallViewModel`, `UninstallEngine`, `deleteWithProgress`, `cleanCache`, `URL(fileURLWithPath` — **not even in comments**.
+- Safety rules from CLAUDE.md stay intact; new rule 6: **the Assistant module never deletes**. Nothing under `SpotlessMac/Assistant/` may contain any of: `trashItem`, `removeItem`, `moveItem`, `copyItem`, `unlink(`, `FileManager` (except `ConversationStore.swift`), `Process(`, `NSWorkspace`, `ScanEngine`, `ScanViewModel`, `DockerCleanupViewModel`, `DockerClient`, `DockerCommandRunner`, `UninstallViewModel`, `UninstallEngine`, `deleteWithProgress`, `cleanCache`, `URL(fileURLWithPath`, `MemoryViewModel`, `AppTerminator`, `NSRunningApplication`, `terminate(`, `forceTerminate`, `kill(` — **not even in comments**. (The last six cover the process-quit flow of the Memory section that landed on `main` after the spec was written.)
 - Provider presets: Ollama Cloud `https://ollama.com` (key required), local Ollama `http://localhost:11434` (no key), OpenAI-compatible `https://api.openai.com` (key optional). Default model `gpt-oss:20b` for Ollama providers, empty for OpenAI-compatible. Timeout 10–300 s, default 120.
 - Auth header: `Authorization: Bearer <key>`, only when the key is non-empty. Always set `URLRequest.timeoutInterval` explicitly.
 - Max 4 tool rounds per answer; history = last 20 messages; ≤150 items and ≤32 000 characters (~8k tokens) of rendered context.
@@ -3426,6 +3426,8 @@ final class AssistantIsolationTests: XCTestCase {
         "NSWorkspace", "ScanEngine", "ScanViewModel", "DockerCleanupViewModel", "DockerClient",
         "DockerCommandRunner", "UninstallViewModel", "UninstallEngine", "deleteWithProgress",
         "cleanCache", "URL(fileURLWithPath",
+        // Memory section (quits apps): the assistant must not reach it either.
+        "MemoryViewModel", "AppTerminator", "NSRunningApplication", "terminate(", "forceTerminate", "kill(",
     ]
     private let allowances: [String: Set<String>] = ["ConversationStore.swift": ["FileManager"]]
     private let allowedFileManagerMembers: Set<String> = ["urls", "createDirectory", "homeDirectoryForCurrentUser"]
@@ -3466,7 +3468,7 @@ final class AssistantIsolationTests: XCTestCase {
 
     func testToolSetIsClosedAndReadOnly() {
         XCTAssertEqual(AssistantTool.names, ["list_items", "item_details", "propose_plan"])
-        for name in ["delete_file", "trash", "run_shell", "rm", "exec"] {
+        for name in ["delete_file", "trash", "run_shell", "rm", "exec", "quit_app", "kill_process"] {
             let outcome = AssistantToolbox.execute(ToolCall(id: "x", name: name, argumentsJSON: "{}"), snapshot: .sample()) { $0 }
             XCTAssertNil(outcome.proposal, name)
             XCTAssertTrue(outcome.resultText.contains("не существует"), name)
@@ -3492,7 +3494,7 @@ Temporarily add `// FileManager.default.removeItem` as the last line of `Spotles
 
 In `CLAUDE.md`, under `## Safety rules (non-negotiable)`, after item 5 (`**Never touch:** …`) add:
 ```markdown
-6. **Assistant never deletes** — `SpotlessMac/Assistant/` has no access to deletion, process or Docker/uninstall APIs. Its only outward effect is the `stagePlan` closure, which marks existing scan items for the user's review. Enforced by `AssistantIsolationTests`; never weaken its token list.
+6. **Assistant never deletes or quits** — `SpotlessMac/Assistant/` has no access to deletion, process-quit (Memory section), process-spawn or Docker/uninstall APIs. Its only outward effect is the `stagePlan` closure, which marks existing scan items for the user's review. Enforced by `AssistantIsolationTests`; never weaken its token list.
 ```
 And in the `## Key files` table add:
 ```markdown
@@ -4471,7 +4473,7 @@ git commit -m "feat(assistant): chat views, plan card, cloud disclosure"
 
 `SpotlessMac/App/ContentView.swift` — in `enum AppTab` add `case assistant = "Ассистент"` after `case docker = "Docker"`, and change:
 ```swift
-    static let mainTabs: [AppTab] = [.care, .cleaning, .uninstall, .diskUsage, .docker, .assistant]
+    static let mainTabs: [AppTab] = [.care, .cleaning, .uninstall, .diskUsage, .memory, .docker, .assistant]
 ```
 `SpotlessMac/App/CareRailView.swift` — add `case .assistant: return "sparkles"` to `icon` and `case .assistant: return "Помощь"` to `shortLabel`.
 
@@ -4995,7 +4997,7 @@ Run:
 grep -rnE "trashItem|removeItem|moveItem|unlink\(|Process\(|NSWorkspace|ScanEngine|ScanViewModel" SpotlessMac/Assistant || echo "clean"
 grep -rn "trashItem" SpotlessMac | grep -v ScanEngine/ || echo "trashItem only in ScanEngine"
 ```
-Expected: `clean`; `trashItem` only under `SpotlessMac/ScanEngine/` (plus any pre-existing uninstall/docker paths that were already there before this branch — compare with `git grep trashItem main`).
+Expected: `clean` (also run `grep -rnE "MemoryViewModel|NSRunningApplication|terminate\(|kill\(" SpotlessMac/Assistant || echo clean`); `trashItem` only under `SpotlessMac/ScanEngine/` (plus any pre-existing uninstall/docker paths that were already there before this branch — compare with `git grep trashItem main`).
 
 - [ ] **Step 3: Manual end-to-end checklist** (`./scripts/install-local-debug.sh`)
 
