@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		777F6EC9427B160A34FCCD12 /* ConversationStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95F35774C814FFBEE9EE789C /* ConversationStore.swift */; };
+		C5A2FD842B78AE7BC79406C4 /* AssistantMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = D84F7BF39AE9CA59A1BB3DDC /* AssistantMessage.swift */; };
+		1BC1E4AF95FBCA4E8348743D /* ConversationStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DAD9062E054609A3D289B00 /* ConversationStoreTests.swift */; };
 		C91E72F7F455ACF6C5D11128 /* AssistantToolbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = C161D1C0D0DACA6F57A89A55 /* AssistantToolbox.swift */; };
 		BA7C04A8ACB0FB5D4D2AE8E4 /* AssistantTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44FF482794B3082EFD45DB61 /* AssistantTool.swift */; };
 		234ACB8F42A82FD0A707F7CD /* AssistantToolboxTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF3CFD3F729863EA9A7EDB3B /* AssistantToolboxTests.swift */; };
@@ -144,6 +147,9 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		95F35774C814FFBEE9EE789C /* ConversationStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationStore.swift; sourceTree = "<group>"; };
+		D84F7BF39AE9CA59A1BB3DDC /* AssistantMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantMessage.swift; sourceTree = "<group>"; };
+		2DAD9062E054609A3D289B00 /* ConversationStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationStoreTests.swift; sourceTree = "<group>"; };
 		C161D1C0D0DACA6F57A89A55 /* AssistantToolbox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantToolbox.swift; sourceTree = "<group>"; };
 		44FF482794B3082EFD45DB61 /* AssistantTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantTool.swift; sourceTree = "<group>"; };
 		AF3CFD3F729863EA9A7EDB3B /* AssistantToolboxTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantToolboxTests.swift; sourceTree = "<group>"; };
@@ -305,6 +311,8 @@
 		B2B489C2435F0FB76091E6B5 /* Assistant */ = {
 			isa = PBXGroup;
 			children = (
+				95F35774C814FFBEE9EE789C /* ConversationStore.swift */,
+				D84F7BF39AE9CA59A1BB3DDC /* AssistantMessage.swift */,
 				C161D1C0D0DACA6F57A89A55 /* AssistantToolbox.swift */,
 				44FF482794B3082EFD45DB61 /* AssistantTool.swift */,
 				49FFEEAEDA3E9C85681861E7 /* PlanParser.swift */,
@@ -456,6 +464,7 @@
 		AA100001000000000000AA00 /* SpotlessMacTests */ = {
 			isa = PBXGroup;
 			children = (
+				2DAD9062E054609A3D289B00 /* ConversationStoreTests.swift */,
 				AF3CFD3F729863EA9A7EDB3B /* AssistantToolboxTests.swift */,
 				55B2A47F764F4D62F36BEBA7 /* AssistantPlanTests.swift */,
 				E5C52CB048B15D809D1332A6 /* SnapshotRendererTests.swift */,
@@ -651,6 +660,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1BC1E4AF95FBCA4E8348743D /* ConversationStoreTests.swift in Sources */,
 				234ACB8F42A82FD0A707F7CD /* AssistantToolboxTests.swift in Sources */,
 				BE0F65E226B1675DC39E0823 /* AssistantPlanTests.swift in Sources */,
 				1DBA997480D59CD62AF37E2A /* SnapshotRendererTests.swift in Sources */,
@@ -700,6 +710,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				777F6EC9427B160A34FCCD12 /* ConversationStore.swift in Sources */,
+				C5A2FD842B78AE7BC79406C4 /* AssistantMessage.swift in Sources */,
 				C91E72F7F455ACF6C5D11128 /* AssistantToolbox.swift in Sources */,
 				BA7C04A8ACB0FB5D4D2AE8E4 /* AssistantTool.swift in Sources */,
 				E34E0F0FE212EEF04171E725 /* PlanParser.swift in Sources */,
