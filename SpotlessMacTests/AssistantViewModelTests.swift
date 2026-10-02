@@ -110,6 +110,39 @@ final class AssistantViewModelTests: XCTestCase {
         XCTAssertTrue(vm.messages.last?.planDismissed ?? false)
     }
 
+    // Fix round 1, item 4: a dismissed card can no longer stage its plan.
+    func testDismissedPlanIsNotStaged() async {
+        let call = ToolCall(id: "p", name: "propose_plan", argumentsJSON: #"{"items":["c1"],"reason":"DerivedData"}"#)
+        let client = FakeLLMClient([.events([.toolCalls([call]), .done]), .events([.text("План."), .done])])
+        let vm = makeViewModel(client)
+        await sendAndWait(vm, "Освободи место")
+        guard let message = vm.messages.last else { return XCTFail("no message") }
+        XCTAssertNotNil(message.plan)
+        vm.dismissPlan(messageID: message.id)
+        vm.openPlan(messageID: message.id)
+        XCTAssertTrue(staged.isEmpty)
+    }
+
+    // Fix round 1, item 2: a plan reason written by a cloud model carries aliases; the card shows real names.
+    func testCloudPlanReasonFromToolIsRestored() async {
+        let call = ToolCall(id: "p", name: "propose_plan", argumentsJSON: #"{"items":["c1"],"reason":"кеш проекта <папка-1>"}"#)
+        let client = FakeLLMClient([.events([.toolCalls([call]), .done]), .events([.text("План."), .done])])
+        let vm = makeViewModel(client, provider: .ollamaCloud)
+        settingsStore.cloudDisclosureAccepted = true
+        await sendAndWait(vm, "Освободи место")
+        XCTAssertEqual(vm.messages.last?.plan?.reason, "кеш проекта secret-client")
+    }
+
+    func testCloudPlanReasonFromTextBlockIsRestored() async {
+        let reply = "План.\n```spotless-plan\n{\"items\":[\"c1\"],\"reason\":\"кеш проекта <папка-1>\"}\n```"
+        let client = FakeLLMClient([.events([.text(reply), .done])])
+        let vm = makeViewModel(client, provider: .ollamaCloud, toolMode: .off)
+        settingsStore.cloudDisclosureAccepted = true
+        await sendAndWait(vm, "Освободи место")
+        XCTAssertEqual(vm.messages.last?.plan?.reason, "кеш проекта secret-client")
+        XCTAssertFalse(vm.messages.last?.plan?.reason.contains("<папка-") ?? true)
+    }
+
     // Review focus 1: tool proposal wins over a text block.
     func testToolProposalWinsOverTextBlock() async {
         let call = ToolCall(id: "p", name: "propose_plan", argumentsJSON: #"{"items":["c1"]}"#)
@@ -259,6 +292,76 @@ final class AssistantViewModelTests: XCTestCase {
         let messages = client.requests[0].messages
         XCTAssertTrue(messages[1].content.contains("c6 | ~/Downloads/<папка-3> |"), "snapshot numbers aliases in item order")
         XCTAssertEqual(messages.last?.content, "Можно удалить ~/Downloads/<папка-3>?")
+    }
+
+    // Fix round 1, item 1: retry must not bypass the first-send disclosure after switching to a cloud provider.
+    private func makeFailedLocalConversation() async -> (AssistantViewModel, FakeLLMClient) {
+        let client = FakeLLMClient([.failure(LLMError.connectionRefused(host: "localhost")), .events([.text("ok"), .done])])
+        let vm = makeViewModel(client)
+        await sendAndWait(vm, "Привет")
+        XCTAssertEqual(vm.messages.last?.status, .failed)
+        var cloud = vm.settings
+        cloud.switchProvider(to: .ollamaCloud)
+        vm.saveSettings(cloud, apiKey: "key")
+        return (vm, client)
+    }
+
+    func testRetryAfterSwitchingToCloudAsksForDisclosure() async {
+        let (vm, client) = await makeFailedLocalConversation()
+        vm.retry()
+        XCTAssertTrue(vm.isCloudDisclosurePresented)
+        XCTAssertEqual(client.requests.count, 1, "no request before the user accepts")
+        vm.acceptCloudDisclosure()
+        await vm.waitUntilIdle()
+        XCTAssertEqual(client.requests.count, 2)
+        XCTAssertEqual(vm.messages.map(\.role), [.user, .assistant], "user message is not duplicated")
+        XCTAssertEqual(vm.messages.last?.status, .complete)
+        XCTAssertEqual(client.requests[1].messages.filter { $0.role == .user }.count, 1)
+    }
+
+    func testCancelledDisclosureOnRetryKeepsFailedMessage() async {
+        let (vm, client) = await makeFailedLocalConversation()
+        vm.retry()
+        vm.cancelCloudDisclosure()
+        XCTAssertFalse(vm.isCloudDisclosurePresented)
+        XCTAssertEqual(client.requests.count, 1)
+        XCTAssertEqual(vm.messages.last?.status, .failed, "the error card stays so the user can retry later")
+        vm.acceptCloudDisclosure()
+        await vm.waitUntilIdle()
+        XCTAssertEqual(client.requests.count, 1, "a cancelled retry is not resumed by a later accept")
+    }
+
+    func testSwitchingToLocalOnRetryResumesIt() async {
+        let (vm, client) = await makeFailedLocalConversation()
+        vm.retry()
+        vm.switchToLocalAfterDisclosure()
+        await vm.waitUntilIdle()
+        XCTAssertEqual(vm.settings.provider, .ollamaLocal)
+        XCTAssertEqual(client.requests.count, 2)
+        XCTAssertEqual(vm.messages.map(\.role), [.user, .assistant])
+        XCTAssertEqual(vm.messages.last?.status, .complete)
+    }
+
+    // Fix round 1, item 3: Stop during the context refresh must not open a request.
+    func testStopDuringContextRefreshOpensNoRequest() async {
+        settingsStore = AssistantSettingsStore(defaults: makeDefaults())
+        var settings = AssistantSettings()
+        settings.switchProvider(to: .ollamaLocal)
+        settingsStore.save(settings)
+        @MainActor final class Box { var vm: AssistantViewModel? }
+        let box = Box()
+        let client = FakeLLMClient([.events([.text("ok"), .done])])
+        let vm = AssistantViewModel(dependencies: .init(
+            settingsStore: settingsStore, keyStore: FakeKeyStore(), makeClient: { _, _ in client },
+            snapshot: { .sample() }, stagePlan: { _ in }, conversationStore: nil, homePath: SystemSnapshot.testHome,
+            refreshContext: { box.vm?.stop() }
+        ))
+        box.vm = vm
+        await sendAndWait(vm, "?")
+        box.vm = nil
+        XCTAssertTrue(client.requests.isEmpty)
+        XCTAssertEqual(vm.messages.last?.status, .stopped)
+        XCTAssertFalse(vm.isStreaming)
     }
 
     func testAskAboutFocusSendsCard() async {

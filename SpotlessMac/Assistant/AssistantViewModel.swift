@@ -33,6 +33,7 @@ final class AssistantViewModel {
     private var redactor: PathRedactor
     private var pendingText: String?
     private var pendingFromDraft = false
+    private var pendingRetry = false
     private var streamTask: Task<Void, Never>?
 
     init(dependencies: Dependencies) {
@@ -62,9 +63,10 @@ final class AssistantViewModel {
         let fromDraft = text == nil
         let trimmed = (text ?? draft).trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, !isStreaming else { return }
-        if settings.sendsDataOffDevice && !deps.settingsStore.cloudDisclosureAccepted {
+        if needsCloudDisclosure {
             pendingText = trimmed
             pendingFromDraft = fromDraft
+            pendingRetry = false
             isCloudDisclosurePresented = true
             return
         }
@@ -96,6 +98,7 @@ final class AssistantViewModel {
     func cancelCloudDisclosure() {
         isCloudDisclosurePresented = false
         pendingText = nil
+        pendingRetry = false
     }
 
     func stop() {
@@ -103,8 +106,15 @@ final class AssistantViewModel {
     }
 
     func retry() {
-        guard !isStreaming, let last = messages.last, last.role == .assistant,
-              [.failed, .interrupted, .stopped].contains(last.status) else { return }
+        guard canRetry else { return }
+        // Settings may have been switched to a cloud provider since the failure, so the first
+        // send off this Mac is gated here too. The failed message stays until the user decides.
+        if needsCloudDisclosure {
+            pendingRetry = true
+            pendingText = nil
+            isCloudDisclosurePresented = true
+            return
+        }
         messages.removeLast()
         startResponse()
     }
@@ -117,7 +127,8 @@ final class AssistantViewModel {
     }
 
     func openPlan(messageID: UUID) {
-        guard let plan = messages.first(where: { $0.id == messageID })?.plan, !plan.isEmpty else { return }
+        guard let message = messages.first(where: { $0.id == messageID }), !message.planDismissed,
+              let plan = message.plan, !plan.isEmpty else { return }
         deps.stagePlan(plan)
     }
 
@@ -159,7 +170,24 @@ final class AssistantViewModel {
 
     // MARK: Response loop
 
+    private var needsCloudDisclosure: Bool {
+        settings.sendsDataOffDevice && !deps.settingsStore.cloudDisclosureAccepted
+    }
+
+    private var canRetry: Bool {
+        guard !isStreaming, let last = messages.last, last.role == .assistant else { return false }
+        return [.failed, .interrupted, .stopped].contains(last.status)
+    }
+
     private func resumePending() {
+        if pendingRetry {
+            // The user message is already in the history: only the failed answer is replaced.
+            pendingRetry = false
+            guard canRetry else { return }
+            messages.removeLast()
+            startResponse()
+            return
+        }
         guard let text = pendingText else { return }
         pendingText = nil
         if pendingFromDraft { draft = "" }
@@ -190,6 +218,9 @@ final class AssistantViewModel {
         let snapshot = Self.prepared(deps.snapshot(), redacts: redacts)
         do {
             let client = try deps.makeClient(settings, deps.keyStore.readKey())
+            // Stop / new conversation during the context refresh must not render the snapshot
+            // (which registers aliases) or open a request.
+            try Task.checkCancellation()
             var toolsEnabled = toolsEnabled(for: settings)
             // The snapshot does not change within one answer, so it is rendered once. Rendering it
             // first registers folder aliases, so history that names the same folder gets the same alias.
@@ -246,7 +277,12 @@ final class AssistantViewModel {
             }
 
             let parsed = PlanParser.extract(from: transcript)
-            let plan = (proposal ?? parsed.proposal).map { PlanResolver.resolve($0, in: snapshot) }
+            // The reason is model-authored text, so it may carry folder aliases; the card shows real names.
+            let plan = (proposal ?? parsed.proposal).map { proposed -> AssistantPlan in
+                var restored = proposed
+                restored.reason = display(restored.reason, redacts: redacts)
+                return PlanResolver.resolve(restored, in: snapshot)
+            }
             let finalText = display(parsed.text, redacts: redacts)
             update(messageID) {
                 $0.text = finalText
