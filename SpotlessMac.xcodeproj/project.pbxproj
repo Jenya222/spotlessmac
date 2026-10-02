@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		AC2CE8020E626DE8D3F209E6 /* PathRedactor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 918AB89C2AD40D9CF2317556 /* PathRedactor.swift */; };
+		FE5ACF3D2ADA39B4EFE45CC3 /* SystemSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25213A9F91176DA17420F184 /* SystemSnapshot.swift */; };
+		F467F708098E9D834219651D /* PathRedactorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FC76C0B5C8B0E7521981401 /* PathRedactorTests.swift */; };
+		63E06D7EAAD98C26F1C53281 /* AssistantSnapshotFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFD359242E27551A5EAF8BC2 /* AssistantSnapshotFixtures.swift */; };
 		B73583321664E7C6B72F0075 /* AssistantConnectionTester.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACF965FB2ACC075885C1328C /* AssistantConnectionTester.swift */; };
 		1B539EC8182F6C3157FF2840 /* LLMClientFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13901B72F66140B454187C38 /* LLMClientFactory.swift */; };
 		3C0C4FE80D86614D31BCDD16 /* LLMClientFactoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F36F71E52A85DB782C0F5 /* LLMClientFactoryTests.swift */; };
@@ -131,6 +135,10 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		918AB89C2AD40D9CF2317556 /* PathRedactor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PathRedactor.swift; sourceTree = "<group>"; };
+		25213A9F91176DA17420F184 /* SystemSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemSnapshot.swift; sourceTree = "<group>"; };
+		4FC76C0B5C8B0E7521981401 /* PathRedactorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PathRedactorTests.swift; sourceTree = "<group>"; };
+		DFD359242E27551A5EAF8BC2 /* AssistantSnapshotFixtures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantSnapshotFixtures.swift; sourceTree = "<group>"; };
 		ACF965FB2ACC075885C1328C /* AssistantConnectionTester.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantConnectionTester.swift; sourceTree = "<group>"; };
 		13901B72F66140B454187C38 /* LLMClientFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LLMClientFactory.swift; sourceTree = "<group>"; };
 		7E5F36F71E52A85DB782C0F5 /* LLMClientFactoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LLMClientFactoryTests.swift; sourceTree = "<group>"; };
@@ -279,6 +287,8 @@
 		B2B489C2435F0FB76091E6B5 /* Assistant */ = {
 			isa = PBXGroup;
 			children = (
+				918AB89C2AD40D9CF2317556 /* PathRedactor.swift */,
+				25213A9F91176DA17420F184 /* SystemSnapshot.swift */,
 				ACF965FB2ACC075885C1328C /* AssistantConnectionTester.swift */,
 				13901B72F66140B454187C38 /* LLMClientFactory.swift */,
 				C20486D273016223B17AC5D3 /* OpenAICompatibleClient.swift */,
@@ -422,6 +432,8 @@
 		AA100001000000000000AA00 /* SpotlessMacTests */ = {
 			isa = PBXGroup;
 			children = (
+				4FC76C0B5C8B0E7521981401 /* PathRedactorTests.swift */,
+				DFD359242E27551A5EAF8BC2 /* AssistantSnapshotFixtures.swift */,
 				7E5F36F71E52A85DB782C0F5 /* LLMClientFactoryTests.swift */,
 				AF4099CAFEC1C5D681A5915D /* OpenAICompatibleClientTests.swift */,
 				A008C16766F14FAA12892C34 /* OllamaClientTests.swift */,
@@ -612,6 +624,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F467F708098E9D834219651D /* PathRedactorTests.swift in Sources */,
+				63E06D7EAAD98C26F1C53281 /* AssistantSnapshotFixtures.swift in Sources */,
 				3C0C4FE80D86614D31BCDD16 /* LLMClientFactoryTests.swift in Sources */,
 				BEBB87B1911DECE06D53AB1E /* OpenAICompatibleClientTests.swift in Sources */,
 				3EEE6611E55AAED173B686B2 /* OllamaClientTests.swift in Sources */,
@@ -656,6 +670,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AC2CE8020E626DE8D3F209E6 /* PathRedactor.swift in Sources */,
+				FE5ACF3D2ADA39B4EFE45CC3 /* SystemSnapshot.swift in Sources */,
 				B73583321664E7C6B72F0075 /* AssistantConnectionTester.swift in Sources */,
 				1B539EC8182F6C3157FF2840 /* LLMClientFactory.swift in Sources */,
 				B8586837D7E902448039CC0B /* OpenAICompatibleClient.swift in Sources */,
