@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		614042D614C3629638B3674A /* OllamaClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B534BB93B7B18C809B08BF1 /* OllamaClient.swift */; };
+		3EEE6611E55AAED173B686B2 /* OllamaClientTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A008C16766F14FAA12892C34 /* OllamaClientTests.swift */; };
 		4A60B593B9360219B96230A6 /* HTTPTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC3E1829B8A666538FEB48B0 /* HTTPTransport.swift */; };
 		B628A38E2FD89AD0303C848D /* LLMError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42A59F65A7641316B1577E73 /* LLMError.swift */; };
 		3CF3D778437865B6DAF84350 /* LLMTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B7A8968DA84042C8FC663A2 /* LLMTypes.swift */; };
@@ -124,6 +126,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		0B534BB93B7B18C809B08BF1 /* OllamaClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OllamaClient.swift; sourceTree = "<group>"; };
+		A008C16766F14FAA12892C34 /* OllamaClientTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OllamaClientTests.swift; sourceTree = "<group>"; };
 		FC3E1829B8A666538FEB48B0 /* HTTPTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTTPTransport.swift; sourceTree = "<group>"; };
 		42A59F65A7641316B1577E73 /* LLMError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LLMError.swift; sourceTree = "<group>"; };
 		9B7A8968DA84042C8FC663A2 /* LLMTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LLMTypes.swift; sourceTree = "<group>"; };
@@ -265,6 +269,7 @@
 		B2B489C2435F0FB76091E6B5 /* Assistant */ = {
 			isa = PBXGroup;
 			children = (
+				0B534BB93B7B18C809B08BF1 /* OllamaClient.swift */,
 				FC3E1829B8A666538FEB48B0 /* HTTPTransport.swift */,
 				42A59F65A7641316B1577E73 /* LLMError.swift */,
 				9B7A8968DA84042C8FC663A2 /* LLMTypes.swift */,
@@ -404,6 +409,7 @@
 		AA100001000000000000AA00 /* SpotlessMacTests */ = {
 			isa = PBXGroup;
 			children = (
+				A008C16766F14FAA12892C34 /* OllamaClientTests.swift */,
 				F279DDFF7B782A1E6BDA78BE /* LLMErrorTests.swift */,
 				C93708FDED4D7E901F038FDB /* AssistantSettingsTests.swift */,
 				5BA9CAB6B0C7E2DC4E9840FF /* AssistantTestSupport.swift */,
@@ -591,6 +597,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3EEE6611E55AAED173B686B2 /* OllamaClientTests.swift in Sources */,
 				001F7C0D08F80A2F9A6027D1 /* LLMErrorTests.swift in Sources */,
 				A4F40CF03571FCA22ADDF493 /* AssistantSettingsTests.swift in Sources */,
 				72742A88401F238CEB4B8D43 /* AssistantTestSupport.swift in Sources */,
@@ -632,6 +639,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				614042D614C3629638B3674A /* OllamaClient.swift in Sources */,
 				4A60B593B9360219B96230A6 /* HTTPTransport.swift in Sources */,
 				B628A38E2FD89AD0303C848D /* LLMError.swift in Sources */,
 				3CF3D778437865B6DAF84350 /* LLMTypes.swift in Sources */,
