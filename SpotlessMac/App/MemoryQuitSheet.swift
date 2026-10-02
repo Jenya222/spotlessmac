@@ -29,7 +29,9 @@ struct MemoryQuitSheet: View {
                 buttons(primary: "Завершить принудительно", role: .destructive) { viewModel.confirmForceQuit() }
             case .finished(let message):
                 title(message)
-                Text("Изменения появятся в списке через пару секунд.").foregroundStyle(.secondary)
+                if viewModel.quitState.finishedWithQuit {
+                    Text("Изменения появятся в списке через пару секунд.").foregroundStyle(.secondary)
+                }
                 HStack { Spacer(); Button("Готово") { viewModel.dismissQuit() }.keyboardShortcut(.defaultAction) }
             }
         }

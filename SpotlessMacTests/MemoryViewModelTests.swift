@@ -124,6 +124,89 @@ final class MemoryViewModelTests: XCTestCase {
         XCTAssertEqual(maxInFlight, 1)
     }
 
+    func testLoopEndsWhenViewModelIsFreedWithoutStop() async {
+        let source = SampleSource()
+        weak var weakViewModel: MemoryViewModel?
+        do {
+            let viewModel = MemoryViewModel(sample: { await source.next() }, interval: .milliseconds(1))
+            weakViewModel = viewModel
+            viewModel.start()
+            await waitUntil { await source.calls >= 3 }
+            let sampled = await source.calls
+            XCTAssertGreaterThanOrEqual(sampled, 3)
+            // Last reference dropped here; `stop()` is deliberately never called.
+        }
+        XCTAssertNil(weakViewModel, "the polling loop must not keep the view model alive")
+
+        // Settle: at most one in-flight sample may still finish after the release.
+        try? await Task.sleep(for: .milliseconds(300))
+        let settled = await source.calls
+        try? await Task.sleep(for: .milliseconds(300))
+        let later = await source.calls
+        XCTAssertEqual(settled, later, "the loop must end once the view model is gone")
+    }
+
+    func testOffersQuitOnlyForGroupsWithARunningApplication() {
+        let viewModel = MemoryViewModel(sample: { F.sample(at: Date()) })
+        let withApp = F.userGroup(slackPath, processes: [F.process(42)])
+        let servicesOnly = F.userGroup("/Applications/Xcode.app", processes: [F.process(7, name: "SourceKitService")])
+        let system = AppMemoryGroup(id: "system", displayName: "Система", kind: .system, bundlePath: nil,
+                                    processes: [F.process(1)])
+        XCTAssertFalse(viewModel.hasRunningApplication(in: withApp), "no sample yet")
+
+        viewModel.apply(F.sample(at: Date(), groups: [withApp, servicesOnly, system],
+                                 runningApps: [F.app(42, slackPath)]))
+        XCTAssertTrue(viewModel.hasRunningApplication(in: withApp))
+        XCTAssertFalse(viewModel.hasRunningApplication(in: servicesOnly), "background services only")
+        XCTAssertFalse(viewModel.hasRunningApplication(in: system))
+    }
+
+    func testFinishedHintAppliesOnlyToRealQuits() async {
+        // Polite quit succeeds.
+        let spy = TerminatorSpy()
+        var (viewModel, slack) = makeSlack(spy: spy)
+        viewModel.requestQuit(slack)
+        XCTAssertFalse(viewModel.quitState.finishedWithQuit)
+        await viewModel.confirmQuit()
+        XCTAssertEqual(viewModel.quitState, .finished("Slack завершено."))
+        XCTAssertTrue(viewModel.quitState.finishedWithQuit)
+
+        // Already closed.
+        let closedSpy = TerminatorSpy(running: [])
+        (viewModel, slack) = makeSlack(spy: closedSpy)
+        viewModel.requestQuit(slack)
+        await viewModel.confirmQuit()
+        XCTAssertEqual(viewModel.quitState, .finished("Приложение уже закрыто."))
+        XCTAssertFalse(viewModel.quitState.finishedWithQuit)
+
+        // Force quit succeeds.
+        let forceSpy = TerminatorSpy()
+        forceSpy.ignoresTerminate = true
+        (viewModel, slack) = makeSlack(spy: forceSpy)
+        viewModel.requestQuit(slack)
+        await viewModel.confirmQuit()
+        viewModel.confirmForceQuit()
+        await waitUntil { isFinished(viewModel) }
+        XCTAssertEqual(viewModel.quitState, .finished("Slack завершено принудительно."))
+        XCTAssertTrue(viewModel.quitState.finishedWithQuit)
+
+        // Force quit fails.
+        let stuckSpy = TerminatorSpy()
+        stuckSpy.ignoresTerminate = true
+        stuckSpy.survivesForce = true
+        (viewModel, slack) = makeSlack(spy: stuckSpy)
+        viewModel.requestQuit(slack)
+        await viewModel.confirmQuit()
+        viewModel.confirmForceQuit()
+        await waitUntil { isFinished(viewModel) }
+        XCTAssertEqual(viewModel.quitState, .finished("Slack не удалось завершить."))
+        XCTAssertFalse(viewModel.quitState.finishedWithQuit)
+
+        XCTAssertFalse(QuitState.idle.finishedWithQuit)
+        XCTAssertEqual(QuitState.quitMessage(for: "Slack"), "Slack завершено.")
+        XCTAssertEqual(QuitState.quitMessage(for: "Slack", forced: true), "Slack завершено принудительно.")
+    }
+
     private func isFinished(_ viewModel: MemoryViewModel) -> Bool {
         if case .finished = viewModel.quitState { return true }
         return false

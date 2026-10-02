@@ -33,6 +33,24 @@ enum QuitState: Equatable {
     case finished(String)
 }
 
+extension QuitState {
+    private static let quitSuffix = " завершено."
+    private static let forcedQuitSuffix = " завершено принудительно."
+
+    /// "Slack завершено." / "Slack завершено принудительно." — the only `.finished`
+    /// messages that mean the app is really gone.
+    static func quitMessage(for appName: String, forced: Bool = false) -> String {
+        appName + (forced ? forcedQuitSuffix : quitSuffix)
+    }
+
+    /// True only for a `.finished` outcome where the app was actually quit, as opposed
+    /// to "already closed" or "could not be quit".
+    var finishedWithQuit: Bool {
+        guard case .finished(let message) = self else { return false }
+        return message.hasSuffix(Self.quitSuffix) || message.hasSuffix(Self.forcedQuitSuffix)
+    }
+}
+
 @Observable @MainActor
 final class MemoryViewModel {
     typealias Sample = @Sendable () async -> MemorySample
@@ -78,6 +96,12 @@ final class MemoryViewModel {
 
     var isRunning: Bool { loop != nil }
 
+    /// True when the group has an application actually running inside its bundle
+    /// (background services alone can't be quit); drives the "Завершить" button.
+    func hasRunningApplication(in group: AppMemoryGroup) -> Bool {
+        group.kind == .userApp && !(latest?.runningApps(in: group).isEmpty ?? true)
+    }
+
     func start() {
         loop?.cancel()
         let sample = sample
@@ -86,7 +110,13 @@ final class MemoryViewModel {
             while !Task.isCancelled {
                 let next = await sample()
                 guard !Task.isCancelled else { return }
-                self?.apply(next)
+                // Re-acquire `self` for each tick and release it before sleeping, so the
+                // loop never keeps the view model alive and ends once it is freed
+                // (even if `stop()` was never called).
+                do {
+                    guard let self else { return }
+                    self.apply(next)
+                }
                 try? await Task.sleep(for: interval)
             }
         }
@@ -154,7 +184,7 @@ final class MemoryViewModel {
         case .superseded:
             return
         case .gone:
-            quitState = .finished("\(group.displayName) завершено.")
+            quitState = .finished(QuitState.quitMessage(for: group.displayName))
         case .timedOut:
             quitState = .stillRunning(group)
         case .cancelled:
@@ -162,7 +192,7 @@ final class MemoryViewModel {
             // is known, otherwise let the user ask again.
             quitState = terminator.isAnyRunning(pids)
                 ? .confirm(group, .allowed)
-                : .finished("\(group.displayName) завершено.")
+                : .finished(QuitState.quitMessage(for: group.displayName))
         }
     }
 
@@ -223,13 +253,13 @@ final class MemoryViewModel {
         case .superseded:
             return
         case .gone:
-            quitState = .finished("\(group.displayName) завершено принудительно.")
+            quitState = .finished(QuitState.quitMessage(for: group.displayName, forced: true))
         case .timedOut:
             quitState = .finished("\(group.displayName) не удалось завершить.")
         case .cancelled:
             quitState = terminator.isAnyRunning(pids)
                 ? .stillRunning(group)
-                : .finished("\(group.displayName) завершено принудительно.")
+                : .finished(QuitState.quitMessage(for: group.displayName, forced: true))
         }
     }
 }

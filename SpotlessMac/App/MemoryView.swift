@@ -236,7 +236,7 @@ struct MemoryView: View {
                 }
                 .frame(width: 150, alignment: .trailing)
 
-                if group.kind == .userApp {
+                if viewModel.hasRunningApplication(in: group) {
                     Button("Завершить") { viewModel.requestQuit(group) }
                         .controlSize(.small)
                 } else {
@@ -270,10 +270,25 @@ struct MemoryView: View {
     @ViewBuilder
     private func icon(for group: AppMemoryGroup) -> some View {
         if let path = group.bundlePath {
-            Image(nsImage: NSWorkspace.shared.icon(forFile: path)).resizable()
+            Image(nsImage: AppIconCache.icon(forFile: path)).resizable()
         } else {
             Image(systemName: group.kind == .system ? "gearshape.2" : "terminal")
                 .foregroundStyle(Theme.textSecondary)
         }
+    }
+}
+
+/// `NSWorkspace.icon(forFile:)` hits the disk and returns a new image on every call;
+/// rows re-render on each 2 s sample, so icons are cached per bundle path. Kept out of
+/// the view model so filling it never triggers Observation updates.
+@MainActor
+private enum AppIconCache {
+    private static var icons: [String: NSImage] = [:]
+
+    static func icon(forFile path: String) -> NSImage {
+        if let cached = icons[path] { return cached }
+        let icon = NSWorkspace.shared.icon(forFile: path)
+        icons[path] = icon
+        return icon
     }
 }

@@ -39,11 +39,13 @@ struct CareDashboardView: View {
             statusColumn
         }
         .task {
+            // Own task so the memory card fills as soon as its sample is ready,
+            // instead of waiting for the (much longer) scan below.
+            memorySample = await MemoryMonitor().sample()
+        }
+        .task {
             if viewModel.items.isEmpty { await viewModel.scan() }
-            async let mem = MemoryMonitor().sample()
-            async let disk = DiskSpaceService.overview()
-            memorySample = await mem
-            diskOverview = await disk
+            diskOverview = await DiskSpaceService.overview()
         }
         .sheet(isPresented: $showConfirmSheet) {
             SmartCareConfirmSheet(
