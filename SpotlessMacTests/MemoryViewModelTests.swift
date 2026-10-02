@@ -16,17 +16,32 @@ private actor SampleSource {
     }
 }
 
+/// Models a small process table: `running` shrinks when an app obeys a terminate request.
 @MainActor
 private final class TerminatorSpy {
+    var running: Set<pid_t>
     var terminated: [pid_t] = []
     var forced: [pid_t] = []
-    var stillRunning = false
+    /// The app ignores the polite quit request.
+    var ignoresTerminate = false
+    /// The app survives even a force quit.
+    var survivesForce = false
+
+    init(running: Set<pid_t> = [42]) {
+        self.running = running
+    }
 
     var terminator: AppTerminator {
         AppTerminator(
-            terminate: { self.terminated += $0 },
-            forceTerminate: { self.forced += $0 },
-            isAnyRunning: { _ in self.stillRunning }
+            terminate: { pids in
+                self.terminated += pids
+                if !self.ignoresTerminate { self.running.subtract(pids) }
+            },
+            forceTerminate: { pids in
+                self.forced += pids
+                if !self.survivesForce { self.running.subtract(pids) }
+            },
+            isAnyRunning: { pids in pids.contains { self.running.contains($0) } }
         )
     }
 }
@@ -109,27 +124,36 @@ final class MemoryViewModelTests: XCTestCase {
         XCTAssertEqual(maxInFlight, 1)
     }
 
-    func testAllowedQuitTerminatesAndFinishes() async {
-        let spy = TerminatorSpy()
+    private func isFinished(_ viewModel: MemoryViewModel) -> Bool {
+        if case .finished = viewModel.quitState { return true }
+        return false
+    }
+
+    private func makeSlack(
+        spy: TerminatorSpy, grace: Duration = .milliseconds(100)
+    ) -> (viewModel: MemoryViewModel, slack: AppMemoryGroup) {
         let viewModel = MemoryViewModel(sample: { F.sample(at: Date()) }, terminator: spy.terminator,
-                                        quitGracePeriod: .milliseconds(100), ownBundlePath: "/nowhere")
+                                        quitGracePeriod: grace, ownBundlePath: "/nowhere")
         let slack = F.userGroup(slackPath, processes: [F.process(42, uid: getuid())])
         viewModel.apply(F.sample(at: Date(), groups: [slack], runningApps: [F.app(42, slackPath)]))
+        return (viewModel, slack)
+    }
+
+    func testAllowedQuitTerminatesAndFinishes() async {
+        let spy = TerminatorSpy()
+        let (viewModel, slack) = makeSlack(spy: spy)
 
         viewModel.requestQuit(slack)
         XCTAssertEqual(viewModel.quitState, .confirm(slack, .allowed))
         await viewModel.confirmQuit()
         XCTAssertEqual(spy.terminated, [42])
-        guard case .finished = viewModel.quitState else { return XCTFail("\(viewModel.quitState)") }
+        XCTAssertEqual(viewModel.quitState, .finished("Slack завершено."))
     }
 
     func testUnresponsiveAppOffersForceQuit() async {
         let spy = TerminatorSpy()
-        spy.stillRunning = true
-        let viewModel = MemoryViewModel(sample: { F.sample(at: Date()) }, terminator: spy.terminator,
-                                        quitGracePeriod: .milliseconds(100), ownBundlePath: "/nowhere")
-        let slack = F.userGroup(slackPath, processes: [F.process(42, uid: getuid())])
-        viewModel.apply(F.sample(at: Date(), groups: [slack], runningApps: [F.app(42, slackPath)]))
+        spy.ignoresTerminate = true
+        let (viewModel, slack) = makeSlack(spy: spy)
 
         viewModel.requestQuit(slack)
         await viewModel.confirmQuit()
@@ -138,7 +162,127 @@ final class MemoryViewModelTests: XCTestCase {
 
         viewModel.confirmForceQuit()
         XCTAssertEqual(spy.forced, [42])
-        guard case .finished = viewModel.quitState else { return XCTFail("\(viewModel.quitState)") }
+        await waitUntil { isFinished(viewModel) }
+        XCTAssertEqual(viewModel.quitState, .finished("Slack завершено принудительно."))
+    }
+
+    func testQuitOfAlreadyClosedAppDoesNotTerminate() async {
+        let spy = TerminatorSpy(running: [])
+        let (viewModel, slack) = makeSlack(spy: spy)
+
+        viewModel.requestQuit(slack)
+        await viewModel.confirmQuit()
+        XCTAssertTrue(spy.terminated.isEmpty)
+        XCTAssertEqual(viewModel.quitState, .finished("Приложение уже закрыто."))
+    }
+
+    func testQuitOfAppThatVanishedFromLatestDoesNotClaimSuccess() async {
+        let spy = TerminatorSpy(running: [])
+        let (viewModel, slack) = makeSlack(spy: spy)
+
+        viewModel.requestQuit(slack)
+        // The next poll no longer lists the app.
+        viewModel.apply(F.sample(at: Date().addingTimeInterval(2), groups: [], runningApps: []))
+        await viewModel.confirmQuit()
+        XCTAssertTrue(spy.terminated.isEmpty)
+        XCTAssertEqual(viewModel.quitState, .finished("Приложение уже закрыто."))
+    }
+
+    func testForceQuitOfAppThatClosedMeanwhileDoesNotForceTerminate() async {
+        let spy = TerminatorSpy()
+        spy.ignoresTerminate = true
+        let (viewModel, slack) = makeSlack(spy: spy)
+
+        viewModel.requestQuit(slack)
+        await viewModel.confirmQuit()
+        XCTAssertEqual(viewModel.quitState, .stillRunning(slack))
+
+        spy.running = []
+        viewModel.confirmForceQuit()
+        XCTAssertTrue(spy.forced.isEmpty)
+        XCTAssertEqual(viewModel.quitState, .finished("Приложение уже закрыто."))
+    }
+
+    func testQuitUsesPIDsVettedAtRequestEvenIfLatestChanges() async {
+        let spy = TerminatorSpy(running: [42, 77])
+        spy.ignoresTerminate = true
+        let (viewModel, slack) = makeSlack(spy: spy)
+
+        viewModel.requestQuit(slack)
+        // The app relaunched under a PID nobody vetted.
+        viewModel.apply(F.sample(at: Date().addingTimeInterval(2), groups: [slack],
+                                 runningApps: [F.app(77, slackPath)]))
+        await viewModel.confirmQuit()
+        XCTAssertEqual(spy.terminated, [42])
+        XCTAssertEqual(viewModel.quitState, .stillRunning(slack))
+
+        viewModel.confirmForceQuit()
+        await waitUntil { isFinished(viewModel) }
+        XCTAssertEqual(spy.forced, [42])
+        XCTAssertTrue(spy.running.contains(77), "the unvetted instance must stay untouched")
+    }
+
+    func testForceQuitReportsFailureWhenAppSurvives() async {
+        let spy = TerminatorSpy()
+        spy.ignoresTerminate = true
+        spy.survivesForce = true
+        let (viewModel, slack) = makeSlack(spy: spy)
+
+        viewModel.requestQuit(slack)
+        await viewModel.confirmQuit()
+        XCTAssertEqual(viewModel.quitState, .stillRunning(slack))
+
+        viewModel.confirmForceQuit()
+        XCTAssertEqual(viewModel.quitState, .quitting(slack), "the outcome is not claimed before it is checked")
+        await waitUntil { isFinished(viewModel) }
+        XCTAssertEqual(spy.forced, [42])
+        XCTAssertEqual(viewModel.quitState, .finished("Slack не удалось завершить."))
+    }
+
+    func testDismissDuringQuittingIsNotOverwrittenByTheWaitLoop() async {
+        let spy = TerminatorSpy()
+        spy.ignoresTerminate = true
+        let (viewModel, slack) = makeSlack(spy: spy)
+
+        viewModel.requestQuit(slack)
+        let quit = Task { await viewModel.confirmQuit() }
+        await waitUntil { viewModel.quitState == .quitting(slack) }
+        XCTAssertEqual(viewModel.quitState, .quitting(slack))
+
+        viewModel.dismissQuit()
+        await quit.value
+        XCTAssertEqual(viewModel.quitState, .idle)
+    }
+
+    func testRequestQuitIsIgnoredWhileQuitting() async {
+        let spy = TerminatorSpy()
+        spy.ignoresTerminate = true
+        let (viewModel, slack) = makeSlack(spy: spy)
+        let other = F.userGroup("/Applications/Other.app", processes: [F.process(7, uid: getuid())])
+
+        viewModel.requestQuit(slack)
+        let quit = Task { await viewModel.confirmQuit() }
+        await waitUntil { viewModel.quitState == .quitting(slack) }
+
+        viewModel.requestQuit(other)
+        XCTAssertEqual(viewModel.quitState, .quitting(slack))
+        await quit.value
+        XCTAssertEqual(viewModel.quitState, .stillRunning(slack))
+    }
+
+    func testCancelledCallerDoesNotEscalateToForceQuit() async {
+        let spy = TerminatorSpy()
+        spy.ignoresTerminate = true
+        let (viewModel, slack) = makeSlack(spy: spy, grace: .seconds(5))
+
+        viewModel.requestQuit(slack)
+        let quit = Task { await viewModel.confirmQuit() }
+        await waitUntil { viewModel.quitState == .quitting(slack) }
+
+        quit.cancel()
+        await quit.value
+        XCTAssertEqual(viewModel.quitState, .confirm(slack, .allowed), "must not offer force quit before the grace period")
+        XCTAssertTrue(spy.forced.isEmpty)
     }
 
     func testDeniedQuitNeverTerminates() async {

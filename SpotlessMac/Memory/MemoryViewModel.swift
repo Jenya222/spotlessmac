@@ -54,6 +54,12 @@ final class MemoryViewModel {
     private let ownBundlePath: String
     private var loop: Task<Void, Never>?
     private var lastSort: Date?
+    /// PIDs of the running apps that `canQuit` approved in `requestQuit`; the only
+    /// PIDs a quit may touch, even if `latest` changes while the sheet is open.
+    private var vettedPIDs: [pid_t] = []
+    /// Bumped whenever a quit starts or is dismissed, so a stale wait loop can tell
+    /// it no longer owns `quitState`.
+    private var quitEpoch = 0
 
     init(
         sample: Sample? = nil,
@@ -120,41 +126,110 @@ final class MemoryViewModel {
     // MARK: Quit flow
 
     func requestQuit(_ group: AppMemoryGroup) {
+        // A quit in progress owns `quitState`; a new request must not clobber it.
+        if case .quitting = quitState { return }
         let apps = latest?.runningApps(in: group) ?? []
         let decision = ProcessSafetyRules.canQuit(
             group, runningApps: apps, currentUID: getuid(),
             ownBundlePath: ownBundlePath, ownPID: getpid()
         )
+        // Only the PIDs that passed the safety gate may ever be terminated.
+        vettedPIDs = decision == .allowed ? apps.map(\.pid) : []
         quitState = .confirm(group, decision)
     }
 
     func confirmQuit() async {
         guard case .confirm(let group, .allowed) = quitState else { return }
-        let pids = (latest?.runningApps(in: group) ?? []).map(\.pid)
+        let pids = runningSubset(of: vettedPIDs)
+        guard !pids.isEmpty else {
+            quitState = .finished(Self.alreadyClosedMessage)
+            return
+        }
+        quitEpoch += 1
+        let epoch = quitEpoch
         quitState = .quitting(group)
         terminator.terminate(pids)
 
-        let step = Duration.milliseconds(250)
-        var waited = Duration.zero
-        while waited < quitGracePeriod {
-            if !terminator.isAnyRunning(pids) {
-                quitState = .finished("\(group.displayName) завершено.")
-                return
-            }
-            try? await Task.sleep(for: step)
-            waited += step
+        switch await waitUntilGone(pids, epoch: epoch) {
+        case .superseded:
+            return
+        case .gone:
+            quitState = .finished("\(group.displayName) завершено.")
+        case .timedOut:
+            quitState = .stillRunning(group)
+        case .cancelled:
+            // The caller went away: don't claim the app is unresponsive. Report what
+            // is known, otherwise let the user ask again.
+            quitState = terminator.isAnyRunning(pids)
+                ? .confirm(group, .allowed)
+                : .finished("\(group.displayName) завершено.")
         }
-        quitState = terminator.isAnyRunning(pids) ? .stillRunning(group) : .finished("\(group.displayName) завершено.")
     }
 
     func confirmForceQuit() {
         guard case .stillRunning(let group) = quitState else { return }
-        let pids = (latest?.runningApps(in: group) ?? []).map(\.pid)
+        let pids = runningSubset(of: vettedPIDs)
+        guard !pids.isEmpty else {
+            quitState = .finished(Self.alreadyClosedMessage)
+            return
+        }
+        quitEpoch += 1
+        let epoch = quitEpoch
+        quitState = .quitting(group)
         terminator.forceTerminate(pids)
-        quitState = .finished("\(group.displayName) завершено принудительно.")
+
+        // `NSRunningApplication` reports the app as running for a few milliseconds
+        // after `forceTerminate()`, so the outcome is checked asynchronously.
+        Task { [weak self] in
+            await self?.finishForceQuit(group, pids: pids, epoch: epoch)
+        }
     }
 
     func dismissQuit() {
+        quitEpoch += 1
+        vettedPIDs = []
         quitState = .idle
+    }
+
+    private static let alreadyClosedMessage = "Приложение уже закрыто."
+
+    private enum QuitWait { case gone, timedOut, superseded, cancelled }
+
+    private func runningSubset(of pids: [pid_t]) -> [pid_t] {
+        pids.filter { terminator.isAnyRunning([$0]) }
+    }
+
+    /// Polls until the PIDs are gone or `quitGracePeriod` elapses. Returns `.superseded`
+    /// when the quit was dismissed (or replaced) while waiting, so the caller leaves
+    /// `quitState` alone.
+    private func waitUntilGone(_ pids: [pid_t], epoch: Int) async -> QuitWait {
+        let step = Duration.milliseconds(250)
+        var waited = Duration.zero
+        while true {
+            if !terminator.isAnyRunning(pids) { return .gone }
+            if waited >= quitGracePeriod { return .timedOut }
+            do {
+                try await Task.sleep(for: step)
+            } catch {
+                return epoch == quitEpoch ? .cancelled : .superseded
+            }
+            guard epoch == quitEpoch else { return .superseded }
+            waited += step
+        }
+    }
+
+    private func finishForceQuit(_ group: AppMemoryGroup, pids: [pid_t], epoch: Int) async {
+        switch await waitUntilGone(pids, epoch: epoch) {
+        case .superseded:
+            return
+        case .gone:
+            quitState = .finished("\(group.displayName) завершено принудительно.")
+        case .timedOut:
+            quitState = .finished("\(group.displayName) не удалось завершить.")
+        case .cancelled:
+            quitState = terminator.isAnyRunning(pids)
+                ? .stillRunning(group)
+                : .finished("\(group.displayName) завершено принудительно.")
+        }
     }
 }
