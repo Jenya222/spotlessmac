@@ -5,6 +5,8 @@ enum SnapshotRenderer {
     static let maxCharacters = 32_000 // ≈ 8k tokens at ~4 chars/token
     private static let tailReserve = 2_000
 
+    // `formatPath` is applied to every path and every piece of user-derived text. The view model
+    // passes a closure using PathRedactor.redact for home-prefixed paths and redactText otherwise.
     static func render(_ snapshot: SystemSnapshot, formatPath: (String) -> String) -> String {
         var lines = ["Снимок системы на \(dateTime(snapshot.takenAt))."]
         if let volume = snapshot.volume {
@@ -76,11 +78,13 @@ enum SnapshotRenderer {
         return lines.joined(separator: "\n")
     }
 
+    // `formatPath` is applied to every path and every piece of user-derived text (see `render`).
     static func itemLine(_ item: SnapshotItem, formatPath: (String) -> String) -> String {
         [item.shortID, formatPath(item.path), bytes(item.bytes), item.category.rawValue, item.disposition.code,
          item.modifiedAt.map(date) ?? "—", item.owner ?? "—"].joined(separator: " | ")
     }
 
+    // `formatPath` is applied to every path and every piece of user-derived text (see `render`).
     static func itemCard(_ item: SnapshotItem, formatPath: (String) -> String) -> String {
         [
             "ID: \(item.shortID)",
@@ -88,7 +92,7 @@ enum SnapshotRenderer {
             "Размер: \(bytes(item.bytes))",
             "Категория: \(item.category.rawValue) (\(item.category.displayName))",
             "Политика: \(item.disposition.code) — \(item.disposition.label)",
-            "Причина: \(item.reason)",
+            "Причина: \(formatPath(item.reason))",
             "Изменён: \(item.modifiedAt.map(date) ?? "неизвестно")",
             "Владелец: \(item.owner ?? "—")",
             "Пакетная очистка: \(item.isBatchCleanable ? "да" : "нет, удаляется вручную")",

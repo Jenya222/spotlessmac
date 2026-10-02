@@ -28,7 +28,7 @@ final class SnapshotRendererTests: XCTestCase {
         XCTAssertTrue(text.contains("данные о томе недоступны"))
     }
 
-    // Review focus 2: huge scans stay within budget.
+    // A huge scan is truncated to the character budget and points to list_items.
     func testLargeSnapshotStaysWithinBudget() {
         var snapshot = SystemSnapshot.sample()
         snapshot.items = (1...5_000).map { n in
@@ -56,6 +56,24 @@ final class SnapshotRendererTests: XCTestCase {
         XCTAssertTrue(card.contains("ID: c4"))
         XCTAssertTrue(card.contains("Политика: personalData"))
         XCTAssertTrue(card.contains("Пакетная очистка: нет"))
+    }
+
+    // The reason line can embed a project folder name (ProjectArtifactsScanner), so it goes through formatPath too.
+    func testItemCardRedactsFolderNameInReason() {
+        let item = SnapshotItem(
+            shortID: "c7", itemID: UUID(), path: "/Users/tester/Projects/secret-client/node_modules",
+            bytes: 3_200_000_000, category: .projectArtifacts, disposition: .rebuildable,
+            reason: "Зависимости или сборка проекта secret-client. Потребуется переустановка.",
+            modifiedAt: nil, owner: nil
+        )
+        var redactor = PathRedactor(homePath: SystemSnapshot.testHome)
+        let card = SnapshotRenderer.itemCard(item) { s in
+            s.hasPrefix(SystemSnapshot.testHome) ? redactor.redact(s) : redactor.redactText(s)
+        }
+        XCTAssertFalse(card.contains("secret-client"))
+        let lines = card.components(separatedBy: "\n")
+        XCTAssertTrue(lines.first { $0.hasPrefix("Путь:") }?.contains("<папка-1>") == true)
+        XCTAssertTrue(lines.first { $0.hasPrefix("Причина:") }?.contains("<папка-1>") == true)
     }
 
     func testPromptVariants() {
