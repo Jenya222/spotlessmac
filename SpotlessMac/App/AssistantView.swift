@@ -83,6 +83,7 @@ struct AssistantView: View {
                             onRetry: viewModel.retry,
                             onOpenSettings: onOpenSettings
                         )
+                        .equatable()
                         .id(message.id)
                     }
                     if let status = viewModel.statusLine {

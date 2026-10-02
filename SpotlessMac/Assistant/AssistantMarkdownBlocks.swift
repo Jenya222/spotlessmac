@@ -12,12 +12,12 @@ enum AssistantMarkdownBlock: Equatable {
     case table(header: [String], rows: [[String]])
 }
 
-/// Разбор Markdown итогов на блоки.
+/// Разбор Markdown-ответов ассистента на блоки.
 ///
-/// Один `Text(AttributedString(markdown:, .full))` (как в `ReportView`) теряет
-/// блочную структуру: заголовки и пункты списка сливаются в один абзац. Поэтому
-/// блоки — наши, а внутри блока `AttributedString(markdown:)` в режиме
-/// «только строчная разметка» даёт жирный, курсив и ссылки.
+/// Один `Text(AttributedString(markdown:, .full))` теряет блочную структуру:
+/// заголовки и пункты списка сливаются в один абзац. Поэтому блоки — наши,
+/// а внутри блока `AttributedString(markdown:)` в режиме «только строчная
+/// разметка» даёт жирный, курсив и код (ссылки из ответа модели вьюха гасит).
 enum AssistantMarkdownBlocks {
     static func parse(_ markdown: String) -> [AssistantMarkdownBlock] {
         var blocks: [AssistantMarkdownBlock] = []
@@ -224,4 +224,3 @@ enum AssistantMarkdownBlocks {
         return Array(cells.prefix(columns))
     }
 }
-

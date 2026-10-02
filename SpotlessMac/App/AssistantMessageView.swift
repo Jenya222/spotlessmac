@@ -1,12 +1,18 @@
 import SwiftUI
 
-struct AssistantMessageView: View {
+// Equatable on message + canRetry only: the closures just capture the message id, so an
+// unchanged completed message is not re-evaluated for every token streamed into the last one.
+struct AssistantMessageView: View, Equatable {
     let message: AssistantMessage
     var canRetry: Bool
     var onOpenPlan: () -> Void
     var onDismissPlan: () -> Void
     var onRetry: () -> Void
     var onOpenSettings: () -> Void
+
+    nonisolated static func == (lhs: AssistantMessageView, rhs: AssistantMessageView) -> Bool {
+        lhs.message == rhs.message && lhs.canRetry == rhs.canRetry
+    }
 
     var body: some View {
         switch message.role {
@@ -34,7 +40,16 @@ struct AssistantMessageView: View {
             if message.text.isEmpty && message.status == .streaming {
                 ProgressView().controlSize(.small)
             } else if !message.text.isEmpty {
-                AssistantMarkdownView(markdown: message.text)
+                if message.status == .streaming {
+                    // Parsing markdown on every streamed token is wasted work: show the raw
+                    // text while it arrives and format it once the message is complete.
+                    Text(message.text)
+                        .font(.system(size: 13))
+                        .textSelection(.enabled)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                } else {
+                    AssistantMarkdownView(markdown: message.text)
+                }
             }
             if let plan = message.plan, !message.planDismissed {
                 AssistantPlanCard(plan: plan, onOpen: onOpenPlan, onDismiss: onDismissPlan)
@@ -147,6 +162,8 @@ struct CloudDisclosureSheet: View {
                 Text("• категории, размеры и даты найденных файлов")
                 Text("• пути, где имя пользователя заменено на ~, а папки проектов и документов — на <папка-N>")
                 Text("• сведения о диске, Docker и остатках программ")
+                Text("• состояние памяти и названия программ, которые занимают больше всего памяти")
+                Text("• статус полного доступа к диску и итог последней очистки")
                 Text("• текст ваших вопросов")
             }
             .font(.system(size: 12))

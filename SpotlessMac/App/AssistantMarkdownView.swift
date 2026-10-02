@@ -62,10 +62,16 @@ struct AssistantMarkdownView: View {
         }
     }
 
+    /// Bold, italic and code only. Links in model output are rendered as plain text: the
+    /// assistant must not be able to put a clickable URL in front of the user.
     nonisolated static func inline(_ text: String) -> AttributedString {
-        (try? AttributedString(
+        guard var result = try? AttributedString(
             markdown: text,
             options: AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace)
-        )) ?? AttributedString(text)
+        ) else { return AttributedString(text) }
+        for run in result.runs where run.link != nil {
+            result[run.range].link = nil
+        }
+        return result
     }
 }

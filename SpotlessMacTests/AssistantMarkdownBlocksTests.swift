@@ -17,4 +17,11 @@ final class AssistantMarkdownBlocksTests: XCTestCase {
         let blocks = AssistantMarkdownBlocks.parse("```\nrm -rf\n```\n| A | B |\n|---|---|\n| 1 | 2 |")
         XCTAssertEqual(blocks, [.code("rm -rf"), .table(header: ["A", "B"], rows: [["1", "2"]])])
     }
+
+    func testInlineKeepsEmphasisButDropsLinks() {
+        let result = AssistantMarkdownView.inline("[сайт](https://example.com) и **важно**")
+        XCTAssertEqual(String(result.characters), "сайт и важно")
+        XCTAssertTrue(result.runs.allSatisfy { $0.link == nil })
+        XCTAssertTrue(result.runs.contains { $0.inlinePresentationIntent?.contains(.stronglyEmphasized) == true })
+    }
 }
