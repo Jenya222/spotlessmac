@@ -177,9 +177,12 @@ final class ScanViewModel {
     }
     func selectNone() { items.indices.forEach { items[$0].isSelected = false } }
 
-    // Marks only existing batch-cleanable items; never deletes anything.
+    // Marks only existing batch-cleanable items; never deletes anything. Item IDs change on every
+    // scan, so a plan that matches nothing (stale after a rescan or restart) returns nil and
+    // leaves the current selection untouched.
     @discardableResult
-    func stageSelection(_ ids: Set<UUID>) -> AssistantStaging {
+    func stageSelection(_ ids: Set<UUID>) -> AssistantStaging? {
+        guard items.contains(where: { $0.category.isBatchCleanable && ids.contains($0.id) }) else { return nil }
         var count = 0
         var bytes: Int64 = 0
         for index in items.indices where items[index].category.isBatchCleanable {

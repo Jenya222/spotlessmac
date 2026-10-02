@@ -123,8 +123,9 @@ struct ContentView: View {
                                               volume: AssistantSnapshotBuilder.readVolume(), now: Date())
             },
             stagePlan: { plan in
-                scan.stageSelection(Set(plan.itemIDs))
+                guard scan.stageSelection(Set(plan.itemIDs)) != nil else { return false }
                 tab.wrappedValue = .diskUsage
+                return true
             },
             conversationStore: ConversationStore(fileURL: ConversationStore.defaultFileURL()),
             homePath: NSHomeDirectory(),

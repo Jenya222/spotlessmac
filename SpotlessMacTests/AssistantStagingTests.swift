@@ -33,6 +33,19 @@ final class AssistantStagingTests: XCTestCase {
         XCTAssertNil(vm.assistantStaging)
     }
 
+    // A persisted plan outlives the scan whose IDs it references; a stale plan must not touch the selection.
+    func testStageSelectionWithOnlyUnknownIDsChangesNothing() async {
+        let a = item("a", 100, .userCaches)
+        let b = item("b", 200, .logs, selected: false)
+        let model = item("m", 999, .modelCaches, selected: false)
+        let vm = await scannedViewModel([a, b, model])
+        let before = vm.items.map(\.isSelected)
+        XCTAssertNil(vm.stageSelection([UUID(), model.id]))
+        XCTAssertEqual(vm.items.map(\.isSelected), before)
+        XCTAssertNil(vm.assistantStaging)
+        XCTAssertFalse(vm.recoveryPreviewRequested)
+    }
+
     func testScanRecordsTimestamp() async {
         let vm = await scannedViewModel([])
         XCTAssertNotNil(vm.lastScanAt)

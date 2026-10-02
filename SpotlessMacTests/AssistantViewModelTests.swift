@@ -4,6 +4,7 @@ import XCTest
 @MainActor
 final class AssistantViewModelTests: XCTestCase {
     private var staged: [AssistantPlan] = []
+    private var stageResult = true
     private var settingsStore: AssistantSettingsStore!
 
     private func makeViewModel(
@@ -19,12 +20,16 @@ final class AssistantViewModelTests: XCTestCase {
         settings.toolMode = toolMode
         settingsStore.save(settings)
         staged = []
+        stageResult = true
         return AssistantViewModel(dependencies: .init(
             settingsStore: settingsStore,
             keyStore: FakeKeyStore("key"),
             makeClient: { _, _ in client },
             snapshot: { snapshot },
-            stagePlan: { [unowned self] plan in self.staged.append(plan) },
+            stagePlan: { [unowned self] plan in
+                self.staged.append(plan)
+                return self.stageResult
+            },
             conversationStore: conversationStore,
             homePath: SystemSnapshot.testHome,
             now: { SystemSnapshot.testDate }
@@ -110,6 +115,38 @@ final class AssistantViewModelTests: XCTestCase {
         XCTAssertTrue(vm.messages.last?.planDismissed ?? false)
     }
 
+    // A plan whose items no longer exist (rescan, restart) is refused and the user is told why.
+    func testStalePlanSetsNoticeAndNextSendClearsIt() async {
+        let call = ToolCall(id: "p", name: "propose_plan", argumentsJSON: #"{"items":["c1"],"reason":"DerivedData"}"#)
+        let client = FakeLLMClient([.events([.toolCalls([call]), .done]), .events([.text("План."), .done]),
+                                    .events([.text("Ок."), .done])])
+        let vm = makeViewModel(client)
+        await sendAndWait(vm, "Освободи место")
+        guard let message = vm.messages.last else { return XCTFail("no message") }
+        XCTAssertNil(vm.planNotice)
+        stageResult = false
+        vm.openPlan(messageID: message.id)
+        XCTAssertEqual(staged.count, 1)
+        XCTAssertEqual(vm.planNotice, "Список найденного изменился — попросите ассистента составить план заново.")
+        await sendAndWait(vm, "Ещё раз")
+        XCTAssertNil(vm.planNotice)
+    }
+
+    func testStagedPlanLeavesNoNoticeAndNewConversationClearsIt() async {
+        let call = ToolCall(id: "p", name: "propose_plan", argumentsJSON: #"{"items":["c1"],"reason":"DerivedData"}"#)
+        let client = FakeLLMClient([.events([.toolCalls([call]), .done]), .events([.text("План."), .done])])
+        let vm = makeViewModel(client)
+        await sendAndWait(vm, "Освободи место")
+        guard let message = vm.messages.last else { return XCTFail("no message") }
+        vm.openPlan(messageID: message.id)
+        XCTAssertNil(vm.planNotice)
+        stageResult = false
+        vm.openPlan(messageID: message.id)
+        XCTAssertNotNil(vm.planNotice)
+        vm.newConversation()
+        XCTAssertNil(vm.planNotice)
+    }
+
     // Fix round 1, item 4: a dismissed card can no longer stage its plan.
     func testDismissedPlanIsNotStaged() async {
         let call = ToolCall(id: "p", name: "propose_plan", argumentsJSON: #"{"items":["c1"],"reason":"DerivedData"}"#)
@@ -181,7 +218,7 @@ final class AssistantViewModelTests: XCTestCase {
         settingsStore.save(settings)
         let vm = AssistantViewModel(dependencies: .init(
             settingsStore: settingsStore, keyStore: FakeKeyStore(), makeClient: { _, _ in DroppingClient() },
-            snapshot: { .sample() }, stagePlan: { _ in }, conversationStore: nil, homePath: SystemSnapshot.testHome))
+            snapshot: { .sample() }, stagePlan: { _ in true }, conversationStore: nil, homePath: SystemSnapshot.testHome))
         await sendAndWait(vm, "?")
         XCTAssertEqual(vm.messages.last?.text, "Частично")
         XCTAssertEqual(vm.messages.last?.status, .interrupted)
@@ -353,7 +390,7 @@ final class AssistantViewModelTests: XCTestCase {
         let client = FakeLLMClient([.events([.text("ok"), .done])])
         let vm = AssistantViewModel(dependencies: .init(
             settingsStore: settingsStore, keyStore: FakeKeyStore(), makeClient: { _, _ in client },
-            snapshot: { .sample() }, stagePlan: { _ in }, conversationStore: nil, homePath: SystemSnapshot.testHome,
+            snapshot: { .sample() }, stagePlan: { _ in true }, conversationStore: nil, homePath: SystemSnapshot.testHome,
             refreshContext: { box.vm?.stop() }
         ))
         box.vm = vm
@@ -396,7 +433,7 @@ final class AssistantViewModelTests: XCTestCase {
         let vm = AssistantViewModel(dependencies: .init(
             settingsStore: settingsStore, keyStore: FakeKeyStore(), makeClient: { _, _ in client },
             snapshot: { var s = SystemSnapshot.sample(); s.memory = context.memory; return s },
-            stagePlan: { _ in }, conversationStore: nil, homePath: SystemSnapshot.testHome,
+            stagePlan: { _ in true }, conversationStore: nil, homePath: SystemSnapshot.testHome,
             refreshContext: {
                 context.refreshes += 1
                 context.memory = MemoryInfo(load: .critical, usedBytes: 15_000_000_000, physicalBytes: 16_000_000_000,
@@ -412,7 +449,7 @@ final class AssistantViewModelTests: XCTestCase {
         settingsStore = AssistantSettingsStore(defaults: makeDefaults())
         let vm = AssistantViewModel(dependencies: .init(
             settingsStore: settingsStore, keyStore: FakeKeyStore(""), makeClient: { _, _ in FakeLLMClient([]) },
-            snapshot: { .sample() }, stagePlan: { _ in }, conversationStore: nil, homePath: SystemSnapshot.testHome))
+            snapshot: { .sample() }, stagePlan: { _ in true }, conversationStore: nil, homePath: SystemSnapshot.testHome))
         XCTAssertFalse(vm.isConfigured)
         vm.saveSettings(vm.settings, apiKey: "abc")
         XCTAssertTrue(vm.isConfigured)

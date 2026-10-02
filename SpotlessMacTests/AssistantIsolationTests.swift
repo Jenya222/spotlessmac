@@ -73,7 +73,7 @@ final class AssistantIsolationTests: XCTestCase {
             keyStore: FakeKeyStore(),
             makeClient: { _, _ in FakeLLMClient([]) },
             snapshot: { .sample() },
-            stagePlan: { _ in },
+            stagePlan: { _ in true },
             conversationStore: nil,
             homePath: SystemSnapshot.testHome)
         let labels = Mirror(reflecting: dependencies).children.compactMap(\.label)

@@ -110,6 +110,8 @@ struct AssistantSettingsCard: View {
             get: { draft.provider },
             set: { provider in
                 draft.switchProvider(to: provider)
+                // A key typed for one provider must never reach another endpoint by accident.
+                apiKey = provider == assistant.settings.provider ? assistant.currentAPIKey() : ""
                 models = []
                 status = nil
             }

@@ -10,7 +10,8 @@ final class AssistantViewModel {
         var makeClient: @MainActor (AssistantSettings, String) throws -> any LLMClient
         var snapshot: @MainActor () -> SystemSnapshot
         // The only outward effect of the assistant: mark items for the user's review.
-        var stagePlan: @MainActor (AssistantPlan) -> Void
+        // Returns false when nothing could be staged (the plan is stale).
+        var stagePlan: @MainActor (AssistantPlan) -> Bool
         var conversationStore: ConversationStore?
         var homePath: String
         // Refreshes read-only context (memory sample) before each answer.
@@ -26,6 +27,7 @@ final class AssistantViewModel {
     private(set) var hasAPIKey: Bool
     private(set) var isStreaming = false
     private(set) var statusLine: String?
+    private(set) var planNotice: String?
     var draft = ""
     var isCloudDisclosurePresented = false
 
@@ -63,6 +65,7 @@ final class AssistantViewModel {
         let fromDraft = text == nil
         let trimmed = (text ?? draft).trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, !isStreaming else { return }
+        planNotice = nil
         if needsCloudDisclosure {
             pendingText = trimmed
             pendingFromDraft = fromDraft
@@ -122,6 +125,7 @@ final class AssistantViewModel {
     func newConversation() {
         streamTask?.cancel()
         messages = []
+        planNotice = nil
         redactor = PathRedactor(homePath: deps.homePath)
         persist()
     }
@@ -129,7 +133,9 @@ final class AssistantViewModel {
     func openPlan(messageID: UUID) {
         guard let message = messages.first(where: { $0.id == messageID }), !message.planDismissed,
               let plan = message.plan, !plan.isEmpty else { return }
-        deps.stagePlan(plan)
+        if !deps.stagePlan(plan) {
+            planNotice = "Список найденного изменился — попросите ассистента составить план заново."
+        }
     }
 
     func dismissPlan(messageID: UUID) {

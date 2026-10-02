@@ -147,6 +147,11 @@ struct AssistantView: View {
 
     private var composer: some View {
         VStack(alignment: .leading, spacing: 10) {
+            if let notice = viewModel.planNotice {
+                Label(notice, systemImage: "exclamationmark.triangle")
+                    .font(.system(size: 12))
+                    .foregroundStyle(Theme.warningOrange)
+            }
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     ForEach(suggestions, id: \.self) { suggestion in
