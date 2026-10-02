@@ -94,6 +94,44 @@ final class PathRedactorTests: XCTestCase {
         XCTAssertEqual(r.redactText("в <папка-1> лежит папка"), "в <папка-1> лежит <папка-1>")
     }
 
+    // Punctuation right after a restored known name must survive and must not create a new alias.
+    func testKnownAliasesStayStableAcrossPunctuation() {
+        var r = redactor()
+        XCTAssertEqual(r.redact("/Users/tester/Downloads/big.iso"), "~/Downloads/<папка-1>")
+        XCTAssertEqual(r.redact("/Users/tester/Documents/Мой проект/a"), "~/Documents/<папка-2>/a")
+        let answers = [
+            "Удалите ~/Downloads/<папка-1>. Это безопасно.",
+            "~/Documents/<папка-2>: 0.9 ГБ",
+            "Папка **~/Documents/<папка-2>** большая",
+            "(~/Downloads/<папка-1>), затем ~/Documents/<папка-2>!",
+        ]
+        for answer in answers {
+            let restored = r.restore(answer)
+            XCTAssertFalse(restored.contains("<папка-"), restored)
+            XCTAssertEqual(r.redactText(restored), answer)
+            XCTAssertEqual(r.restore(r.redactText(restored)), restored)
+        }
+        // No alias was created along the way: the next new folder gets number 3.
+        XCTAssertEqual(r.redact("/Users/tester/Projects/new/x"), "~/Projects/<папка-3>/x")
+    }
+
+    func testKnownNameMustMatchWholeComponent() {
+        var r = redactor()
+        _ = r.redact("/Users/tester/Projects/shop/x")
+        XCTAssertEqual(r.redactText("~/Projects/shop-admin/x"), "~/Projects/<папка-2>/x")
+        XCTAssertEqual(r.restore("<папка-2>"), "shop-admin")
+        XCTAssertEqual(r.redactText("~/Projects/shop.old/x"), "~/Projects/<папка-3>/x")
+        XCTAssertEqual(r.redactText("~/Projects/shop/x"), "~/Projects/<папка-1>/x")
+    }
+
+    func testHomeInsideLongerPathStillAliasesPersonalFolder() {
+        var r = redactor()
+        let redacted = r.redactText("/System/Volumes/Data/Users/tester/Documents/Секрет/x")
+        XCTAssertFalse(redacted.contains("Секрет"))
+        XCTAssertFalse(redacted.contains("tester"))
+        XCTAssertTrue(redacted.contains("<папка-1>"))
+    }
+
     func testRestoreMapsAliasesBack() {
         var r = redactor()
         _ = r.redact("/Users/tester/Projects/a/x")

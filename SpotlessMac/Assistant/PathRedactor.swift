@@ -19,6 +19,17 @@ struct PathRedactor: Sendable {
     private static let minBareNameLength = 3
     private static let wordBoundary = #"[\p{L}\p{N}_]"#
 
+    // A path component ends at "/", whitespace or one of |`'"«»,;().
+    private static let componentTerminators = #"/\s|`'"«»,;()"#
+    // Sentence and markdown punctuation that may directly follow a path in prose.
+    private static let trailingPunctuation = #".:!?*\-—–…\]\}>"#
+    // A known name must be a whole component: the end of the text, a terminator, or
+    // trailing punctuation that is itself followed by a terminator or the end. So
+    // "~/Projects/shop-admin" is not a match for the known name "shop", while
+    // "~/Downloads/big.iso. Это" and "**~/Documents/Мой проект**" are.
+    private static let knownNameEnd = #"(?=\z|["# + componentTerminators + #"]|["# + trailingPunctuation
+        + #"]+(?:\z|["# + componentTerminators + #"]))"#
+
     let homePath: String
     private var entries: [Entry] = []
 
@@ -53,21 +64,23 @@ struct PathRedactor: Sendable {
             result = Self.rewrite(result, pattern: home + #"(?![A-Za-z0-9_-]|\.[A-Za-z0-9_-])"#) { _ in "~" }
         }
 
-        // 2. Known (root, name) pairs, longest name first: exact match, so names with spaces work.
+        // 2. Known (root, name) pairs, longest name first: exact match of the whole component,
+        // so names with spaces work and "shop" does not match inside "shop-admin".
         for entry in entries.sorted(by: { $0.name.count > $1.name.count }) {
             let known = NSRegularExpression.escapedPattern(for: "~/\(entry.root)/\(entry.name)")
-            result = Self.rewrite(result, pattern: known + "(?!\(Self.wordBoundary))") { _ in
+            result = Self.rewrite(result, pattern: known + Self.knownNameEnd) { _ in
                 "~/\(entry.root)/\(entry.alias)"
             }
         }
 
-        // 3. Remaining "~/<personalRoot>/<component>"; the component ends at "/", whitespace
-        // or one of |`'"«»,;(). Components that already are aliases are left alone.
+        // 3. Remaining "~/<personalRoot>/<component>". A component that starts with an alias
+        // token was produced by step 2 (possibly followed by punctuation) and is left alone.
+        // No lookbehind: "/System/Volumes/Data/Users/<user>/Documents/x" becomes
+        // "/System/Volumes/Data~/Documents/x" in step 1 and its folder must still be aliased.
         let roots = Self.personalRoots.sorted().map { NSRegularExpression.escapedPattern(for: $0) }.joined(separator: "|")
-        let pathPattern = #"(?<![\p{L}\p{N}_~])~/("# + roots + #")/([^/\s|`'"«»,;()]+)"#
+        let pathPattern = "~/(" + roots + #")/(?!<папка-\d+>)([^"# + Self.componentTerminators + #"]+)"#
         result = Self.rewrite(result, pattern: pathPattern) { groups in
-            guard !Self.isAliasToken(groups[2]) else { return nil }
-            return "~/\(groups[1])/\(alias(forRoot: groups[1], name: groups[2]))"
+            "~/\(groups[1])/\(alias(forRoot: groups[1], name: groups[2]))"
         }
 
         // 4. Bare known names as whole words (restored answers mention folders without a path).
