@@ -31,7 +31,12 @@ enum AssistantToolbox {
             }
             guard !matches.isEmpty else { return ToolOutcome(resultText: "Ничего не найдено.", proposal: nil) }
             let shown = matches.prefix(limit)
-            let header = "Найдено \(matches.count), показано \(shown.count) (ID | путь | размер | категория | политика | изменён | владелец):"
+            var applied: [String] = []
+            if let category { applied.append("категория: \(category.rawValue)") }
+            if let olderThanDays { applied.append("старше \(olderThanDays) дн.") }
+            if let minBytes { applied.append("от \(SnapshotRenderer.bytes(minBytes))") }
+            let filters = applied.isEmpty ? "" : " (\(applied.joined(separator: "; ")))"
+            let header = "Найдено \(matches.count), показано \(shown.count)\(filters). Колонки: ID | путь | размер | категория | политика | изменён | владелец:"
             let lines = shown.map { SnapshotRenderer.itemLine($0, formatPath: formatPath) }
             return ToolOutcome(resultText: ([header] + lines).joined(separator: "\n"), proposal: nil)
         case .success(.itemDetails(let id)):
@@ -41,10 +46,21 @@ enum AssistantToolbox {
             return ToolOutcome(resultText: SnapshotRenderer.itemCard(item, formatPath: formatPath), proposal: nil)
         case .success(.proposePlan(let proposal)):
             let plan = PlanResolver.resolve(proposal, in: snapshot)
-            return ToolOutcome(
-                resultText: "План показан пользователю карточкой: \(plan.itemIDs.count) элементов, \(SnapshotRenderer.bytes(plan.totalBytes)). Ничего не удалено — пользователь сам проверит список и решит. Кратко объясни план словами.",
-                proposal: proposal
-            )
+            // The chat shows a card only for a meaningful plan, so the model must not be told one was shown otherwise.
+            guard plan.isMeaningful else {
+                return ToolOutcome(
+                    resultText: "План пуст: ни один элемент не подошёл. Проверь ID и фильтры через list_items. Ничего не удалено.",
+                    proposal: nil
+                )
+            }
+            var text = "План показан пользователю карточкой: \(plan.itemIDs.count) элементов, \(SnapshotRenderer.bytes(plan.totalBytes)). Ничего не удалено — пользователь сам проверит список и решит. Кратко объясни план словами."
+            if !plan.skipped.isEmpty {
+                text += " Пропущено: " + plan.skipped.map { "\($0.label) — \($0.count)" }.joined(separator: ", ") + "."
+            }
+            if !plan.manualReview.isEmpty {
+                text += " Удалять вручную: \(plan.manualReview.count)."
+            }
+            return ToolOutcome(resultText: text, proposal: proposal)
         }
     }
 }

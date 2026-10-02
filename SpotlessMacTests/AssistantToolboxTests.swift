@@ -53,6 +53,69 @@ final class AssistantToolboxTests: XCTestCase {
         XCTAssertTrue(outcome.resultText.contains("2 элементов"))
     }
 
+    func testEmptyPlanIsReportedHonestly() {
+        let outcome = run("propose_plan", #"{"filters":[{"category":"logs","olderThanDays":3650}],"reason":"старые логи"}"#)
+        XCTAssertNil(outcome.proposal)
+        XCTAssertTrue(outcome.resultText.contains("План пуст"))
+        XCTAssertFalse(outcome.resultText.contains("показан пользователю"))
+    }
+
+    func testProposePlanReportsSkippedGroups() {
+        let outcome = run("propose_plan", #"{"items":["c1","c4","c99"],"reason":"проверка"}"#)
+        XCTAssertNotNil(outcome.proposal)
+        XCTAssertTrue(outcome.resultText.contains("1 элементов"))
+        XCTAssertTrue(outcome.resultText.contains("Пропущено:"))
+        XCTAssertTrue(outcome.resultText.contains("личные данные — 1"))
+        XCTAssertTrue(outcome.resultText.contains("неизвестные ID — 1"))
+    }
+
+    func testProposePlanReportsManualReviewCountOnly() {
+        let outcome = run("propose_plan", #"{"items":["c2"],"reason":"зависимости"}"#)
+        XCTAssertNotNil(outcome.proposal)
+        XCTAssertTrue(outcome.resultText.contains("Удалять вручную: 1."))
+        XCTAssertFalse(outcome.resultText.contains("node_modules"))
+        XCTAssertFalse(outcome.resultText.contains("secret-client"))
+    }
+
+    func testCleanPlanHasNoSkippedSuffix() {
+        let outcome = run("propose_plan", #"{"items":["c1","c3"],"reason":"кеши"}"#)
+        XCTAssertFalse(outcome.resultText.contains("Пропущено"))
+        XCTAssertFalse(outcome.resultText.contains("Удалять вручную"))
+    }
+
+    func testListItemsRejectsMistypedArguments() {
+        XCTAssertTrue(run("list_items", #"{"olderThanDays":"60"}"#).resultText.contains("Ошибка"))
+        XCTAssertTrue(run("list_items", #"{"minBytes":"1000"}"#).resultText.contains("Ошибка"))
+        XCTAssertTrue(run("list_items", #"{"limit":true}"#).resultText.contains("Ошибка"))
+        XCTAssertTrue(run("list_items", #"{"olderThanDays":false}"#).resultText.contains("Ошибка"))
+        XCTAssertTrue(run("list_items", #"{"category":5}"#).resultText.contains("Ошибка"))
+        XCTAssertTrue(run("list_items", #"{"olderThanDays":-1}"#).resultText.contains("Ошибка"))
+        XCTAssertTrue(run("list_items", #"{"minBytes":-5}"#).resultText.contains("Ошибка"))
+    }
+
+    func testListItemsParseErrorsNameTheKey() {
+        let call = ToolCall(id: "1", name: "list_items", argumentsJSON: #"{"olderThanDays":"60"}"#)
+        XCTAssertEqual(AssistantTool.parse(call), .failure(.invalidArguments("olderThanDays должно быть числом")))
+        let category = ToolCall(id: "1", name: "list_items", argumentsJSON: #"{"category":5}"#)
+        XCTAssertEqual(AssistantTool.parse(category), .failure(.invalidArguments("category должно быть строкой")))
+    }
+
+    func testListItemsAcceptsNumbersAndExplicitNull() {
+        let call = ToolCall(id: "1", name: "list_items", argumentsJSON: #"{"category":null,"olderThanDays":60,"minBytes":0,"limit":5}"#)
+        XCTAssertEqual(AssistantTool.parse(call), .success(.listItems(category: nil, minBytes: 0, olderThanDays: 60, limit: 5)))
+    }
+
+    func testListItemsHeaderEchoesAppliedFilters() {
+        let logs = run("list_items", #"{"category":"logs"}"#).resultText
+        XCTAssertTrue(logs.contains("(категория: logs)"))
+        XCTAssertFalse(logs.contains("старше"))
+        let all = run("list_items", #"{"category":"developer_caches","olderThanDays":30,"minBytes":1000000000}"#).resultText
+        XCTAssertTrue(all.contains("категория: developer_caches; старше 30 дн.; от 1 GB"))
+        let unfiltered = run("list_items", "{}").resultText
+        XCTAssertFalse(unfiltered.contains("категория:"))
+        XCTAssertFalse(unfiltered.contains("старше"))
+    }
+
     func testFormatPathIsUsed() {
         var redactor = PathRedactor(homePath: SystemSnapshot.testHome)
         let outcome = AssistantToolbox.execute(ToolCall(id: "1", name: "list_items", argumentsJSON: "{}"), snapshot: snapshot) { redactor.redact($0) }

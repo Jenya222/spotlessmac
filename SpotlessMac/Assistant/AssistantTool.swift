@@ -64,18 +64,11 @@ enum AssistantTool: Equatable, Sendable {
         }
         switch call.name {
         case "list_items":
-            var category: ScanCategory?
-            if let raw = arguments["category"] as? String {
-                guard let parsed = ScanCategory(rawValue: raw) else { return .failure(.invalidArguments("неизвестная категория \(raw)")) }
-                category = parsed
+            do throws(ToolParseError) {
+                return .success(try parseListItems(arguments))
+            } catch {
+                return .failure(error)
             }
-            let limit = min(max((arguments["limit"] as? NSNumber)?.intValue ?? 50, 1), 200)
-            return .success(.listItems(
-                category: category,
-                minBytes: (arguments["minBytes"] as? NSNumber)?.int64Value,
-                olderThanDays: (arguments["olderThanDays"] as? NSNumber)?.intValue,
-                limit: limit
-            ))
         case "item_details":
             guard let id = arguments["id"] as? String, !id.isEmpty else { return .failure(.invalidArguments("нужен id")) }
             return .success(.itemDetails(id: id))
@@ -85,5 +78,40 @@ enum AssistantTool: Equatable, Sendable {
             }
             return .success(.proposePlan(proposal))
         }
+    }
+
+    // Strict on purpose: a filter the model asked for must never be silently dropped, otherwise it
+    // would believe a narrowed list was returned. An explicit JSON null counts as "not provided".
+    private static func parseListItems(_ arguments: [String: Any]) throws(ToolParseError) -> AssistantTool {
+        var category: ScanCategory?
+        if let value = provided(arguments["category"]) {
+            guard let raw = value as? String else { throw .invalidArguments("category должно быть строкой") }
+            guard let parsed = ScanCategory(rawValue: raw) else { throw .invalidArguments("неизвестная категория \(raw)") }
+            category = parsed
+        }
+        let limit = try number("limit", in: arguments, allowNegative: true)
+        let minBytes = try number("minBytes", in: arguments, allowNegative: false)
+        let olderThanDays = try number("olderThanDays", in: arguments, allowNegative: false)
+        return .listItems(
+            category: category,
+            minBytes: minBytes?.int64Value,
+            olderThanDays: olderThanDays?.intValue,
+            limit: min(max(limit?.intValue ?? 50, 1), 200)
+        )
+    }
+
+    private static func provided(_ value: Any?) -> Any? {
+        guard let value, !(value is NSNull) else { return nil }
+        return value
+    }
+
+    // JSON booleans are NSNumbers too, so they are rejected explicitly.
+    private static func number(_ key: String, in arguments: [String: Any], allowNegative: Bool) throws(ToolParseError) -> NSNumber? {
+        guard let value = provided(arguments[key]) else { return nil }
+        guard let number = value as? NSNumber, CFGetTypeID(number) != CFBooleanGetTypeID() else {
+            throw .invalidArguments("\(key) должно быть числом")
+        }
+        if !allowNegative && number.doubleValue < 0 { throw .invalidArguments("\(key) не может быть отрицательным") }
+        return number
     }
 }
