@@ -77,7 +77,7 @@ These invariants must be preserved in all changes:
 3. **Preview before delete** — user must see paths and sizes before any deletion is triggered.
 4. **`SafetyRules.isSafe(_:)` gates every delete call** in `ScanEngine.delete()`.
 5. **Never touch:** `/System`, `/private/var/vm` (swap), `/dev`, `/cores`, or anything outside the whitelist.
-6. **Assistant never deletes or quits** — `SpotlessMac/Assistant/` has no access to deletion, process-quit (Memory section), process-spawn or Docker/uninstall APIs. Its only outward effect is the `stagePlan` closure, which marks existing scan items for the user's review. Enforced by `AssistantIsolationTests`; never weaken its token list.
+6. **Assistant never deletes or quits** — `SpotlessMac/Assistant/` has no access to deletion, process-quit (Memory section), process-spawn or Docker/uninstall APIs. Its only effect on the user's files and apps is the `stagePlan` closure, which marks existing scan items for the user's review (it also talks to the configured LLM endpoint and stores its own conversation file). Enforced by `AssistantIsolationTests`; never weaken its token list — extend it whenever a new type that deletes, spawns processes or quits apps is added.
 
 ## Adding a new scanner
 
@@ -97,5 +97,5 @@ See `CachesScanner.swift` as the canonical pattern:
 | `ScanEngine/SafetyRules.swift` | Whitelist + forbidden paths — edit here to expand scan scope |
 | `ScanEngine/ScanEngine.swift` | Registers scanners; only place `trashItem` calls live |
 | `ScanEngine/Scanner.swift` | Protocol all scanners implement |
-| `ViewModels/ScanViewModel.swift` | Only ViewModel; drives scan + delete from the UI |
+| `ViewModels/ScanViewModel.swift` | Main scan ViewModel; drives scan + delete from the UI |
 | `Assistant/AssistantViewModel.swift` | AI cleanup assistant; receives only a snapshot closure and `stagePlan` |

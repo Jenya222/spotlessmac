@@ -11,22 +11,34 @@ final class AssistantIsolationTests: XCTestCase {
         "cleanCache", "URL(fileURLWithPath",
         // Memory section (quits apps): the assistant must not reach it either.
         "MemoryViewModel", "AppTerminator", "NSRunningApplication", "terminate(", "forceTerminate", "kill(",
+        // Other ways to spawn processes or mutate files. A bare "system(" is deliberately absent:
+        // it collides with AssistantPrompt.system(toolsEnabled:).
+        "posix_spawn", "NSAppleScript", "popen(", "rmdir(", "FileHandle", "replaceItem", "createFile(",
+        "Darwin.system", "NSTask",
     ]
     private let allowances: [String: Set<String>] = ["ConversationStore.swift": ["FileManager"]]
     private let allowedFileManagerMembers: Set<String> = ["urls", "createDirectory", "homeDirectoryForCurrentUser"]
 
+    // Every regular file under SpotlessMac/Assistant, at any depth and with any extension.
     private var assistantSources: [URL] {
         get throws {
             let root = URL(filePath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
                 .appending(path: "SpotlessMac/Assistant")
-            return try FileManager.default.contentsOfDirectory(at: root, includingPropertiesForKeys: nil)
-                .filter { $0.pathExtension == "swift" }
+            let enumerator = try XCTUnwrap(FileManager.default.enumerator(
+                at: root, includingPropertiesForKeys: [.isRegularFileKey]))
+            var files: [URL] = []
+            for case let url as URL in enumerator where url.lastPathComponent != ".DS_Store" {
+                if try url.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile == true {
+                    files.append(url)
+                }
+            }
+            return files
         }
     }
 
     func testAssistantModuleHasNoAccessToDeletionOrProcessAPIs() throws {
         let files = try assistantSources
-        XCTAssertGreaterThan(files.count, 10, "Assistant sources not found")
+        XCTAssertGreaterThanOrEqual(files.count, 18, "Assistant sources not found")
         var violations: [String] = []
         for file in files {
             let source = try String(contentsOf: file, encoding: .utf8)
@@ -47,14 +59,39 @@ final class AssistantIsolationTests: XCTestCase {
         }
         XCTAssertFalse(members.isEmpty)
         XCTAssertEqual(Set(members).subtracting(allowedFileManagerMembers), [])
+        // Every mention of FileManager must be a direct `FileManager.default.<member>` call:
+        // aliases (`let fm = FileManager.default`) and line-broken uses would dodge the member check.
+        let mentions = source.components(separatedBy: "FileManager").count - 1
+        XCTAssertEqual(mentions, members.count, "Only direct FileManager.default.<member> uses are allowed")
+    }
+
+    // The view model receives exactly these capabilities and nothing else.
+    @MainActor
+    func testViewModelDependenciesExposeOnlyTheApprovedCapabilities() {
+        let dependencies = AssistantViewModel.Dependencies(
+            settingsStore: AssistantSettingsStore(defaults: makeDefaults()),
+            keyStore: FakeKeyStore(),
+            makeClient: { _, _ in FakeLLMClient([]) },
+            snapshot: { .sample() },
+            stagePlan: { _ in },
+            conversationStore: nil,
+            homePath: SystemSnapshot.testHome)
+        let labels = Mirror(reflecting: dependencies).children.compactMap(\.label)
+        XCTAssertEqual(Set(labels), [
+            "settingsStore", "keyStore", "makeClient", "snapshot", "stagePlan", "conversationStore",
+            "homePath", "refreshContext", "now",
+        ])
+        XCTAssertEqual(labels.count, 9)
     }
 
     func testToolSetIsClosedAndReadOnly() {
         XCTAssertEqual(AssistantTool.names, ["list_items", "item_details", "propose_plan"])
+        XCTAssertEqual(AssistantTool.specs.map(\.name), AssistantTool.names)
         for name in ["delete_file", "trash", "run_shell", "rm", "exec", "quit_app", "kill_process"] {
-            let outcome = AssistantToolbox.execute(ToolCall(id: "x", name: name, argumentsJSON: "{}"), snapshot: .sample()) { $0 }
+            let call = ToolCall(id: "x", name: name, argumentsJSON: "{}")
+            XCTAssertEqual(AssistantTool.parse(call), .failure(.unknownTool(name)), name)
+            let outcome = AssistantToolbox.execute(call, snapshot: .sample()) { $0 }
             XCTAssertNil(outcome.proposal, name)
-            XCTAssertTrue(outcome.resultText.contains("не существует"), name)
         }
     }
 }
