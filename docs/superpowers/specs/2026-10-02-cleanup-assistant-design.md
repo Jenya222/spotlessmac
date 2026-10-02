@@ -17,9 +17,9 @@ Success criteria:
   in Settings, picks a model, and verifies the connection.
 - User chats with the assistant in a dedicated tab; the assistant sees the current
   system snapshot (disk, categories, largest items, Docker, leftovers, last cleanup).
-- User can ask "What is this? Can I delete it?" from a row in Cleaning, Uninstaller
+- User can ask "What is this? Can I delete it?" from a row in the «Освободить место» list, Uninstaller
   leftovers and Docker.
-- The assistant can propose a plan; the user opens it in the normal Cleaning preview
+- The assistant can propose a plan; the user opens it in the normal «Освободить место» preview
   and trashes items themselves.
 - No code path exists from the assistant to any deletion API (enforced by tests).
 
@@ -34,7 +34,7 @@ scan-aware chat that stages a reviewable plan is not offered by competitors.
 | D1 | Capability level: **advise + stage a selection** (no autonomous actions, no rescans). |
 | D2 | Providers: **Ollama Cloud, local Ollama, OpenAI-compatible** (two client implementations behind one protocol). |
 | D3 | Privacy: for cloud providers paths are **redacted**; local Ollama receives full paths; one-time cloud disclosure before first send. |
-| D4 | Entry points: **Assistant tab** + **"Ask assistant"** on rows in Cleaning, Uninstaller leftovers, Docker. |
+| D4 | Entry points: **Assistant tab** + **"Ask assistant"** on rows in the «Освободить место» list (`StorageRecoveryView`), Uninstaller leftovers, Docker. |
 | D5 | History: **last conversation persisted** to Application Support (JSON), restored on launch. |
 | D6 | Plan mechanism: **hybrid** — native tool calling when the model supports it, fenced `spotless-plan` block otherwise. |
 | D7 | No-delete guarantee enforced **architecturally** (capability isolation + closed tool set + source guard test), not by prompt. |
@@ -59,7 +59,7 @@ New folder `SpotlessMac/Assistant/`.
 | `AssistantTool` | Closed `enum`: `listItems(category:minBytes:olderThanDays:)`, `itemDetails(id:)`, `proposePlan(ids:filters:reason:)`. JSON schemas for both providers. |
 | `AssistantToolbox` | Executes tools against an immutable `SystemSnapshot` only. Unknown tool names / invalid args → error result returned to the model + `Logger` warning. |
 | `PlanParser` | Fallback: extracts and strips a fenced ` ```spotless-plan ` JSON block from assistant text. |
-| `PlanResolver` | Resolves IDs + filters (`category`, `olderThanDays`, `minBytes`) against the snapshot. Drops unknown IDs and items with disposition `inspectOnly` or `personalData`. Output: `AssistantPlan { itemIDs: [ScanItem.ID], totalBytes, reason, skipped: [(label, count)] }`. |
+| `PlanResolver` | Resolves IDs + filters (`category` required, optional `olderThanDays`, `minBytes`; age measured from `snapshot.takenAt`) against the snapshot. Drops unknown IDs and items with disposition `inspectOnly` or `personalData`. Only batch-cleanable items (`ScanCategory.isBatchCleanable`: user caches, developer caches, logs) are selectable; other deletable items go to `manualReview` (deleted one-by-one by the user). Output: `AssistantPlan { itemIDs: [UUID], totalBytes, reason, skipped: [SkippedGroup], manualReview: [String] }`. |
 | `ConversationStore` | Saves/loads the last conversation to `~/Library/Application Support/SpotlessMac/assistant-conversation.json`. Corrupt file → empty conversation. |
 | `AssistantViewModel` | `@Observable @MainActor`. Messages, streaming state, cancel, tool loop (max 4 rounds), `toolMode = auto` fallback with per-model cache, `newConversation()`, `ask(about:)`, `stagePlan(_:)`. |
 | Views | `AssistantView`, `AssistantMessageView` (block markdown, ported from wooffoow `SummaryMarkdownView`), `AssistantPlanCard`, `AssistantImprovementsPanel`, `AssistantSettingsCard`, `CloudDisclosureSheet`. |
@@ -74,8 +74,9 @@ AssistantView → AssistantViewModel
       .text      → message (PlanParser strips spotless-plan block in fallback mode)
   → PlanResolver → AssistantPlan → plan card in message
   → user taps "Открыть в превью" → stagePlan(plan) closure
-      → ScanViewModel marks isSelected on those items, switches to Cleaning tab
-      → user reviews preview and presses "В корзину" (existing flow, SafetyRules.isSafe)
+      → ScanViewModel.stageSelection marks isSelected on those batch-cleanable items,
+        switches to the «Диск» tab and opens the «Освободить место» sheet (StorageRecoveryView)
+      → user reviews the list and presses the existing delete button (existing confirmation, SafetyRules.isSafe)
 ```
 
 ### Wiring
@@ -85,15 +86,15 @@ AssistantView → AssistantViewModel
   - `snapshotProvider: @MainActor () -> SystemSnapshot`
   - `stagePlan: @MainActor (AssistantPlan) -> Void`
   - `conversationStore`
-- `UninstallViewModel` and `StorageAnalysisViewModel` are hoisted from their views into `ContentView` `@State` so the snapshot can read them and they survive tab switches.
-- `ScanViewModel` gains `stageSelection(_ ids: Set<ScanItem.ID>, source: .assistant)`: sets `isSelected` only for matching existing items, clears others, records `stagedByAssistant` for the preview banner. It never deletes.
+- `UninstallViewModel` is hoisted from `UninstallerView` into `ContentView` `@State` so the snapshot can read leftovers and they survive tab switches. Volume capacity is read directly from `/` resource values (no hoisting of `StorageAnalysisViewModel`).
+- `ScanViewModel` gains `stageSelection(_ ids: Set<UUID>) -> AssistantStaging`: for batch-cleanable items sets `isSelected = ids.contains(id)`, records `assistantStaging` (count, bytes) for the preview banner and sets `recoveryPreviewRequested` so `DiskOverviewView` opens the sheet. Also `lastScanAt`. It never deletes.
 
 ## 4. No-delete guarantee (non-negotiable)
 
 1. **Capability isolation.** Code under `SpotlessMac/Assistant/` holds no reference to `ScanEngine`, `ScanViewModel`, `DockerCleanupViewModel`, `DockerClient`, `UninstallViewModel`, `UninstallEngine`. Its only outward effect is the `stagePlan` closure, which only toggles selection.
 2. **Closed tool set.** `AssistantTool` has exactly three cases, all operating on in-memory snapshot data. No filesystem, process, or network access. Any other tool name from the model is rejected. Raw paths are never accepted as arguments — only snapshot IDs.
-3. **Source guard test.** `AssistantIsolationTests` scans `SpotlessMac/Assistant/**/*.swift` and fails on any of: `trashItem`, `removeItem`, `FileManager`, `unlink`, `Process(`, `NSWorkspace`, `ScanEngine`, `ScanViewModel`, `.delete(`, `DockerClient`, `UninstallEngine`, `URL(fileURLWithPath`. Single allowlisted exception: `ConversationStore.swift` may use `FileManager` to create its own directory and write its own JSON file (checked by asserting the file only references the conversation file URL).
-4. **User-only deletion.** Staged items show a banner in the Cleaning preview: «Выбрано ассистентом: N элементов, X. Проверьте список перед удалением». Deletion requires the user to press «В корзину» and pass the existing confirmation and `SafetyRules.isSafe`. No auto-confirm, no "delete now" from chat, no shortcut.
+3. **Source guard test.** `AssistantIsolationTests` scans `SpotlessMac/Assistant/*.swift` and fails on any of: `trashItem`, `removeItem`, `moveItem`, `copyItem`, `unlink(`, `FileManager`, `Process(`, `NSWorkspace`, `ScanEngine`, `ScanViewModel`, `DockerCleanupViewModel`, `DockerClient`, `DockerCommandRunner`, `UninstallViewModel`, `UninstallEngine`, `deleteWithProgress`, `cleanCache`, `URL(fileURLWithPath`. Single allowlisted exception: `ConversationStore.swift` may use `FileManager`, and only its `urls(for:in:)`, `createDirectory`, `homeDirectoryForCurrentUser` members. (`KeychainStore.delete` for the API key is allowed — it touches only the Keychain item.) Views live in `SpotlessMac/App/`; row focus builders live in `SpotlessMac/ViewModels/`.
+4. **User-only deletion.** Staged items show a banner in the «Освободить место» sheet: «Выбрано ассистентом: N элементов, X. Проверьте список перед удалением». Deletion requires the user to press «В корзину» and pass the existing confirmation and `SafetyRules.isSafe`. No auto-confirm, no "delete now" from chat, no shortcut.
 
 CLAUDE.md "Safety rules" gains rule 6: *Assistant never deletes — the Assistant module has no access to deletion APIs; enforced by `AssistantIsolationTests`.*
 
@@ -106,12 +107,12 @@ CLAUDE.md "Safety rules" gains rule 6: *Assistant never deletes — the Assistan
 - Suggestion chips: «Почему диск заполнен?», «Освободи 20 ГБ безопасно», «Что можно удалить из Docker?», «Хватит ли места на обновление macOS?».
 - Messages: streamed text, block markdown, status line during tool calls («Смотрю кэши разработки…»), caption «модель · время».
 - Plan card: «План: N элементов · X», reason, «Пропущено: …», buttons «Открыть в превью» / «Отклонить».
-- Input: Enter sends, ⇧Enter newline, «Стоп» during streaming.
+- Input: Enter sends, ⌥Enter newline (native multi-line `TextField`), «Стоп» during streaming.
 - Empty states: not configured → «Подключите модель» + button to Settings; errors → message + hint + «Повторить» where relevant.
 - Cloud disclosure (once, before first cloud send; flag `assistantCloudDisclosureAccepted` in UserDefaults): what is sent (categories, sizes, dates, redacted paths) and what is not (file contents). Buttons «Понятно» / «Использовать локальную Ollama».
 
 ### "Ask assistant" entry points
-Context menu item + ⓘ button on `ScanItemRow`, leftover rows in `UninstallerView`, resource rows in `DockerCleanupView`. Switches to the Assistant tab and sends «Что это и можно ли удалить?» with a full item card (path, policy, reason, owner, owner running state via `OwnerActivityChecker` computed outside `Assistant/` and passed in).
+Context menu item + ⓘ button on `StorageRecoveryRow`, leftover rows in `UninstallerView`, resource rows in `DockerCleanupView`. Switches to the Assistant tab and sends «Что это и можно ли удалить?» with a full item card (path, policy, reason, owner, owner running state via `OwnerActivityChecker` computed outside `Assistant/` and passed in).
 
 ### Settings card «АССИСТЕНТ»
 Built with existing `settingsCard(_:icon:iconColor:content:)`:
@@ -180,6 +181,7 @@ Manual: `scripts/install-local-debug.sh`; Ollama Cloud (`gpt-oss:20b`), local Ol
 ## 9. Out of scope (v1)
 
 - Plans for Docker resources and app leftovers (explanations only).
+- Selecting non-batch items (model caches, project artifacts, large files) — they are listed in the plan card for manual removal.
 - Background advice on the Care dashboard.
 - Multiple conversations / history list.
 - Separate framework target for the Assistant module (stronger compile-time isolation; revisit later).
