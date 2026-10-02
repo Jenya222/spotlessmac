@@ -6,7 +6,15 @@ struct ConnectionCheckResult: Equatable, Sendable {
     let toolsSupported: Bool?
 
     static func failure(_ error: Error) -> ConnectionCheckResult {
-        ConnectionCheckResult(ok: false, message: (error as? LLMError)?.userMessage ?? error.localizedDescription, toolsSupported: nil)
+        let message: String
+        if let llmError = error as? LLMError {
+            message = llmError.userMessage
+        } else if error is CancellationError {
+            message = "Проверка отменена"
+        } else {
+            message = error.localizedDescription
+        }
+        return ConnectionCheckResult(ok: false, message: message, toolsSupported: nil)
     }
 }
 
@@ -35,7 +43,11 @@ enum AssistantConnectionTester {
         }
     }
 
+    // Cancelling the consumer ends the stream normally, so success needs an explicit `.done`.
     private static func drain(_ stream: AsyncThrowingStream<ChatEvent, Error>) async throws {
-        for try await _ in stream {}
+        var finished = false
+        for try await event in stream where event == .done { finished = true }
+        try Task.checkCancellation()
+        if !finished { throw LLMError.streamInterrupted }
     }
 }

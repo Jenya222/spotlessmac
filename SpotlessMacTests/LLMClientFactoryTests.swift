@@ -65,4 +65,29 @@ final class LLMClientFactoryTests: XCTestCase {
         XCTAssertEqual(result.message, LLMError.unauthorized.userMessage)
         XCTAssertNil(result.toolsSupported)
     }
+
+    func testCancelledCheckIsNotReportedAsSuccess() async throws {
+        let client = FakeLLMClient([.hang])
+        let task = Task { await AssistantConnectionTester.check(client: client, model: "m") }
+        try await Task.sleep(nanoseconds: 50_000_000)
+        task.cancel()
+        let result = await task.value
+        XCTAssertFalse(result.ok)
+        XCTAssertNil(result.toolsSupported)
+    }
+
+    func testStreamEndingWithoutDoneIsNotSuccess() async {
+        let client = FakeLLMClient([.events([.text("x")])])
+        let result = await AssistantConnectionTester.check(client: client, model: "m")
+        XCTAssertFalse(result.ok)
+        XCTAssertEqual(result.message, LLMError.streamInterrupted.userMessage)
+        XCTAssertNil(result.toolsSupported)
+    }
+
+    func testCancellationFailureMessage() {
+        let result = ConnectionCheckResult.failure(CancellationError())
+        XCTAssertFalse(result.ok)
+        XCTAssertEqual(result.message, "Проверка отменена")
+        XCTAssertNil(result.toolsSupported)
+    }
 }
