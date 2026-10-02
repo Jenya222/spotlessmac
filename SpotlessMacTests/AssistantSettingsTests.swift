@@ -22,6 +22,43 @@ final class AssistantSettingsTests: XCTestCase {
         XCTAssertEqual(settings.model, "")
     }
 
+    // Final review, item 2: a saved token is only ever offered to the provider and host it was saved for.
+    func testSavedTokenBelongsToSavedProviderAndHostOnly() {
+        var saved = AssistantSettings()
+        saved.switchProvider(to: .openAICompatible)
+        saved.baseURL = "https://api.openai.com"
+        var edited = saved
+        XCTAssertTrue(edited.sharesTokenEndpoint(with: saved))
+        edited.baseURL = "https://API.OpenAI.com/v1"
+        XCTAssertTrue(edited.sharesTokenEndpoint(with: saved), "host comparison ignores case, path and scheme details")
+        edited.baseURL = "https://evil.example.com"
+        XCTAssertFalse(edited.sharesTokenEndpoint(with: saved))
+        edited.baseURL = "https://api.openai.com.evil.example"
+        XCTAssertFalse(edited.sharesTokenEndpoint(with: saved))
+        edited.baseURL = "https://api.openai.com"
+        XCTAssertTrue(edited.sharesTokenEndpoint(with: saved), "going back to the saved host restores the match")
+        edited.switchProvider(to: .ollamaCloud)
+        XCTAssertFalse(edited.sharesTokenEndpoint(with: saved), "another provider never shares the token")
+    }
+
+    func testSavedTokenDoesNotFollowSameProviderDefaultAddressWhenSavedHostWasCustom() {
+        var saved = AssistantSettings()
+        saved.switchProvider(to: .openAICompatible)
+        saved.baseURL = "https://llm.internal.example"
+        var edited = saved
+        edited.switchProvider(to: .openAICompatible)
+        XCTAssertFalse(edited.sharesTokenEndpoint(with: saved))
+    }
+
+    func testUnparsableAddressesShareTheTokenOnlyWhenIdentical() {
+        var saved = AssistantSettings()
+        saved.baseURL = "not a url"
+        var edited = saved
+        XCTAssertTrue(edited.sharesTokenEndpoint(with: saved))
+        edited.baseURL = "not a url either"
+        XCTAssertFalse(edited.sharesTokenEndpoint(with: saved))
+    }
+
     func testSendsDataOffDevice() {
         var settings = AssistantSettings()
         XCTAssertTrue(settings.sendsDataOffDevice)

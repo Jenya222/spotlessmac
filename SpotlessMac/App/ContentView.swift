@@ -112,6 +112,17 @@ struct ContentView: View {
         }
     }
 
+    // Project roots the redactor must hide from cloud providers. Roots that PathRedactor already treats
+    // as personal home folders (~/MyProjects, ...) are left out so they keep their readable
+    // "~/MyProjects/<папка-N>" form; any other root (~/work, /Volumes/Ext/clients) becomes "<проекты-K>".
+    // Read once when the assistant is created: roots registered later apply after the next launch.
+    private static func registeredProjectRoots(home: String) -> [String] {
+        let homeFolders = Set(PathRedactor.personalRoots.map { home + "/" + $0 })
+        return SafetyRules.projectRoots
+            .map { $0.path(percentEncoded: false) }
+            .filter { root in !homeFolders.contains(root.hasSuffix("/") ? String(root.dropLast()) : root) }
+    }
+
     private func makeAssistant() -> AssistantViewModel {
         let scan = viewModel
         let docker = dockerViewModel
@@ -133,6 +144,7 @@ struct ContentView: View {
             },
             conversationStore: ConversationStore(fileURL: ConversationStore.defaultFileURL()),
             homePath: NSHomeDirectory(),
+            personalRoots: Self.registeredProjectRoots(home: NSHomeDirectory()),
             refreshContext: { await memory.refresh() }
         ))
     }

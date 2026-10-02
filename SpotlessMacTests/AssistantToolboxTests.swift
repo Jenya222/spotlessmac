@@ -110,7 +110,7 @@ final class AssistantToolboxTests: XCTestCase {
         XCTAssertTrue(logs.contains("(категория: logs)"))
         XCTAssertFalse(logs.contains("старше"))
         let all = run("list_items", #"{"category":"developer_caches","olderThanDays":30,"minBytes":1000000000}"#).resultText
-        XCTAssertTrue(all.contains("категория: developer_caches; старше 30 дн.; от 1 GB"))
+        XCTAssertTrue(all.contains("категория: developer_caches; старше 30 дн.; от \(SnapshotRenderer.bytes(1_000_000_000))"))
         let unfiltered = run("list_items", "{}").resultText
         XCTAssertFalse(unfiltered.contains("категория:"))
         XCTAssertFalse(unfiltered.contains("старше"))

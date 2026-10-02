@@ -12,7 +12,8 @@ final class AssistantViewModelTests: XCTestCase {
         provider: AssistantProvider = .ollamaLocal,
         toolMode: AssistantToolMode = .auto,
         conversationStore: ConversationStore? = nil,
-        snapshot: SystemSnapshot = .sample()
+        snapshot: SystemSnapshot = .sample(),
+        personalRoots: [String] = []
     ) -> AssistantViewModel {
         settingsStore = AssistantSettingsStore(defaults: makeDefaults())
         var settings = AssistantSettings()
@@ -32,6 +33,7 @@ final class AssistantViewModelTests: XCTestCase {
             },
             conversationStore: conversationStore,
             homePath: SystemSnapshot.testHome,
+            personalRoots: personalRoots,
             now: { SystemSnapshot.testDate }
         ))
     }
@@ -327,8 +329,9 @@ final class AssistantViewModelTests: XCTestCase {
         settingsStore.cloudDisclosureAccepted = true
         await sendAndWait(vm, "Можно удалить /Users/tester/Downloads/big.iso?")
         let messages = client.requests[0].messages
-        XCTAssertTrue(messages[1].content.contains("c6 | ~/Downloads/<папка-3> |"), "snapshot numbers aliases in item order")
-        XCTAssertEqual(messages.last?.content, "Можно удалить ~/Downloads/<папка-3>?")
+        // Every folder and file name gets its own alias: secret-client 1, Мой проект 2, recording.m4a 3, big.iso 4.
+        XCTAssertTrue(messages[1].content.contains("c6 | ~/Downloads/<папка-4> |"), "snapshot numbers aliases in item order")
+        XCTAssertEqual(messages.last?.content, "Можно удалить ~/Downloads/<папка-4>?")
     }
 
     // Fix round 1, item 1: retry must not bypass the first-send disclosure after switching to a cloud provider.
@@ -410,6 +413,91 @@ final class AssistantViewModelTests: XCTestCase {
         XCTAssertTrue(question.hasPrefix("Что это и можно ли это удалить?"))
         XCTAssertTrue(question.contains("Путь: /Users/tester/Library/Developer/Xcode/DerivedData"))
         XCTAssertTrue(question.contains("- Размер: 9,8 ГБ"))
+    }
+
+    // Final review, item 1: nested project folders and registered roots must not reach a cloud provider.
+    private func snapshotReplacingC2(path: String, reason: String) -> SystemSnapshot {
+        var snapshot = SystemSnapshot.sample()
+        snapshot.items = snapshot.items.map { item in
+            guard item.shortID == "c2" else { return item }
+            return SnapshotItem(shortID: item.shortID, itemID: item.itemID, path: path, bytes: item.bytes,
+                                category: item.category, disposition: item.disposition,
+                                reason: reason, modifiedAt: item.modifiedAt, owner: item.owner)
+        }
+        return snapshot
+    }
+
+    func testCloudRequestsHideNestedProjectNamesInPathsAndReasons() async {
+        let snapshot = snapshotReplacingC2(path: "/Users/tester/MyProjects/clients/acme-bank/node_modules",
+                                           reason: "Зависимости или сборка проекта acme-bank.")
+        let call = ToolCall(id: "d", name: "item_details", argumentsJSON: #"{"id":"c2"}"#)
+        let client = FakeLLMClient([.events([.toolCalls([call]), .done]), .events([.text("Папка <папка-2> — проект."), .done])])
+        let vm = makeViewModel(client, provider: .ollamaCloud, snapshot: snapshot)
+        settingsStore.cloudDisclosureAccepted = true
+        await sendAndWait(vm, "Что в c2?")
+        XCTAssertEqual(client.requests.count, 2)
+        for (index, request) in client.requests.enumerated() {
+            for message in request.messages {
+                XCTAssertFalse(message.content.contains("acme-bank"), "request \(index) leaks the project name")
+                XCTAssertFalse(message.content.contains("clients"), "request \(index) leaks the parent folder")
+                XCTAssertFalse(message.content.contains("/Users/tester"), "request \(index) leaks the home path")
+            }
+        }
+        let card = client.requests[1].messages.last?.content ?? ""
+        XCTAssertTrue(card.contains("Путь: ~/MyProjects/<папка-1>/<папка-2>/node_modules"), card)
+        XCTAssertTrue(card.contains("Причина: Зависимости или сборка проекта <папка-2>."), card)
+        XCTAssertEqual(vm.messages.last?.text, "Папка acme-bank — проект.")
+    }
+
+    func testCloudRequestsHideRegisteredProjectRootsAndSurviveNewConversation() async {
+        let snapshot = snapshotReplacingC2(path: "/Volumes/Ext/clients/Мой клиент/node_modules",
+                                           reason: "Зависимости проекта Мой клиент")
+        let call = ToolCall(id: "d", name: "item_details", argumentsJSON: #"{"id":"c2"}"#)
+        let client = FakeLLMClient([
+            .events([.toolCalls([call]), .done]), .events([.text("Папка <проекты-1>/<папка-1>."), .done]),
+            .events([.text("ok"), .done]),
+        ])
+        let vm = makeViewModel(client, provider: .ollamaCloud, snapshot: snapshot, personalRoots: ["/Volumes/Ext/clients"])
+        settingsStore.cloudDisclosureAccepted = true
+        await sendAndWait(vm, "Что в c2? Это /Volumes/Ext/clients/Мой клиент/node_modules")
+        for request in client.requests {
+            for message in request.messages {
+                for leak in ["Ext", "clients", "Мой клиент"] {
+                    XCTAssertFalse(message.content.contains(leak), "\(leak) leaked: \(message.content)")
+                }
+            }
+        }
+        let card = client.requests[1].messages.last?.content ?? ""
+        XCTAssertTrue(card.contains("Путь: <проекты-1>/<папка-1>/node_modules"), card)
+        XCTAssertEqual(vm.messages.last?.text, "Папка /Volumes/Ext/clients/Мой клиент.")
+
+        vm.newConversation()
+        await sendAndWait(vm, "Ещё раз про /Volumes/Ext/clients/Мой клиент")
+        let again = client.requests[2].messages.map(\.content).joined(separator: "\n")
+        XCTAssertFalse(again.contains("clients"))
+        XCTAssertTrue(again.contains("<проекты-1>"))
+    }
+
+    // Final review, item 6: a row shortcut during an answer keeps its question for the user instead of dropping it.
+    func testAskWhileStreamingPutsTheQuestionIntoAnEmptyDraft() async {
+        let client = FakeLLMClient([.hang, .events([.text("ok"), .done])])
+        let vm = makeViewModel(client)
+        vm.send("?")
+        XCTAssertTrue(vm.isStreaming)
+        try? await Task.sleep(for: .milliseconds(50))
+        let focus = AssistantFocus(title: "DerivedData", path: "/Users/tester/Library/Developer/Xcode/DerivedData", facts: ["Размер: 9,8 ГБ"])
+        vm.ask(about: focus)
+        XCTAssertTrue(vm.draft.hasPrefix("Что это и можно ли это удалить?"))
+        XCTAssertTrue(vm.draft.contains("Путь: /Users/tester/Library/Developer/Xcode/DerivedData"))
+        XCTAssertEqual(vm.messages.count, 2, "nothing is sent while the answer is streaming")
+
+        vm.draft = "мой черновик"
+        vm.ask(about: focus)
+        XCTAssertEqual(vm.draft, "мой черновик", "an existing draft is never overwritten")
+
+        vm.stop()
+        await vm.waitUntilIdle()
+        XCTAssertEqual(client.requests.count, 1)
     }
 
     // Fix round 1 (task 16): asking from a result row on an unconfigured assistant must do nothing

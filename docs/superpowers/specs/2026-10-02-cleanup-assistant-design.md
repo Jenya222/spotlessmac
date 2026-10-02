@@ -49,7 +49,7 @@ New folder `SpotlessMac/Assistant/`.
 | `APIKeyStoring` / `AssistantKeyStore` | Protocol + Keychain implementation over existing `KeychainStore`, account `assistantAPIKey`. Fake in tests. |
 | `LLMClient` (protocol) | `func stream(_ request: ChatRequest) -> AsyncThrowingStream<ChatEvent, Error>`; `func listModels() async throws -> [String]`. `ChatEvent`: `.text(String)`, `.toolCalls([ToolCall])`, `.done`. |
 | `OllamaClient` | `POST {base}/api/chat`, `stream: true`, NDJSON lines; `tools` when enabled; `Authorization: Bearer` only when key non-empty. Models from `GET {base}/api/tags`. |
-| `OpenAICompatibleClient` | `POST {base}/v1/chat/completions`, `stream: true`, SSE (`data:` / `[DONE]`), accumulates chunked `tool_calls`. Models from `GET {base}/v1/models`. |
+| `OpenAICompatibleClient` | `POST {base}/v1/chat/completions`, `stream: true`, SSE (`data:` / `[DONE]`), accumulates chunked `tool_calls`; sends no `temperature` (OpenAI reasoning models reject it; Ollama gets `options.temperature`). Models from `GET {base}/v1/models`. |
 | `HTTPTransport` | Injectable protocol over `URLSession.bytes(for:)`; stub in tests. Sets `URLRequest.timeoutInterval` explicitly. |
 | `LLMError` | `missingAPIKey`, `unauthorized`, `modelNotFound`, `rateLimited`, `toolsUnsupported`, `connectionRefused`, `timedOut`, `httpStatus(code, body)`, `decodingFailed`, `invalidURL`, `streamInterrupted`; each maps to a Russian user message. |
 | `SystemSnapshot` | `Sendable` value type: volume overview, FDA status, scan timestamp, per-category totals, up to 150 largest `ScanItem`s with short IDs (`c1…`), Docker summary, leftovers summary, last `CleanupReport`, read-only memory info (pressure, used/physical, swap, top-5 user apps). Contains no references to live objects. |
@@ -118,7 +118,7 @@ Context menu item + ⓘ button on `StorageRecoveryRow`, leftover rows in `Uninst
 ### Settings card «АССИСТЕНТ»
 Built with existing `settingsCard(_:icon:iconColor:content:)`:
 - Provider segmented control; switching applies preset URL/model. Switching to a different provider clears the token field (a key typed for one endpoint must never reach another); switching back to the saved provider restores the saved key.
-- URL field; token `SecureField` (hidden for local Ollama, optional for OpenAI-compatible) with hint «Хранится в Keychain».
+- URL field; token `SecureField` (hidden for local Ollama, optional for OpenAI-compatible) with hint «Хранится в Keychain». The saved token follows only the saved provider and host: switching the provider or editing the address to another host clears the field, returning to the saved host restores the saved token.
 - Model picker populated from `listModels()` with refresh button, plus free-text entry.
 - Tool mode «Авто / Вкл / Выкл» with explanation; timeout stepper.
 - «Проверить подключение»: short real request; shows «✓ Ответила <model> · инструменты поддерживаются/не поддерживаются» or the mapped error. Result seeds the per-model tool-support cache. Success requires a stream that ends with an explicit `.done`: a cancelled check reports «Проверка отменена» and a truncated stream fails with `streamInterrupted` instead of passing.
@@ -150,10 +150,11 @@ Docker: виртуальный диск 48 ГБ, можно освободить
 
 **Redaction (only when `sendsDataOffDevice`, see D3):**
 - `/Users/<name>` → `~`.
-- First path component under `~/Documents`, `~/Desktop`, `~/Downloads`, `~/Projects`, `~/MyProjects`, `~/Developer`, `~/src`, `~/code`, `~/Movies`, `~/Music`, `~/Pictures` → `<папка-N>`, numbering stable within a conversation.
+- Under `~/Documents`, `~/Desktop`, `~/Downloads`, `~/Projects`, `~/MyProjects`, `~/Developer`, `~/src`, `~/code`, `~/Movies`, `~/Music`, `~/Pictures` **every** path component → `<папка-N>`, keyed by its full prefix (the same folder always gets the same alias, numbering stable within a conversation). Well-known artifact directories carry no personal information and stay readable: `node_modules`, `.build`, `build`, `dist`, `target`, `.venv`, `venv`, `Pods`, `DerivedData`, `.gradle`, `__pycache__`, `.next`, `.nuxt`, `.cache`, `vendor`.
+- Registered project roots (`SafetyRules.projectRoots`, e.g. `~/work`, `/Volumes/Ext/clients`; passed in as `AssistantViewModel.Dependencies.personalRoots`) → the root prefix becomes `<проекты-K>` (K stable per root, numbered in order of first use) and the path below it is aliased like a personal folder. Home roots that are already personal folders (`~/MyProjects`) are not passed. The roots are read when the assistant is created.
 - Known non-personal cache paths (`~/Library/Caches/...`, `DerivedData`, `~/.cache/huggingface`, etc.) kept verbatim.
 - The computer name is never put into the snapshot; a non-default volume name is replaced with «системный диск».
-- Model output is shown as-is; `<папка-N>` tokens in it are mapped back to real paths for display using the in-memory map (the map itself is never persisted or sent). The restored text is what gets persisted in the history, so history is re-redacted on every send: `redactText` re-aliases already-registered folder names (with or without a `~/<root>/` prefix) as well as home paths.
+- Model output is shown as-is; `<папка-N>` / `<проекты-K>` tokens in it are mapped back to real names for display using the in-memory map (the map itself is never persisted or sent). The restored text is what gets persisted in the history, so history is re-redacted on every send: `redactText` re-aliases already-registered folder names (with or without a `~/<root>/` prefix) as well as home paths.
 - The formatter the view model hands to the renderer and the toolbox redacts home-prefixed paths and also free text (item reasons, tool output, user messages) through `redactText`; a plan's `reason` is restored for display too.
 
 **Tools:**
@@ -179,7 +180,7 @@ Docker: виртуальный диск 48 ГБ, можно освободить
 ## 8. Testing
 
 XCTest with stubbed `HTTPTransport` and fake `APIKeyStoring`:
-`OllamaClientTests`, `OpenAICompatibleClientTests`, `LLMErrorTests`, `SnapshotRendererTests`, `PathRedactorTests`, `AssistantPlanTests` (parser + resolver), `AssistantToolboxTests`, `AssistantMarkdownBlocksTests`, `LLMClientFactoryTests`, `AssistantViewModelTests` (streaming, tool-loop cap, auto fallback + cache, cancel, plan card vs. staging), `ConversationStoreTests`, `AssistantSettingsTests`, `AssistantIsolationTests`, and `AssistantStagingTests` for `ScanViewModel.stageSelection` (selects only existing IDs, never deletes, returns `nil` and changes nothing for a stale plan).
+`OllamaClientTests`, `OpenAICompatibleClientTests`, `LLMErrorTests`, `SnapshotRendererTests`, `PathRedactorTests`, `AssistantPlanTests` (parser + resolver), `AssistantToolboxTests`, `AssistantMarkdownBlocksTests`, `LLMClientFactoryTests`, `AssistantViewModelTests` (streaming, tool-loop cap, auto fallback + cache, cancel, plan card vs. staging), `ConversationStoreTests`, `AssistantSettingsTests`, `AssistantIsolationTests`, and `AssistantStagingTests` for `ScanViewModel.stageSelection` (selects only existing IDs, never deletes, returns `nil` and changes nothing for a stale plan or while a scan is running).
 
 Manual: `scripts/install-local-debug.sh`; Ollama Cloud (`gpt-oss:20b`), local Ollama with a tool-capable model and a tool-less model, LM Studio (OpenAI-compatible); verify a model attempting `delete_file` is refused and logged.
 

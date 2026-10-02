@@ -94,7 +94,7 @@ struct AssistantSettingsCard: View {
             }
             .buttonStyle(.bordered)
 
-            Text("Для облачных провайдеров пути обезличиваются: имя пользователя заменяется на ~, папки проектов — на <папка-N>. Содержимое файлов не отправляется.")
+            Text("Для облачных провайдеров пути обезличиваются: имя пользователя заменяется на ~, названия папок и файлов в личных папках и папках проектов — на <папка-N>. Содержимое файлов не отправляется.")
                 .font(.system(size: 11))
                 .foregroundStyle(Theme.textTertiary)
         }
@@ -103,6 +103,15 @@ struct AssistantSettingsCard: View {
             loaded = true
             reset()
         }
+        // The saved token follows only the saved provider and host: editing the address to another
+        // host clears it, and returning to the saved host brings the saved token back.
+        .onChange(of: tokenBelongsToDraft) { _, belongs in
+            apiKey = belongs ? assistant.currentAPIKey() : ""
+        }
+    }
+
+    private var tokenBelongsToDraft: Bool {
+        draft.sharesTokenEndpoint(with: assistant.settings)
     }
 
     private var providerBinding: Binding<AssistantProvider> {
@@ -110,8 +119,8 @@ struct AssistantSettingsCard: View {
             get: { draft.provider },
             set: { provider in
                 draft.switchProvider(to: provider)
-                // A key typed for one provider must never reach another endpoint by accident.
-                apiKey = provider == assistant.settings.provider ? assistant.currentAPIKey() : ""
+                // A key typed for one provider or host must never reach another endpoint by accident.
+                apiKey = tokenBelongsToDraft ? assistant.currentAPIKey() : ""
                 models = []
                 status = nil
             }

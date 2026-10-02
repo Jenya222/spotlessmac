@@ -15,8 +15,14 @@ final class AssistantIsolationTests: XCTestCase {
         // it collides with AssistantPrompt.system(toolsEnabled:).
         "posix_spawn", "NSAppleScript", "popen(", "rmdir(", "FileHandle", "replaceItem", "createFile(",
         "Darwin.system", "NSTask",
+        // Low-level deletion and write paths. Any "Darwin." access is refused; the only file the assistant
+        // may write is its own conversation, through ConversationStore.
+        "unlinkat", "removefile", "Darwin.", ".write(to:", ".write(toFile:",
     ]
-    private let allowances: [String: Set<String>] = ["ConversationStore.swift": ["FileManager"]]
+    private let allowances: [String: Set<String>] = [
+        "ConversationStore.swift": ["FileManager", ".write(to:"],
+    ]
+    private let allowedImports: Set<String> = ["Foundation", "Observation", "os"]
     private let allowedFileManagerMembers: Set<String> = ["urls", "createDirectory", "homeDirectoryForCurrentUser"]
 
     // Every regular file under SpotlessMac/Assistant, at any depth and with any extension.
@@ -50,6 +56,40 @@ final class AssistantIsolationTests: XCTestCase {
         XCTAssertEqual(violations, [], "Assistant must never reach deletion or process APIs")
     }
 
+    // `Process(` is in the token list; this also catches `Process.run`, a bare `Process` type and aliases.
+    func testAssistantModuleNeverMentionsTheProcessType() throws {
+        let regex = try NSRegularExpression(pattern: #"\bProcess\b(?!Info)"#)
+        var violations: [String] = []
+        for file in try assistantSources {
+            let source = try String(contentsOf: file, encoding: .utf8)
+            if regex.firstMatch(in: source, range: NSRange(source.startIndex..., in: source)) != nil {
+                violations.append(file.lastPathComponent)
+            }
+        }
+        XCTAssertEqual(violations, [], "Assistant must not name Process")
+    }
+
+    // Foundation, Observation and os cannot spawn processes or reach the file system beyond what the token
+    // checks watch; any other module (AppKit, Darwin, Security, ...) needs a deliberate decision here.
+    func testAssistantModuleImportsOnlyApprovedModules() throws {
+        let regex = try NSRegularExpression(
+            pattern: #"(?:^|;)[ \t]*(?:@\w+[ \t]+)*import[ \t]+(?:(?:typealias|struct|class|enum|protocol|let|var|func)[ \t]+)?([A-Za-z_]\w*)"#,
+            options: .anchorsMatchLines)
+        var found = Set<String>()
+        var violations: [String] = []
+        for file in try assistantSources {
+            let source = try String(contentsOf: file, encoding: .utf8)
+            for match in regex.matches(in: source, range: NSRange(source.startIndex..., in: source)) {
+                guard let range = Range(match.range(at: 1), in: source) else { continue }
+                let module = String(source[range])
+                found.insert(module)
+                if !allowedImports.contains(module) { violations.append("\(file.lastPathComponent): import \(module)") }
+            }
+        }
+        XCTAssertFalse(found.isEmpty, "no imports found: the pattern is broken")
+        XCTAssertEqual(violations, [], "Assistant may import only \(allowedImports.sorted())")
+    }
+
     func testConversationStoreUsesOnlyHarmlessFileManagerMembers() throws {
         let file = try XCTUnwrap(try assistantSources.first { $0.lastPathComponent == "ConversationStore.swift" })
         let source = try String(contentsOf: file, encoding: .utf8)
@@ -79,9 +119,9 @@ final class AssistantIsolationTests: XCTestCase {
         let labels = Mirror(reflecting: dependencies).children.compactMap(\.label)
         XCTAssertEqual(Set(labels), [
             "settingsStore", "keyStore", "makeClient", "snapshot", "stagePlan", "conversationStore",
-            "homePath", "refreshContext", "now",
+            "homePath", "personalRoots", "refreshContext", "now",
         ])
-        XCTAssertEqual(labels.count, 9)
+        XCTAssertEqual(labels.count, 10)
     }
 
     func testToolSetIsClosedAndReadOnly() {

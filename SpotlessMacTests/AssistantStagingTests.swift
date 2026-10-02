@@ -46,6 +46,44 @@ final class AssistantStagingTests: XCTestCase {
         XCTAssertFalse(vm.recoveryPreviewRequested)
     }
 
+    private final class ScanCounter: @unchecked Sendable {
+        private let lock = NSLock()
+        private var count = 0
+        func next() -> Int { lock.withLock { count += 1; return count } }
+    }
+
+    // Final review (T13): while a scan runs, `items` still holds the previous scan's list that the
+    // plan was written against, and the scan is about to replace it. Staging then would mark rows that vanish.
+    func testStageSelectionDuringAScanReturnsNilAndChangesNothing() async {
+        let a = item("a", 100, .userCaches, selected: false)
+        let gate = AsyncStream<Void>.makeStream()
+        let started = AsyncStream<Void>.makeStream()
+        let scans = ScanCounter()
+        let vm = ScanViewModel(
+            scanItems: { _ in
+                if scans.next() > 1 {
+                    started.continuation.yield(())
+                    for await _ in gate.stream { break }
+                }
+                return [a]
+            },
+            deleteItems: { _ in XCTFail("staging must never delete"); return [] }
+        )
+        await vm.scan()
+        let before = vm.items.map(\.isSelected)
+        let rescan = Task { await vm.scan() }
+        for await _ in started.stream { break }
+        XCTAssertTrue(vm.isScanning)
+        XCTAssertNil(vm.stageSelection([a.id]))
+        XCTAssertEqual(vm.items.map(\.isSelected), before)
+        XCTAssertNil(vm.assistantStaging)
+        XCTAssertFalse(vm.recoveryPreviewRequested)
+        gate.continuation.yield(())
+        await rescan.value
+        XCTAssertFalse(vm.isScanning)
+        XCTAssertNotNil(vm.stageSelection([a.id]), "staging works again once the scan is over")
+    }
+
     func testScanRecordsTimestamp() async {
         let vm = await scannedViewModel([])
         XCTAssertNotNil(vm.lastScanAt)

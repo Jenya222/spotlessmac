@@ -14,6 +14,8 @@ final class AssistantViewModel {
         var stagePlan: @MainActor (AssistantPlan) -> Bool
         var conversationStore: ConversationStore?
         var homePath: String
+        // Registered project roots (absolute paths): redacted like personal folders for cloud providers.
+        var personalRoots: [String] = []
         // Refreshes read-only context (memory sample) before each answer.
         var refreshContext: @MainActor () async -> Void = {}
         var now: @MainActor () -> Date = { Date() }
@@ -43,7 +45,7 @@ final class AssistantViewModel {
         settings = dependencies.settingsStore.load()
         hasAPIKey = !dependencies.keyStore.readKey().isEmpty
         messages = dependencies.conversationStore?.load() ?? []
-        redactor = PathRedactor(homePath: dependencies.homePath)
+        redactor = PathRedactor(homePath: dependencies.homePath, extraRoots: dependencies.personalRoots)
     }
 
     var isConfigured: Bool {
@@ -83,7 +85,13 @@ final class AssistantViewModel {
         // which shows the setup screen. Never queue a hidden exchange or a disclosure here.
         guard isConfigured else { return }
         let facts = focus.facts.map { "- \($0)" }.joined(separator: "\n")
-        send("Что это и можно ли это удалить?\n\n\(focus.title)\nПуть: \(focus.path)\n\(facts)")
+        let question = "Что это и можно ли это удалить?\n\n\(focus.title)\nПуть: \(focus.path)\n\(facts)"
+        if isStreaming {
+            // The answer in progress is not interrupted: keep the question so the user can send it afterwards.
+            if draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { draft = question }
+            return
+        }
+        send(question)
     }
 
     func acceptCloudDisclosure() {
@@ -129,7 +137,7 @@ final class AssistantViewModel {
         streamTask?.cancel()
         messages = []
         planNotice = nil
-        redactor = PathRedactor(homePath: deps.homePath)
+        redactor = PathRedactor(homePath: deps.homePath, extraRoots: deps.personalRoots)
         persist()
     }
 
@@ -339,10 +347,10 @@ final class AssistantViewModel {
     }
 
     // Formats a path or a piece of user-derived text (snapshot lines, item reasons, tool output) for the model.
-    // Home-prefixed paths go through `redact`; any other text through `redactText`.
+    // Paths inside the home folder or a registered project root go through `redact`; any other text through `redactText`.
     private func format(_ text: String, redacts: Bool) -> String {
         guard redacts else { return text }
-        return text.hasPrefix(deps.homePath) ? redactor.redact(text) : redactor.redactText(text)
+        return redactor.covers(text) ? redactor.redact(text) : redactor.redactText(text)
     }
 
     private func display(_ text: String, redacts: Bool) -> String {

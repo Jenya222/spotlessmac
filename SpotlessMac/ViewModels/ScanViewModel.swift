@@ -179,9 +179,11 @@ final class ScanViewModel {
 
     // Marks only existing batch-cleanable items; never deletes anything. Item IDs change on every
     // scan, so a plan that matches nothing (stale after a rescan or restart) returns nil and
-    // leaves the current selection untouched.
+    // leaves the current selection untouched. While a scan runs, `items` is the previous list that
+    // the scan is about to replace, so staging is refused (nil) until it finishes.
     @discardableResult
     func stageSelection(_ ids: Set<UUID>) -> AssistantStaging? {
+        guard !isScanning else { return nil }
         guard items.contains(where: { $0.category.isBatchCleanable && ids.contains($0.id) }) else { return nil }
         var count = 0
         var bytes: Int64 = 0

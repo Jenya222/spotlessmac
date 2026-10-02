@@ -29,6 +29,16 @@ final class OpenAICompatibleClientTests: XCTestCase {
         XCTAssertNotNil(body["tools"])
     }
 
+    // Final review, item 4: OpenAI reasoning models reject any explicit temperature, so none is sent.
+    func testRequestBodyHasNoTemperature() throws {
+        var req = ChatRequest(model: "o4-mini", messages: [WireMessage(role: .user, content: "hi")])
+        req.temperature = 0.7
+        let body = jsonBody(try client(FakeTransport([])).makeChatRequest(req))
+        XCTAssertNil(body["temperature"])
+        XCTAssertEqual(body["model"] as? String, "o4-mini")
+        XCTAssertEqual(body["stream"] as? Bool, true)
+    }
+
     func testNoAuthorizationWithoutKey() throws {
         let sent = try client(FakeTransport([]), key: "").makeChatRequest(ChatRequest(model: "m", messages: []))
         XCTAssertNil(sent.value(forHTTPHeaderField: "Authorization"))

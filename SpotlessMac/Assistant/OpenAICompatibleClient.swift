@@ -88,10 +88,10 @@ struct OpenAICompatibleClient: LLMClient {
         urlRequest.timeoutInterval = timeout
         urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
         authorize(&urlRequest)
+        // No "temperature": OpenAI reasoning models reject any explicit value, so the server default applies.
         var body: [String: Any] = [
             "model": request.model,
             "stream": true,
-            "temperature": request.temperature,
             "messages": request.messages.map(Self.wire),
         ]
         if !request.tools.isEmpty { body["tools"] = request.tools.map { $0.jsonObject() } }

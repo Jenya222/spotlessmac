@@ -71,6 +71,21 @@ struct AssistantSettings: Codable, Equatable, Sendable {
         }
     }
 
+    // A token saved with `saved` may be offered again only for the same provider and the same host.
+    // Editing the address to another host must not carry the token there. Hosts compare case-insensitively;
+    // addresses without a parsable host match only when they are identical.
+    func sharesTokenEndpoint(with saved: AssistantSettings) -> Bool {
+        guard provider == saved.provider else { return false }
+        guard let host = Self.host(of: baseURL), let savedHost = Self.host(of: saved.baseURL) else {
+            return baseURL == saved.baseURL
+        }
+        return host == savedHost
+    }
+
+    private static func host(of address: String) -> String? {
+        URL(string: address.trimmingCharacters(in: .whitespacesAndNewlines))?.host()?.lowercased()
+    }
+
     private var pointsAtLoopback: Bool {
         let host = URL(string: baseURL)?.host()?.lowercased() ?? ""
         return ["localhost", "127.0.0.1", "::1"].contains(host)
