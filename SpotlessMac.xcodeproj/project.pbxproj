@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		52EFA46EBB0F4DD33B739AC2 /* MemoryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 374BC7ACD20CEE7F7D7CF08E /* MemoryViewModel.swift */; };
+		EAB8D02030D444907CC70F83 /* MemoryViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3E4750E133FA40F702F5B38 /* MemoryViewModelTests.swift */; };
 		8A52BF4B2755F6E08EC666E6 /* MemoryVerdict.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C560EBCBA1BAC2ABAA394FA /* MemoryVerdict.swift */; };
 		89507767455D6EFEFC9D0EBF /* ProcessSafetyRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8767394EBF2EA91969D5038F /* ProcessSafetyRules.swift */; };
 		3281D68A652FB871A751FE55 /* MemoryVerdictTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9113016A0BBFD2907983AE16 /* MemoryVerdictTests.swift */; };
@@ -113,6 +115,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		374BC7ACD20CEE7F7D7CF08E /* MemoryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryViewModel.swift; sourceTree = "<group>"; };
+		C3E4750E133FA40F702F5B38 /* MemoryViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryViewModelTests.swift; sourceTree = "<group>"; };
 		3C560EBCBA1BAC2ABAA394FA /* MemoryVerdict.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryVerdict.swift; sourceTree = "<group>"; };
 		8767394EBF2EA91969D5038F /* ProcessSafetyRules.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessSafetyRules.swift; sourceTree = "<group>"; };
 		9113016A0BBFD2907983AE16 /* MemoryVerdictTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryVerdictTests.swift; sourceTree = "<group>"; };
@@ -243,6 +247,7 @@
 		45819CC578BB45491CC3FC92 /* Memory */ = {
 			isa = PBXGroup;
 			children = (
+				374BC7ACD20CEE7F7D7CF08E /* MemoryViewModel.swift */,
 				3C560EBCBA1BAC2ABAA394FA /* MemoryVerdict.swift */,
 				8767394EBF2EA91969D5038F /* ProcessSafetyRules.swift */,
 				6593FCC39A0414E0C3E12AC7 /* MemoryMonitor.swift */,
@@ -366,6 +371,7 @@
 		AA100001000000000000AA00 /* SpotlessMacTests */ = {
 			isa = PBXGroup;
 			children = (
+				C3E4750E133FA40F702F5B38 /* MemoryViewModelTests.swift */,
 				9113016A0BBFD2907983AE16 /* MemoryVerdictTests.swift */,
 				896D8E874C572A8202C8B50F /* ProcessSafetyRulesTests.swift */,
 				EF40178ECCEF9479DADD6608 /* SystemMemoryReaderTests.swift */,
@@ -550,6 +556,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EAB8D02030D444907CC70F83 /* MemoryViewModelTests.swift in Sources */,
 				3281D68A652FB871A751FE55 /* MemoryVerdictTests.swift in Sources */,
 				4564354336A2DCB7A00EF8D0 /* ProcessSafetyRulesTests.swift in Sources */,
 				4039E8972DAFA49F05DFE984 /* SystemMemoryReaderTests.swift in Sources */,
@@ -587,6 +594,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				52EFA46EBB0F4DD33B739AC2 /* MemoryViewModel.swift in Sources */,
 				8A52BF4B2755F6E08EC666E6 /* MemoryVerdict.swift in Sources */,
 				89507767455D6EFEFC9D0EBF /* ProcessSafetyRules.swift in Sources */,
 				845D2B330BBF9D11646005DF /* MemoryMonitor.swift in Sources */,
