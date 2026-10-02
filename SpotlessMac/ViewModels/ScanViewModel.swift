@@ -15,6 +15,15 @@ final class ScanViewModel {
     var deletionFailures: [DeletionFailure] = []
     var fdaStatus: FDAStatus = .unknown
 
+    // Assistant staging: selection prepared by the assistant for the user's review.
+    struct AssistantStaging: Equatable {
+        let count: Int
+        let bytes: Int64
+    }
+    private(set) var lastScanAt: Date?
+    private(set) var assistantStaging: AssistantStaging?
+    var recoveryPreviewRequested = false
+
     // Smart Care (dashboard one-click flow)
     var isPreparingSmartCare = false
     var isCleaning = false
@@ -116,8 +125,10 @@ final class ScanViewModel {
         scanError = nil
         deletionFailures = []
         defer { isScanning = false }
+        assistantStaging = nil
         do {
             items = try await scanItems(fdaStatus)
+            lastScanAt = Date()
         } catch {
             scanError = error.localizedDescription
         }
@@ -137,6 +148,7 @@ final class ScanViewModel {
         let successIDs = Set(targetItems.map(\.id)).subtracting(failedIDs)
         items.removeAll { successIDs.contains($0.id) }
         cleanupReports = await reports(for: targetItems.filter { successIDs.contains($0.id) }, before: before)
+        assistantStaging = nil
         return .completed(failures)
     }
 
@@ -164,6 +176,29 @@ final class ScanViewModel {
         }
     }
     func selectNone() { items.indices.forEach { items[$0].isSelected = false } }
+
+    // Marks only existing batch-cleanable items; never deletes anything.
+    @discardableResult
+    func stageSelection(_ ids: Set<UUID>) -> AssistantStaging {
+        var count = 0
+        var bytes: Int64 = 0
+        for index in items.indices where items[index].category.isBatchCleanable {
+            let selected = ids.contains(items[index].id)
+            items[index].isSelected = selected
+            if selected {
+                count += 1
+                bytes += items[index].size
+            }
+        }
+        let staging = AssistantStaging(count: count, bytes: bytes)
+        assistantStaging = staging
+        recoveryPreviewRequested = true
+        return staging
+    }
+
+    func clearAssistantStaging() {
+        assistantStaging = nil
+    }
 
     var cleanableItems: [ScanItem] { items.filter { $0.category.isBatchCleanable } }
     var largeFileItems: [ScanItem] { items.filter { $0.category == .largeFiles } }

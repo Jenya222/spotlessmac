@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D3DEBDA3F614CA6F4FE40F7B /* ImprovementAdvisor.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEC7B4A1C54695EC954AB036 /* ImprovementAdvisor.swift */; };
+		8DDC6E238CF2D0059E32C5F0 /* AssistantSnapshotBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32D2A813BD046A1665978CC1 /* AssistantSnapshotBuilder.swift */; };
+		12A549D05D662DEA6A967FEB /* AssistantStagingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80A45EA0025233CABF58A5CA /* AssistantStagingTests.swift */; };
 		C38A4C574052859A9AE474AB /* AssistantIsolationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E97CDA7D1B975456FB641EE /* AssistantIsolationTests.swift */; };
 		1ABF981BE6CB80095542636D /* AssistantViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DC98D18391E2F37F39A3D6F /* AssistantViewModel.swift */; };
 		EA7E392EBFB12035F333D0A9 /* AssistantViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9E7E47D6EF36792EBFD458C /* AssistantViewModelTests.swift */; };
@@ -150,6 +153,9 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		FEC7B4A1C54695EC954AB036 /* ImprovementAdvisor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImprovementAdvisor.swift; sourceTree = "<group>"; };
+		32D2A813BD046A1665978CC1 /* AssistantSnapshotBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantSnapshotBuilder.swift; sourceTree = "<group>"; };
+		80A45EA0025233CABF58A5CA /* AssistantStagingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantStagingTests.swift; sourceTree = "<group>"; };
 		6E97CDA7D1B975456FB641EE /* AssistantIsolationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantIsolationTests.swift; sourceTree = "<group>"; };
 		2DC98D18391E2F37F39A3D6F /* AssistantViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantViewModel.swift; sourceTree = "<group>"; };
 		E9E7E47D6EF36792EBFD458C /* AssistantViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantViewModelTests.swift; sourceTree = "<group>"; };
@@ -317,6 +323,7 @@
 		B2B489C2435F0FB76091E6B5 /* Assistant */ = {
 			isa = PBXGroup;
 			children = (
+				FEC7B4A1C54695EC954AB036 /* ImprovementAdvisor.swift */,
 				2DC98D18391E2F37F39A3D6F /* AssistantViewModel.swift */,
 				95F35774C814FFBEE9EE789C /* ConversationStore.swift */,
 				D84F7BF39AE9CA59A1BB3DDC /* AssistantMessage.swift */,
@@ -471,6 +478,7 @@
 		AA100001000000000000AA00 /* SpotlessMacTests */ = {
 			isa = PBXGroup;
 			children = (
+				80A45EA0025233CABF58A5CA /* AssistantStagingTests.swift */,
 				6E97CDA7D1B975456FB641EE /* AssistantIsolationTests.swift */,
 				E9E7E47D6EF36792EBFD458C /* AssistantViewModelTests.swift */,
 				2DAD9062E054609A3D289B00 /* ConversationStoreTests.swift */,
@@ -552,6 +560,7 @@
 		AA000007000000000000AA00 /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
+				32D2A813BD046A1665978CC1 /* AssistantSnapshotBuilder.swift */,
 				8085CC0C72A288ABB6CA80F2 /* StorageAnalysisViewModel.swift */,
 				DD000009000000000000DD00 /* ScanViewModel.swift */,
 				DD000023000000000000DD00 /* UninstallViewModel.swift */,
@@ -669,6 +678,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				12A549D05D662DEA6A967FEB /* AssistantStagingTests.swift in Sources */,
 				C38A4C574052859A9AE474AB /* AssistantIsolationTests.swift in Sources */,
 				EA7E392EBFB12035F333D0A9 /* AssistantViewModelTests.swift in Sources */,
 				1BC1E4AF95FBCA4E8348743D /* ConversationStoreTests.swift in Sources */,
@@ -721,6 +731,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D3DEBDA3F614CA6F4FE40F7B /* ImprovementAdvisor.swift in Sources */,
+				8DDC6E238CF2D0059E32C5F0 /* AssistantSnapshotBuilder.swift in Sources */,
 				1ABF981BE6CB80095542636D /* AssistantViewModel.swift in Sources */,
 				777F6EC9427B160A34FCCD12 /* ConversationStore.swift in Sources */,
 				C5A2FD842B78AE7BC79406C4 /* AssistantMessage.swift in Sources */,
