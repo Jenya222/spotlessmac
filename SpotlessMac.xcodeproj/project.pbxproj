@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		54672F472D51E090A7C9B766 /* APIKeyStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 183A159D210343E738F7D231 /* APIKeyStore.swift */; };
+		7792FCC923DA1DA272099908 /* AssistantSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF2740BD7C08DE1BCEDB7C32 /* AssistantSettings.swift */; };
+		A4F40CF03571FCA22ADDF493 /* AssistantSettingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C93708FDED4D7E901F038FDB /* AssistantSettingsTests.swift */; };
+		72742A88401F238CEB4B8D43 /* AssistantTestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BA9CAB6B0C7E2DC4E9840FF /* AssistantTestSupport.swift */; };
 		484156751CE35F1F82709FD4 /* MemoryQuitSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 053C94B4BEE5C8ABDB853F96 /* MemoryQuitSheet.swift */; };
 		A5F1E96E66CD4F4F93F69FBF /* MemoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21A751DFC984DBD2A5DFB6E0 /* MemoryView.swift */; };
 		52EFA46EBB0F4DD33B739AC2 /* MemoryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 374BC7ACD20CEE7F7D7CF08E /* MemoryViewModel.swift */; };
@@ -116,6 +120,10 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		183A159D210343E738F7D231 /* APIKeyStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIKeyStore.swift; sourceTree = "<group>"; };
+		EF2740BD7C08DE1BCEDB7C32 /* AssistantSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantSettings.swift; sourceTree = "<group>"; };
+		C93708FDED4D7E901F038FDB /* AssistantSettingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantSettingsTests.swift; sourceTree = "<group>"; };
+		5BA9CAB6B0C7E2DC4E9840FF /* AssistantTestSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantTestSupport.swift; sourceTree = "<group>"; };
 		053C94B4BEE5C8ABDB853F96 /* MemoryQuitSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryQuitSheet.swift; sourceTree = "<group>"; };
 		21A751DFC984DBD2A5DFB6E0 /* MemoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryView.swift; sourceTree = "<group>"; };
 		374BC7ACD20CEE7F7D7CF08E /* MemoryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryViewModel.swift; sourceTree = "<group>"; };
@@ -246,6 +254,15 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		B2B489C2435F0FB76091E6B5 /* Assistant */ = {
+			isa = PBXGroup;
+			children = (
+				183A159D210343E738F7D231 /* APIKeyStore.swift */,
+				EF2740BD7C08DE1BCEDB7C32 /* AssistantSettings.swift */,
+			);
+			path = Assistant;
+			sourceTree = "<group>";
+		};
 		45819CC578BB45491CC3FC92 /* Memory */ = {
 			isa = PBXGroup;
 			children = (
@@ -282,6 +299,7 @@
 		AA000003000000000000AA00 /* SpotlessMac */ = {
 			isa = PBXGroup;
 			children = (
+				B2B489C2435F0FB76091E6B5 /* Assistant */,
 				45819CC578BB45491CC3FC92 /* Memory */,
 				DD000040000000000000DD00 /* Assets.xcassets */,
 				AA000004000000000000AA00 /* App */,
@@ -375,6 +393,8 @@
 		AA100001000000000000AA00 /* SpotlessMacTests */ = {
 			isa = PBXGroup;
 			children = (
+				C93708FDED4D7E901F038FDB /* AssistantSettingsTests.swift */,
+				5BA9CAB6B0C7E2DC4E9840FF /* AssistantTestSupport.swift */,
 				C3E4750E133FA40F702F5B38 /* MemoryViewModelTests.swift */,
 				9113016A0BBFD2907983AE16 /* MemoryVerdictTests.swift */,
 				896D8E874C572A8202C8B50F /* ProcessSafetyRulesTests.swift */,
@@ -559,6 +579,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A4F40CF03571FCA22ADDF493 /* AssistantSettingsTests.swift in Sources */,
+				72742A88401F238CEB4B8D43 /* AssistantTestSupport.swift in Sources */,
 				EAB8D02030D444907CC70F83 /* MemoryViewModelTests.swift in Sources */,
 				3281D68A652FB871A751FE55 /* MemoryVerdictTests.swift in Sources */,
 				4564354336A2DCB7A00EF8D0 /* ProcessSafetyRulesTests.swift in Sources */,
@@ -597,6 +619,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				54672F472D51E090A7C9B766 /* APIKeyStore.swift in Sources */,
+				7792FCC923DA1DA272099908 /* AssistantSettings.swift in Sources */,
 				484156751CE35F1F82709FD4 /* MemoryQuitSheet.swift in Sources */,
 				A5F1E96E66CD4F4F93F69FBF /* MemoryView.swift in Sources */,
 				52EFA46EBB0F4DD33B739AC2 /* MemoryViewModel.swift in Sources */,
