@@ -38,18 +38,22 @@ System-wide (exact values):
 - `sysctl vm.swapusage` (`struct xsw_usage`): swap total/used.
 - `sysctl kern.memorystatus_vm_pressure_level`: 1 = normal, 2 = warning, 4 = critical.
 
-`MemoryStatsService.current()` is reimplemented on top of `SystemMemoryReader` so the dashboard and the Memory section agree. The `MemoryStats` API stays the same.
+The Care dashboard switches from `MemoryStatsService` to `MemoryMonitor`, and `MemoryStatsService` is deleted, so both screens show the same numbers.
 
 ## Attribution (process → source application)
 
 `ProcessGrouper` is a pure function over `[ProcessMemorySample]` plus an optional responsibility lookup. For each process, it tries these in order:
 
-1. **Responsible process.** `responsibility_get_pid_responsible_for_pid` resolved once with `dlsym(RTLD_DEFAULT, …)`. If the symbol is missing, this step is skipped. If the responsible pid differs from the process pid, attribution continues with the responsible process. This puts the Docker VM (`com.apple.Virtualization.VirtualMachine`) under Docker and Safari's WebContent processes under Safari.
-2. **Enclosing bundle.** The outermost `*.app` component of the (responsible) process path. `/Applications/Docker.app/Contents/MacOS/com.docker.backend` → Docker.
-3. **Parent chain.** Walk `ppid` (bounded, cycle-safe, stop at pid 1) until step 2 succeeds.
-4. **Fallback.** `.system` if uid is 0 or the path is under `/System`, `/usr`, `/bin`, `/sbin`, `/Library/Apple`. Otherwise `.other`, grouped by executable name.
+Inputs: the process samples plus a snapshot of running applications (`NSWorkspace.runningApplications`: pid, bundle path, bundle id, whether `activationPolicy == .regular`). Every bundle path is normalized to its **outermost** `*.app` component, because Docker runs `Docker.app/Contents/MacOS/Docker Desktop.app` (bundle id `com.electron.dockerdesktop`) next to `Docker.app/Contents/MacOS/com.docker.backend`, and both must land in one Docker group.
 
-Grouping key: bundle identifier when available, otherwise the bundle path. Group display name and icon come from the bundle (`Bundle(url:)`, `NSWorkspace.icon(forFile:)`). A group is `.userApp` when it resolves to a bundle outside the system prefixes. Group totals are the sums of their processes' memory and pushed-out values.
+For each process, attribution tries these in order:
+
+1. **Responsible process.** `responsibility_get_pid_responsible_for_pid` is resolved once with `dlsym(RTLD_DEFAULT, …)`. If the symbol is missing, this step is skipped. The responsible pid is looked up first among running applications, then by its executable path. This puts the Docker VM under Docker and Chrome/Safari helpers under their browser. Chrome's main process runs from a code-sign clone (`/private/var/folders/…/Google Chrome.app.bundle`), so path matching alone would miss it, while the running-application lookup yields `/Applications/Google Chrome.app`.
+2. **Own bundle.** The process's own pid among running applications, then the outermost `*.app` in its path.
+3. **Parent chain.** Walk `ppid` (at most 32 steps, cycle-safe, stop at pid ≤ 1), applying step 2 to each ancestor.
+4. **Fallback.** `.system` if the uid is not the current user's or the path is under `/System`, `/usr`, `/bin`, `/sbin`, `/Library/Apple`. Otherwise `.other`, grouped by executable name. The name comes from `argv[0]` (`KERN_PROCARGS2`) when it is readable, so Claude Code's versioned binaries (`~/.local/share/claude/versions/2.1.285`) group as `claude`. Otherwise it falls back to `proc_name`.
+
+A resolved bundle becomes a `.userApp` group when it belongs to a running regular application (any path: Terminal, Activity Monitor and Safari live under `/System`), or when it is outside the system prefixes. Otherwise it goes into the single `.system` group. Grouping key: the outermost bundle path. Display name: the bundle file name without `.app`. Group totals are the sums of their processes' memory and pushed-out values.
 
 ## Components
 
@@ -87,9 +91,9 @@ The list keeps stable identity across samples (group id), so rows do not jump wh
 
 ## Quitting applications
 
-- Only `.userApp` groups with a matching `NSRunningApplication` (looked up by bundle identifier) get a «Завершить» button. The action targets the application as a whole, never an individual helper pid.
+- Only `.userApp` groups with running applications inside their bundle (matched by outermost bundle path) get a «Завершить» button. The action targets the application as a whole, never an individual helper pid.
 - The confirmation sheet lists the application and its process count, and shows the memory expected to be freed (current group total, marked approximate).
-- Confirm → `NSRunningApplication.terminate()`. The app may ask to save documents.
+- Confirm → `NSRunningApplication.terminate()` for every running application inside the bundle. The app may ask to save documents.
 - If the app is still running after 5 seconds, the sheet offers «Завершить принудительно». A second confirmation warns about unsaved data, then calls `forceTerminate()`.
 - After quitting, the next samples show the real change. Nothing is claimed beyond them.
 - No `kill(2)` anywhere in the subsystem.
@@ -99,12 +103,12 @@ The list keeps stable identity across samples (group id), so rows do not jump wh
 
 Quitting is denied if any of these apply:
 
-- the group kind is not `.userApp`;
+- the group kind is not `.userApp` (`.other` gets its own reason: command-line processes are ended where they were started);
 - any process in the group has a uid other than `getuid()`;
-- it is SpotlessMac itself (own bundle id or own pid);
-- the bundle path is under `/System`, `/usr`, `/bin`, `/sbin`, `/Library/Apple`;
+- it is SpotlessMac itself (own bundle path or own pid);
+- none of the group's running applications is quittable: a `.regular` app, or an `.accessory` (menu-bar) app whose bundle is outside the system prefixes;
 - the name or bundle id is on the protected list: `kernel_task`, `launchd`, `WindowServer`, `loginwindow`, `Finder` (`com.apple.finder`), `Dock` (`com.apple.dock`), `SystemUIServer`, `ControlCenter`;
-- no `NSRunningApplication` is found for the bundle identifier.
+- no running application is found inside the group's bundle.
 
 The sheet shows the denial reason instead of a button.
 
