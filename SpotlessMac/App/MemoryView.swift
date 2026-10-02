@@ -130,15 +130,21 @@ struct MemoryView: View {
     // MARK: History
 
     private var historyChart: some View {
-        Chart(viewModel.history) { point in
-            LineMark(x: .value("Время", point.date), y: .value("ГБ", Self.gigabytes(point.swapUsed)),
-                     series: .value("Метрика", "Своп"))
-                .foregroundStyle(by: .value("Метрика", "Своп"))
-            LineMark(x: .value("Время", point.date), y: .value("ГБ", Self.gigabytes(point.compressed)),
-                     series: .value("Метрика", "Сжато"))
-                .foregroundStyle(by: .value("Метрика", "Сжато"))
-            RuleMark(x: .value("Время", point.date))
-                .foregroundStyle(Self.color(for: point.pressure).opacity(0.08))
+        let bands = Self.pressureBands(viewModel.history)
+        return Chart {
+            // Pressure tint first so the lines are drawn on top of it.
+            ForEach(bands) { band in
+                RectangleMark(xStart: .value("Начало", band.start), xEnd: .value("Конец", band.end))
+                    .foregroundStyle(Self.color(for: band.pressure).opacity(0.12))
+            }
+            ForEach(viewModel.history) { point in
+                LineMark(x: .value("Время", point.date), y: .value("ГБ", Self.gigabytes(point.swapUsed)),
+                         series: .value("Метрика", "Своп"))
+                    .foregroundStyle(by: .value("Метрика", "Своп"))
+                LineMark(x: .value("Время", point.date), y: .value("ГБ", Self.gigabytes(point.compressed)),
+                         series: .value("Метрика", "Сжато"))
+                    .foregroundStyle(by: .value("Метрика", "Сжато"))
+            }
         }
         .chartForegroundStyleScale(["Своп": Theme.accentGradientStart, "Сжато": Theme.warningOrange])
         .chartYAxisLabel("ГБ")
@@ -147,6 +153,28 @@ struct MemoryView: View {
         .background(Color(nsColor: .textBackgroundColor))
         .overlay(RoundedRectangle(cornerRadius: Theme.radiusCard).stroke(Theme.divider))
         .clipShape(RoundedRectangle(cornerRadius: Theme.radiusCard))
+    }
+
+    /// One contiguous background band per run of equal pressure. A sample's pressure
+    /// holds until the next sample, so a run ends where the next run begins and the
+    /// bands tile the plot without gaps. Fewer than two points yield no bands.
+    private struct PressureBand: Identifiable {
+        let start: Date
+        let end: Date
+        let pressure: MemoryPressure
+        var id: Date { start }
+    }
+
+    private static func pressureBands(_ history: [MemoryHistoryPoint]) -> [PressureBand] {
+        var bands: [PressureBand] = []
+        for (point, next) in zip(history, history.dropFirst()) {
+            if let last = bands.last, last.pressure == point.pressure {
+                bands[bands.count - 1] = PressureBand(start: last.start, end: next.date, pressure: last.pressure)
+            } else {
+                bands.append(PressureBand(start: point.date, end: next.date, pressure: point.pressure))
+            }
+        }
+        return bands
     }
 
     private static func gigabytes(_ bytes: UInt64) -> Double { Double(bytes) / 1_073_741_824 }
