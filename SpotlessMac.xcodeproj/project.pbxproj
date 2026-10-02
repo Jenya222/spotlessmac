@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		B73583321664E7C6B72F0075 /* AssistantConnectionTester.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACF965FB2ACC075885C1328C /* AssistantConnectionTester.swift */; };
+		1B539EC8182F6C3157FF2840 /* LLMClientFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13901B72F66140B454187C38 /* LLMClientFactory.swift */; };
+		3C0C4FE80D86614D31BCDD16 /* LLMClientFactoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E5F36F71E52A85DB782C0F5 /* LLMClientFactoryTests.swift */; };
 		B8586837D7E902448039CC0B /* OpenAICompatibleClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20486D273016223B17AC5D3 /* OpenAICompatibleClient.swift */; };
 		BEBB87B1911DECE06D53AB1E /* OpenAICompatibleClientTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF4099CAFEC1C5D681A5915D /* OpenAICompatibleClientTests.swift */; };
 		614042D614C3629638B3674A /* OllamaClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B534BB93B7B18C809B08BF1 /* OllamaClient.swift */; };
@@ -128,6 +131,9 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		ACF965FB2ACC075885C1328C /* AssistantConnectionTester.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantConnectionTester.swift; sourceTree = "<group>"; };
+		13901B72F66140B454187C38 /* LLMClientFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LLMClientFactory.swift; sourceTree = "<group>"; };
+		7E5F36F71E52A85DB782C0F5 /* LLMClientFactoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LLMClientFactoryTests.swift; sourceTree = "<group>"; };
 		C20486D273016223B17AC5D3 /* OpenAICompatibleClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAICompatibleClient.swift; sourceTree = "<group>"; };
 		AF4099CAFEC1C5D681A5915D /* OpenAICompatibleClientTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAICompatibleClientTests.swift; sourceTree = "<group>"; };
 		0B534BB93B7B18C809B08BF1 /* OllamaClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OllamaClient.swift; sourceTree = "<group>"; };
@@ -273,6 +279,8 @@
 		B2B489C2435F0FB76091E6B5 /* Assistant */ = {
 			isa = PBXGroup;
 			children = (
+				ACF965FB2ACC075885C1328C /* AssistantConnectionTester.swift */,
+				13901B72F66140B454187C38 /* LLMClientFactory.swift */,
 				C20486D273016223B17AC5D3 /* OpenAICompatibleClient.swift */,
 				0B534BB93B7B18C809B08BF1 /* OllamaClient.swift */,
 				FC3E1829B8A666538FEB48B0 /* HTTPTransport.swift */,
@@ -414,6 +422,7 @@
 		AA100001000000000000AA00 /* SpotlessMacTests */ = {
 			isa = PBXGroup;
 			children = (
+				7E5F36F71E52A85DB782C0F5 /* LLMClientFactoryTests.swift */,
 				AF4099CAFEC1C5D681A5915D /* OpenAICompatibleClientTests.swift */,
 				A008C16766F14FAA12892C34 /* OllamaClientTests.swift */,
 				F279DDFF7B782A1E6BDA78BE /* LLMErrorTests.swift */,
@@ -603,6 +612,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3C0C4FE80D86614D31BCDD16 /* LLMClientFactoryTests.swift in Sources */,
 				BEBB87B1911DECE06D53AB1E /* OpenAICompatibleClientTests.swift in Sources */,
 				3EEE6611E55AAED173B686B2 /* OllamaClientTests.swift in Sources */,
 				001F7C0D08F80A2F9A6027D1 /* LLMErrorTests.swift in Sources */,
@@ -646,6 +656,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B73583321664E7C6B72F0075 /* AssistantConnectionTester.swift in Sources */,
+				1B539EC8182F6C3157FF2840 /* LLMClientFactory.swift in Sources */,
 				B8586837D7E902448039CC0B /* OpenAICompatibleClient.swift in Sources */,
 				614042D614C3629638B3674A /* OllamaClient.swift in Sources */,
 				4A60B593B9360219B96230A6 /* HTTPTransport.swift in Sources */,
