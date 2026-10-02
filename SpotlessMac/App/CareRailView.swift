@@ -54,12 +54,11 @@ struct CareRailView: View {
     }
 
     private var logoTile: some View {
-        Image(systemName: "sparkles")
-            .font(.system(size: 17, weight: .semibold))
-            .foregroundStyle(.white)
+        Image("BrandIcon")
+            .resizable()
+            .scaledToFit()
             .frame(width: Theme.logoTileSize, height: Theme.logoTileSize)
-            .background(Theme.accentGradient)
-            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .accessibilityLabel("Spotless Mac")
             .padding(.bottom, 8)
     }
 

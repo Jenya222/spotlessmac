@@ -97,6 +97,19 @@ actor DockerClient {
         return DockerClientScanResult(serverVersion: serverVersion, snapshot: snapshot)
     }
 
+    func storageSummary(for snapshot: DockerScanSnapshot) async -> DockerStorageSummary {
+        guard let context = snapshot.dockerContext else { return DockerStorageSummary(virtualDiskAllocatedBytes: nil, engineReclaimableBytes: nil, report: nil) }
+        let output = try? await checked(in: context, ["system", "df", "--format", "{{json .}}"])
+        var diskBytes: Int64?
+        if context.isDockerDesktop {
+            let image = FileManager.default.homeDirectoryForCurrentUser.appending(path: "Library/Containers/com.docker.docker/Data/vms/0/data/Docker.raw")
+            if StorageSourceCatalog.policy.canRead(image), StorageFileIdentity.read(image)?.isRegularFile == true {
+                diskBytes = try? await StorageAnalysisEngine().measure(image).allocatedBytes
+            }
+        }
+        return DockerStorageSummary(virtualDiskAllocatedBytes: diskBytes, engineReclaimableBytes: output.flatMap(DockerStorageSummary.parseReclaimable), report: nil)
+    }
+
     func delete(
         _ resources: [DockerResource],
         from snapshot: DockerScanSnapshot
@@ -161,6 +174,7 @@ actor DockerClient {
         for resource in confirmed where resource.kind != .buildCache || builderIsValid {
             guard let arguments = deletionArguments(for: resource, snapshot: snapshot) else { continue }
             do {
+                try await revalidate(resource, snapshot: snapshot)
                 let result = try await run(arguments)
                 if result.exitCode != 0 {
                     failures.append(DockerDeletionFailure(
@@ -176,6 +190,42 @@ actor DockerClient {
             }
         }
         return failures
+    }
+
+    private func revalidate(_ resource: DockerResource, snapshot: DockerScanSnapshot) async throws {
+        guard let context = snapshot.dockerContext, try await inspectContext(named: context.name) == context else {
+            throw DockerCommandError.invalidOutput("Docker context изменился. Выполните проверку снова.")
+        }
+        switch resource.kind {
+        case .container:
+            let raw = try await checked(in: context, ["container", "inspect", "--format", "{{json .State.Running}}", resource.id])
+            guard let running = try? JSONDecoder().decode(Bool.self, from: Data(raw.trimmingCharacters(in: .whitespacesAndNewlines).utf8)), !running else {
+                throw DockerCommandError.invalidOutput("Контейнер запущен или его состояние неизвестно.")
+            }
+        case .image:
+            let ids = try await identifiers(from: checked(in: context, ["container", "ls", "--all", "--quiet", "--no-trunc"]))
+            if !ids.isEmpty {
+                let raw = try await checked(in: context, ["container", "inspect", "--format", "{{json .Image}}"] + ids)
+                let values = raw.split(whereSeparator: \.isNewline)
+                guard values.count == ids.count else { throw DockerCommandError.invalidOutput("Не удалось проверить использование образа.") }
+                for value in values {
+                    let id = try JSONDecoder().decode(String.self, from: Data(value.utf8))
+                    if DockerScanParser.normalizeImageID(id) == DockerScanParser.normalizeImageID(resource.id) {
+                        throw DockerCommandError.invalidOutput("Образ используется контейнером.")
+                    }
+                }
+            }
+        case .volume:
+            let using = try await checked(in: context, ["container", "ls", "--all", "--filter", "volume=\(resource.id)", "--quiet"])
+            guard using.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { throw DockerCommandError.invalidOutput("Том теперь подключён к контейнеру.") }
+        case .buildCache:
+            guard let expected = snapshot.buildxBuilder, let actual = try await buildxBuilder(named: expected.name, in: context), actual == expected else {
+                throw DockerCommandError.invalidOutput("Buildx builder изменился.")
+            }
+            let raw = try await checked(in: context, ["buildx", "du", "--builder", expected.name, "--format", "json"])
+            let fresh = try DockerScanParser.makeSnapshot(containerJSON: Data("[]".utf8), imageJSON: Data("[]".utf8), volumeJSON: Data("[]".utf8), buildCacheJSON: raw, now: await now(), dockerContext: context, buildxBuilder: expected)
+            guard fresh.reclaimableBuildCacheIDs.contains(resource.id) else { throw DockerCommandError.invalidOutput("Кэш сборки теперь используется или недостаточно стар.") }
+        }
     }
 
     private func inspectContext(named name: String) async throws -> DockerContextIdentity {

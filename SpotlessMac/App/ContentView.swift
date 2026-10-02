@@ -77,7 +77,7 @@ struct ContentView: View {
         case .uninstall:
             UninstallerView(licenseManager: licenseManager)
         case .diskUsage:
-            DiskOverviewView(viewModel: viewModel, licenseManager: licenseManager)
+            DiskOverviewView(viewModel: viewModel, licenseManager: licenseManager, onOpenDocker: { selectedTab = .docker })
         case .docker:
             DockerCleanupView(viewModel: dockerViewModel, licenseManager: licenseManager)
         case .settings:

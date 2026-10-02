@@ -28,6 +28,10 @@ final class DockerCleanupViewModel {
     var isScanning = false
     var isDeleting = false
     var failures: [DockerDeletionFailure] = []
+    var storageSummary = DockerStorageSummary(virtualDiskAllocatedBytes: nil, engineReclaimableBytes: nil, report: nil)
+    var endpoint: String? { latestSnapshot?.dockerContext?.endpoint }
+    private let readStorage: @Sendable (DockerScanSnapshot) async -> DockerStorageSummary
+    private let sampleSpace: @Sendable () async -> VolumeSample?
 
     private let scanDocker: ScanDocker
     private let deleteDocker: DeleteDocker
@@ -36,8 +40,14 @@ final class DockerCleanupViewModel {
     init(
         client: DockerClient = DockerClient(),
         scanDocker: ScanDocker? = nil,
-        deleteDocker: DeleteDocker? = nil
+        deleteDocker: DeleteDocker? = nil,
+        readStorage: (@Sendable (DockerScanSnapshot) async -> DockerStorageSummary)? = nil,
+        sampleSpace: @escaping @Sendable () async -> VolumeSample? = { try? await VolumeSpaceReader.sample(at: FileManager.default.homeDirectoryForCurrentUser) }
     ) {
+        self.sampleSpace = sampleSpace
+        if let readStorage { self.readStorage = readStorage }
+        else if scanDocker != nil { self.readStorage = { _ in DockerStorageSummary(virtualDiskAllocatedBytes: nil, engineReclaimableBytes: nil, report: nil) } }
+        else { self.readStorage = { await client.storageSummary(for: $0) } }
         self.scanDocker = scanDocker ?? { try await client.scan() }
         self.deleteDocker = deleteDocker ?? { resources, snapshot in
             await client.delete(resources, from: snapshot)
@@ -96,6 +106,8 @@ final class DockerCleanupViewModel {
         failures = []
         defer { isDeleting = false }
 
+        let local = selection.scanSnapshot.dockerContext?.endpoint.hasPrefix("unix://") == true
+        let before = local ? await sampleSpace() : nil
         var deletionFailures = await deleteDocker(selection.resources, selection.scanSnapshot)
         let didRescan = await loadScan()
         if didRescan {
@@ -115,6 +127,8 @@ final class DockerCleanupViewModel {
         }
         failures = deletionFailures
         let successCount = max(0, selection.resources.count - deletionFailures.count)
+        let after = local ? await sampleSpace() : nil
+        storageSummary.report = CleanupReport(trashedBytes: 0, successfulItems: successCount, before: before, after: after)
         if successCount > 0 {
             recordSuccessfulClean()
         }
@@ -127,6 +141,9 @@ final class DockerCleanupViewModel {
             let result = try await scanDocker()
             latestSnapshot = result.snapshot
             resources = result.snapshot.resources
+            let report = storageSummary.report
+            storageSummary = await readStorage(result.snapshot)
+            storageSummary.report = report
             availability = .ready(serverVersion: result.serverVersion)
             return true
         } catch DockerCommandError.executableNotFound {

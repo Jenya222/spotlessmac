@@ -19,6 +19,7 @@ struct StorageRecoveryView: View {
         .logs,
         .oldInstallers,
         .largeFiles,
+        .knownAppCaches, .modelCaches, .projectArtifacts, .recordings,
     ]
 
     private var filteredItems: [ScanItem] {
@@ -63,7 +64,7 @@ struct StorageRecoveryView: View {
             Button("Отмена", role: .cancel) { itemPendingDelete = nil }
         } message: {
             if let itemPendingDelete {
-                Text(itemPendingDelete.path.path(percentEncoded: false))
+                Text("\(itemPendingDelete.path.path(percentEncoded: false))\n\(itemPendingDelete.formattedSize) · \(itemPendingDelete.cleanupPolicy.disposition.label)\n\(itemPendingDelete.cleanupReason)")
             }
         }
         .sheet(isPresented: Binding(
@@ -112,7 +113,7 @@ struct StorageRecoveryView: View {
             VStack(alignment: .leading, spacing: 5) {
                 Text("Освобождение места")
                     .font(.title2.bold())
-                Text("Безопасные данные выбраны автоматически. Личные файлы удаляются только по одному после подтверждения.")
+                Text("Безопасные данные выбраны автоматически. Новые кэши, модели и личные файлы удаляются по одному после проверки.")
                     .font(.callout)
                     .foregroundStyle(.secondary)
             }
@@ -208,6 +209,10 @@ struct StorageRecoveryView: View {
                     .lineLimit(1)
             }
 
+            if let report = viewModel.cleanupReport {
+                Text("Перемещено в Корзину: " + ByteCountFormatter.string(fromByteCount: report.trashedBytes, countStyle: .file)).font(.caption)
+                    .help(report.measurementDescription + ". Корзина продолжает занимать место.")
+            }
             Spacer()
 
             Button {
@@ -343,7 +348,7 @@ private struct StorageRecoveryRow: View {
                             .foregroundStyle(.secondary)
                     }
                 }
-                Text(item.cleanupReason)
+                Text(item.cleanupPolicy.disposition.label + " · " + item.cleanupReason)
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
@@ -359,13 +364,17 @@ private struct StorageRecoveryRow: View {
                 .font(.callout.monospacedDigit())
                 .foregroundStyle(.secondary)
 
+            if item.category == .recordings {
+                Button { NSWorkspace.shared.open(item.path) } label: { Image(systemName: "play.circle") }
+                    .help("Прослушать запись")
+            }
             Button(action: onReveal) {
                 Image(systemName: "folder")
             }
             .buttonStyle(.plain)
             .help("Показать в Finder")
 
-            if !item.category.isBatchCleanable {
+            if !item.category.isBatchCleanable && item.cleanupPolicy.canDelete {
                 Button(role: .destructive, action: onDelete) {
                     Image(systemName: "trash")
                 }

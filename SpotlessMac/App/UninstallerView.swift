@@ -7,6 +7,9 @@ struct UninstallerView: View {
     @State private var viewModel = UninstallViewModel()
     @State private var showConfirmation = false
     @State private var showActivation = false
+    @State private var pendingItems: [LeftoverItem] = []
+    @State private var pendingCache: [ScanItem] = []
+    @State private var cacheFailure: String?
 
     var body: some View {
         NavigationSplitView {
@@ -17,6 +20,32 @@ struct UninstallerView: View {
         }
         .task {
             if viewModel.apps.isEmpty { await viewModel.loadApps() }
+        }
+        .onDisappear { viewModel.cancelSizing() }
+        .sheet(isPresented: Binding(get: { !pendingCache.isEmpty }, set: { if !$0 { pendingCache = [] } })) {
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Переместить кэш в Корзину?").font(.title2.bold())
+                Text("Закройте приложение. Программа и личные данные сохраняются.").foregroundStyle(.secondary)
+                List(pendingCache) { item in
+                    VStack(alignment: .leading) {
+                        Text(item.path.path(percentEncoded: false)).textSelection(.enabled)
+                        Text(item.formattedSize).font(.caption)
+                    }
+                }
+                HStack {
+                    Button("Отмена") { pendingCache = [] }
+                    Spacer()
+                    Button("Переместить в Корзину", role: .destructive) {
+                        let snapshot = pendingCache; pendingCache = []
+                        Task {
+                            guard licenseManager.canClean else { showActivation = true; return }
+                            let failures = await viewModel.cleanCache(snapshot)
+                            cacheFailure = failures.first?.reason
+                            if failures.count < snapshot.count && !licenseManager.isActivated { licenseManager.recordClean() }
+                        }
+                    }
+                }
+            }.padding(20).frame(width: 650, height: 450)
         }
         .sheet(isPresented: $showActivation) {
             ActivationView(licenseManager: licenseManager) {
@@ -45,7 +74,7 @@ struct UninstallerView: View {
                 ProgressView("Поиск приложений…")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                List(viewModel.apps, selection: Binding(
+                List(viewModel.sortedApps, selection: Binding(
                     get: { viewModel.selectedApp?.id },
                     set: { id in
                         if let app = viewModel.apps.first(where: { $0.id == id }) {
@@ -53,14 +82,17 @@ struct UninstallerView: View {
                         }
                     }
                 )) { app in
-                    AppRow(app: app).tag(app.id)
-                }
+                    AppRow(app: app, summary: viewModel.storageSummaries[app.id]).tag(app.id)
+                }.disabled(viewModel.isDeleting)
             }
         }
         .toolbar {
             ToolbarItem {
+                Toggle("По размеру", isOn: $viewModel.sortBySize)
+            }
+            ToolbarItem {
                 Button("Обновить") { Task { await viewModel.loadApps() } }
-                    .disabled(viewModel.isLoadingApps)
+                    .disabled(viewModel.isLoadingApps || viewModel.isDeleting)
             }
         }
     }
@@ -86,6 +118,12 @@ struct UninstallerView: View {
     private var leftoversView: some View {
         VStack(alignment: .leading, spacing: 0) {
             appHeader
+            if let app = viewModel.selectedApp, let summary = viewModel.storageSummaries[app.id] {
+                Text("Программа: \(ByteCountFormatter.string(fromByteCount: summary.bundleBytes, countStyle: .file)) · Кэш: \(ByteCountFormatter.string(fromByteCount: summary.cacheBytes, countStyle: .file)) · Данные: \(ByteCountFormatter.string(fromByteCount: summary.dataBytes, countStyle: .file))")
+                    .font(.caption).padding(.horizontal, 16)
+                if !summary.isComplete { Text("Некоторые данные недоступны; показан измеренный объём.").font(.caption).foregroundStyle(.orange).padding(.horizontal, 16) }
+            }
+            if let cacheFailure { Text(cacheFailure).font(.caption).foregroundStyle(.red).padding(.horizontal, 16) }
             if let warning = viewModel.largeLeftoverWarning {
                 warningBanner(for: warning)
             }
@@ -104,24 +142,29 @@ struct UninstallerView: View {
             Divider()
             footer
         }
-        .confirmationDialog(
-            "Переместить выбранное в Корзину?",
-            isPresented: $showConfirmation,
-            titleVisibility: .visible
-        ) {
-            Button("Переместить в Корзину", role: .destructive) {
-                Task {
-                    await viewModel.uninstall()
-                    if viewModel.failures.isEmpty && !licenseManager.isActivated {
-                        licenseManager.recordClean()
+        .sheet(isPresented: $showConfirmation) {
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Переместить выбранное в Корзину?").font(.title2.bold())
+                Text("Программа, кэш и личные данные показаны отдельно. Корзина продолжает занимать место.").font(.callout).foregroundStyle(.secondary)
+                List(pendingItems) { item in
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(item.path.path(percentEncoded: false)).textSelection(.enabled)
+                        Text(item.formattedSize + " · " + item.dispositionLabel).font(.caption).foregroundStyle(.secondary)
                     }
                 }
-            }
-            Button("Отмена", role: .cancel) {}
-        } message: {
-            Text(viewModel.selectedLeftovers
-                .map { $0.path.path(percentEncoded: false) }
-                .joined(separator: "\n"))
+                HStack {
+                    Button("Отмена") { showConfirmation = false }.keyboardShortcut(.cancelAction)
+                    Spacer()
+                    Button("Переместить в Корзину", role: .destructive) {
+                        let snapshot = pendingItems; showConfirmation = false
+                        Task {
+                            guard licenseManager.canClean else { showActivation = true; return }
+                            await viewModel.uninstall(items: snapshot)
+                            if viewModel.failures.count < snapshot.count && !licenseManager.isActivated { licenseManager.recordClean() }
+                        }
+                    }.disabled(pendingItems.isEmpty || viewModel.isDeleting)
+                }
+            }.padding(20).frame(minWidth: 650, minHeight: 450)
         }
     }
 
@@ -133,8 +176,8 @@ struct UninstallerView: View {
                     .frame(width: 52, height: 52)
                     .clipShape(RoundedRectangle(cornerRadius: 13))
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Удалить \(app.name)").font(.system(size: 22, weight: .heavy))
-                    Text("\(viewModel.totalLeftoverCount) объектов · будет освобождено \(viewModel.formattedTotalLeftoverSize)")
+                    Text(app.name).font(.system(size: 22, weight: .heavy))
+                    Text("\(viewModel.totalLeftoverCount) объектов · найдено \(viewModel.formattedTotalLeftoverSize)")
                         .font(.system(size: 12.5))
                         .foregroundStyle(.secondary)
                 }
@@ -171,18 +214,23 @@ struct UninstallerView: View {
                 .font(.callout)
                 .foregroundStyle(.secondary)
             Spacer()
+            Button("Очистить поддерживаемый кэш") {
+                guard licenseManager.canClean else { showActivation = true; return }
+                pendingCache = viewModel.supportedCacheItems
+            }.disabled(viewModel.supportedCacheItems.isEmpty || viewModel.isDeleting)
             Button("Снять выделение") { viewModel.selectNone() }
                 .buttonStyle(.plain)
                 .foregroundStyle(Color.accentColor)
                 .disabled(!viewModel.hasSelection)
             Button {
                 if licenseManager.canClean {
+                    pendingItems = viewModel.selectedLeftovers
                     showConfirmation = true
                 } else {
                     showActivation = true
                 }
             } label: {
-                Text("Удалить полностью")
+                Text("Переместить выбранное в Корзину")
                     .font(.system(size: 13, weight: .bold))
                     .foregroundStyle(.white)
                     .padding(.vertical, 11)
@@ -202,14 +250,19 @@ struct UninstallerView: View {
 
 private struct AppRow: View {
     let app: InstalledApp
+    var summary: AppStorageSummary?
 
     var body: some View {
         HStack(spacing: 8) {
             Image(nsImage: NSWorkspace.shared.icon(forFile: app.bundleURL.path(percentEncoded: false)))
                 .resizable()
                 .frame(width: 24, height: 24)
-            Text(app.name)
-                .lineLimit(1)
+            VStack(alignment: .leading) {
+                Text(app.name).lineLimit(1)
+                if let summary {
+                    Text((summary.isComplete ? "" : "Не менее ") + ByteCountFormatter.string(fromByteCount: summary.confirmedTotalBytes, countStyle: .file)).font(.caption2).foregroundStyle(.secondary)
+                } else { Text("Размер не измерен").font(.caption2).foregroundStyle(.secondary) }
+            }
         }
     }
 }
@@ -227,7 +280,7 @@ private struct LeftoverRow: View {
             }
             .buttonStyle(.plain)
 
-            Text(item.path.path(percentEncoded: false))
+            Text(item.dispositionLabel + " · " + item.path.path(percentEncoded: false))
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)

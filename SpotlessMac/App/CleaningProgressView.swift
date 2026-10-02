@@ -80,13 +80,13 @@ struct CleaningProgressView: View {
         case .failed:
             return "Не удалось переместить выбранные объекты в Корзину"
         case .partialFailure:
-            return "Освобождено \(freed); часть объектов удалить не удалось"
+            return "Перемещено в Корзину \(freed); часть объектов удалить не удалось"
         case .cancelled:
-            return "Освобождено \(freed); осталось объектов: \(viewModel.unprocessedSmartCareItems.count)"
+            return "Перемещено в Корзину \(freed); осталось объектов: \(viewModel.unprocessedSmartCareItems.count)"
         case .succeeded:
-            return "Освобождено \(freed)"
+            return "Перемещено в Корзину \(freed)"
         case nil:
-            return "Уже освобождено \(freed) из \(total)"
+            return "Уже перемещено в Корзину \(freed) из \(total)"
         }
     }
 
@@ -170,6 +170,14 @@ struct CleaningProgressView: View {
 
     @ViewBuilder
     private var resultDetails: some View {
+        if !viewModel.isCleaning, !viewModel.cleanupReports.isEmpty {
+            VStack(alignment: .leading, spacing: 4) {
+                ForEach(Array(viewModel.cleanupReports.enumerated()), id: \.offset) { _, report in
+                    Text(report.measurementDescription)
+                }
+                Text("Корзина продолжает занимать место. Изменение свободного места также зависит от других процессов.")
+            }.font(.caption).foregroundStyle(.secondary)
+        }
         if !viewModel.smartCareFailures.isEmpty || !viewModel.unprocessedSmartCareItems.isEmpty {
             VStack(alignment: .leading, spacing: 10) {
                 if !viewModel.smartCareFailures.isEmpty {

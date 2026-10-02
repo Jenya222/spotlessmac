@@ -51,6 +51,10 @@ struct DockerResource: Identifiable, Hashable, Sendable {
 struct DockerContextIdentity: Equatable, Sendable {
     let name: String
     let endpoint: String
+    var isDockerDesktop: Bool {
+        let socket = FileManager.default.homeDirectoryForCurrentUser.appending(path: ".docker/run/docker.sock").path
+        return name == "desktop-linux" && endpoint == "unix://" + socket
+    }
 }
 
 struct DockerBuildxIdentity: Equatable, Sendable {

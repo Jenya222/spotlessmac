@@ -50,27 +50,7 @@ enum FolderSizeCalculator {
     }
 
     static func recursiveSize(_ url: URL) -> Int64 {
-        var isDir: ObjCBool = false
-        guard FileManager.default.fileExists(atPath: url.path(percentEncoded: false), isDirectory: &isDir) else {
-            return 0
-        }
-        if !isDir.boolValue {
-            let rv = try? url.resourceValues(forKeys: [.fileSizeKey])
-            return Int64(rv?.fileSize ?? 0)
-        }
-        guard let enumerator = FileManager.default.enumerator(
-            at: url,
-            includingPropertiesForKeys: [.fileSizeKey, .isRegularFileKey],
-            options: [.skipsHiddenFiles]
-        ) else { return 0 }
-        var total: Int64 = 0
-        for case let file as URL in enumerator {
-            if Task.isCancelled { return total }
-            let rv = try? file.resourceValues(forKeys: [.fileSizeKey, .isRegularFileKey])
-            if rv?.isRegularFile == true {
-                total += Int64(rv?.fileSize ?? 0)
-            }
-        }
-        return total
+        // Legacy callers display logical bytes; the analysis UI displays allocated bytes.
+        (try? StorageAnalysisEngine.measureNow(url, policy: PathPolicy(readRoots: [url])).logicalBytes) ?? 0
     }
 }

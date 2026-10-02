@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		EE000040000000000000EE00 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = DD000040000000000000DD00 /* Assets.xcassets */; };
 		EE100001000000000000EE00 /* LeftoverMatcherTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD100002000000000000DD00 /* LeftoverMatcherTests.swift */; };
 		EE100002000000000000EE00 /* SmartCareSelectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD100003000000000000DD00 /* SmartCareSelectionTests.swift */; };
 		EE100003000000000000EE00 /* SmartCareLifecycleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD100004000000000000DD00 /* SmartCareLifecycleTests.swift */; };
@@ -64,9 +65,43 @@
 		EE000039000000000000EE00 /* DockerCleanupViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000039000000000000DD00 /* DockerCleanupViewModel.swift */; };
 		EE00003A000000000000EE00 /* DockerCleanupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00003A000000000000DD00 /* DockerCleanupView.swift */; };
 		EE00003B000000000000EE00 /* SpotlessMacSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00003B000000000000DD00 /* SpotlessMacSettingsView.swift */; };
+		F78D75EB9FFB54DF9F52599D /* CleanupReportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B26C4F2492FDF6E18E673E45 /* CleanupReportTests.swift */; };
+		D30912E88A4B5A90E18B3C77 /* CleanupReport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B5025C137FB0255F24CF5CC /* CleanupReport.swift */; };
+		94182E7A2F4F56102B8AC8A6 /* VolumeSpaceReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 328B5E0DB0BF2C312A89FB94 /* VolumeSpaceReader.swift */; };
+		66B58F9AA9A58AE4789F3298 /* StorageAnalysisEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 361B7A2A8E3D01A3B861BAAC /* StorageAnalysisEngineTests.swift */; };
+		EA19949991DE641A5703873F /* PathPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA887531F60DDFD0B208F677 /* PathPolicyTests.swift */; };
+		3F6BE75A7B122B328D5914D6 /* StorageMeasurement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 907FEE933B71C6484DC53C65 /* StorageMeasurement.swift */; };
+		9836C0A95FA6BD5EFD19EEEA /* PathPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 857BCF06A4CCEC7643B4478F /* PathPolicy.swift */; };
+		49A4ACAA14B39852EE628AC8 /* StorageSourceCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76E7D746AA729E24358312CE /* StorageSourceCatalog.swift */; };
+		63A5207F397F50053CBA2CA1 /* StorageAnalysisEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 662CD1C6159AFBB2E3BDEC19 /* StorageAnalysisEngine.swift */; };
+		AC88102856BE1ED71EB71523 /* StorageAnalysisViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0E545C1AEE79BAD041738C /* StorageAnalysisViewModelTests.swift */; };
+		7CA2BEE0885632B93BE5E7C9 /* StorageAnalysisViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8085CC0C72A288ABB6CA80F2 /* StorageAnalysisViewModel.swift */; };
+		D9D877B32EC0D4EDE013C105 /* CleanupPlanTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9FE6D8819305BD1F2EE0BBC /* CleanupPlanTests.swift */; };
+		4F5D5D9E801C022ECAFE2465 /* KnownCacheScannerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11C247603DE8640E1D0862F1 /* KnownCacheScannerTests.swift */; };
+		95FB0B7496DE13B1D8E90166 /* HuggingFaceCacheScannerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D778E3ED4CF63785BD041929 /* HuggingFaceCacheScannerTests.swift */; };
+		0E569131C3DD5FA9E3C3B899 /* ProjectArtifactsScannerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41856C4F957FD318EDE7D29F /* ProjectArtifactsScannerTests.swift */; };
+		0DD7219E40F224273762C536 /* RecordingScannerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C4C1732D75584381208DAEF /* RecordingScannerTests.swift */; };
+		E91D0CA604716451AE1CB178 /* CleanupPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = C82FC9AD6B6D2D8845631A25 /* CleanupPolicy.swift */; };
+		39998D04C762A2DF12224B4F /* KnownCacheScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EEC498C32FD9EE7882BB2E3 /* KnownCacheScanner.swift */; };
+		E36A5EA81DF9B90B51B8665A /* HuggingFaceCacheScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F2D72B68FF8077485A4D733 /* HuggingFaceCacheScanner.swift */; };
+		7AC0EF43C864103881636011 /* CleanupPlanBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB1BF70DF5DD69335D696E11 /* CleanupPlanBuilder.swift */; };
+		E0997554F80458BF9CC1B129 /* OwnerActivityChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F1B06836A970B53DD26BA57 /* OwnerActivityChecker.swift */; };
+		997C85C9D3BCF8AB57C8F52C /* ProjectArtifactsScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF045EC4C5F4E8B662C4DD2C /* ProjectArtifactsScanner.swift */; };
+		48D25F0C399CE777A17283B6 /* RecordingScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA1C24F752851355AAC22D2 /* RecordingScanner.swift */; };
+		5D933F12C6073B6442C5CC9B /* AppStorageServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46D2128E90C84D9EC39EC846 /* AppStorageServiceTests.swift */; };
+		19AAD73A4E59FE3565571FA9 /* AppStorageSummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E9645C522999BA874701E61 /* AppStorageSummary.swift */; };
+		B9F13CFDCDA140694659C434 /* AppStorageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07D2AD1CA7DCDCFAA28AF254 /* AppStorageService.swift */; };
+		588335D976F4BEF112904DA0 /* DockerStorageSummaryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1DBFEF0E19D67F7F71E8F4 /* DockerStorageSummaryTests.swift */; };
+		652C636491B7C47BEFE7B067 /* DockerStorageSummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01316B1023FCFA24908EEED /* DockerStorageSummary.swift */; };
+		B1F4B621F842F5BA5D4D4EB5 /* CleanupAdmissionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 443305F183C1EAD0B18B04FD /* CleanupAdmissionTests.swift */; };
+		0233CC4F9F88868B29E132A8 /* StorageRootRegistryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9611A2F3721DEA54C1EDA0C0 /* StorageRootRegistryTests.swift */; };
+		F0B9616E8465CDAB0D1B368F /* StorageRootRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C4154803878303226FF62BB /* StorageRootRegistry.swift */; };
+		C53DABBB8BFE54D44723A554 /* StorageAnalysisStressTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89761D1DED7B48B83D9A1AFB /* StorageAnalysisStressTests.swift */; };
+		582DE52D853D916A88432071 /* LeftoverSelectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 655259F217D35F9DDAB35A61 /* LeftoverSelectionTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		DD000040000000000000DD00 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		DD100001000000000000DD00 /* SpotlessMacTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SpotlessMacTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		DD100002000000000000DD00 /* LeftoverMatcherTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeftoverMatcherTests.swift; sourceTree = "<group>"; };
 		DD100003000000000000DD00 /* SmartCareSelectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartCareSelectionTests.swift; sourceTree = "<group>"; };
@@ -128,6 +163,39 @@
 		DD000039000000000000DD00 /* DockerCleanupViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DockerCleanupViewModel.swift; sourceTree = "<group>"; };
 		DD00003A000000000000DD00 /* DockerCleanupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DockerCleanupView.swift; sourceTree = "<group>"; };
 		DD00003B000000000000DD00 /* SpotlessMacSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotlessMacSettingsView.swift; sourceTree = "<group>"; };
+		B26C4F2492FDF6E18E673E45 /* CleanupReportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupReportTests.swift; sourceTree = "<group>"; };
+		6B5025C137FB0255F24CF5CC /* CleanupReport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupReport.swift; sourceTree = "<group>"; };
+		328B5E0DB0BF2C312A89FB94 /* VolumeSpaceReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VolumeSpaceReader.swift; sourceTree = "<group>"; };
+		361B7A2A8E3D01A3B861BAAC /* StorageAnalysisEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageAnalysisEngineTests.swift; sourceTree = "<group>"; };
+		FA887531F60DDFD0B208F677 /* PathPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PathPolicyTests.swift; sourceTree = "<group>"; };
+		907FEE933B71C6484DC53C65 /* StorageMeasurement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageMeasurement.swift; sourceTree = "<group>"; };
+		857BCF06A4CCEC7643B4478F /* PathPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PathPolicy.swift; sourceTree = "<group>"; };
+		76E7D746AA729E24358312CE /* StorageSourceCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageSourceCatalog.swift; sourceTree = "<group>"; };
+		662CD1C6159AFBB2E3BDEC19 /* StorageAnalysisEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageAnalysisEngine.swift; sourceTree = "<group>"; };
+		7D0E545C1AEE79BAD041738C /* StorageAnalysisViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageAnalysisViewModelTests.swift; sourceTree = "<group>"; };
+		8085CC0C72A288ABB6CA80F2 /* StorageAnalysisViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageAnalysisViewModel.swift; sourceTree = "<group>"; };
+		D9FE6D8819305BD1F2EE0BBC /* CleanupPlanTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupPlanTests.swift; sourceTree = "<group>"; };
+		11C247603DE8640E1D0862F1 /* KnownCacheScannerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnownCacheScannerTests.swift; sourceTree = "<group>"; };
+		D778E3ED4CF63785BD041929 /* HuggingFaceCacheScannerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HuggingFaceCacheScannerTests.swift; sourceTree = "<group>"; };
+		41856C4F957FD318EDE7D29F /* ProjectArtifactsScannerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectArtifactsScannerTests.swift; sourceTree = "<group>"; };
+		9C4C1732D75584381208DAEF /* RecordingScannerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingScannerTests.swift; sourceTree = "<group>"; };
+		C82FC9AD6B6D2D8845631A25 /* CleanupPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupPolicy.swift; sourceTree = "<group>"; };
+		9EEC498C32FD9EE7882BB2E3 /* KnownCacheScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnownCacheScanner.swift; sourceTree = "<group>"; };
+		0F2D72B68FF8077485A4D733 /* HuggingFaceCacheScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HuggingFaceCacheScanner.swift; sourceTree = "<group>"; };
+		CB1BF70DF5DD69335D696E11 /* CleanupPlanBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupPlanBuilder.swift; sourceTree = "<group>"; };
+		3F1B06836A970B53DD26BA57 /* OwnerActivityChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OwnerActivityChecker.swift; sourceTree = "<group>"; };
+		BF045EC4C5F4E8B662C4DD2C /* ProjectArtifactsScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectArtifactsScanner.swift; sourceTree = "<group>"; };
+		9FA1C24F752851355AAC22D2 /* RecordingScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingScanner.swift; sourceTree = "<group>"; };
+		46D2128E90C84D9EC39EC846 /* AppStorageServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStorageServiceTests.swift; sourceTree = "<group>"; };
+		1E9645C522999BA874701E61 /* AppStorageSummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStorageSummary.swift; sourceTree = "<group>"; };
+		07D2AD1CA7DCDCFAA28AF254 /* AppStorageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStorageService.swift; sourceTree = "<group>"; };
+		4B1DBFEF0E19D67F7F71E8F4 /* DockerStorageSummaryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DockerStorageSummaryTests.swift; sourceTree = "<group>"; };
+		A01316B1023FCFA24908EEED /* DockerStorageSummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DockerStorageSummary.swift; sourceTree = "<group>"; };
+		443305F183C1EAD0B18B04FD /* CleanupAdmissionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupAdmissionTests.swift; sourceTree = "<group>"; };
+		9611A2F3721DEA54C1EDA0C0 /* StorageRootRegistryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageRootRegistryTests.swift; sourceTree = "<group>"; };
+		0C4154803878303226FF62BB /* StorageRootRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageRootRegistry.swift; sourceTree = "<group>"; };
+		89761D1DED7B48B83D9A1AFB /* StorageAnalysisStressTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageAnalysisStressTests.swift; sourceTree = "<group>"; };
+		655259F217D35F9DDAB35A61 /* LeftoverSelectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeftoverSelectionTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -169,6 +237,7 @@
 		AA000003000000000000AA00 /* SpotlessMac */ = {
 			isa = PBXGroup;
 			children = (
+				DD000040000000000000DD00 /* Assets.xcassets */,
 				AA000004000000000000AA00 /* App */,
 				AA000005000000000000AA00 /* Models */,
 				AA000006000000000000AA00 /* ScanEngine */,
@@ -218,6 +287,10 @@
 		AA000005000000000000AA00 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				1E9645C522999BA874701E61 /* AppStorageSummary.swift */,
+				C82FC9AD6B6D2D8845631A25 /* CleanupPolicy.swift */,
+				907FEE933B71C6484DC53C65 /* StorageMeasurement.swift */,
+				6B5025C137FB0255F24CF5CC /* CleanupReport.swift */,
 				DD000004000000000000DD00 /* ScanCategory.swift */,
 				DD000005000000000000DD00 /* ScanItem.swift */,
 				DD000020000000000000DD00 /* InstalledApp.swift */,
@@ -231,6 +304,7 @@
 		AA000009000000000000AA00 /* Uninstall */ = {
 			isa = PBXGroup;
 			children = (
+				07D2AD1CA7DCDCFAA28AF254 /* AppStorageService.swift */,
 				DD000022000000000000DD00 /* UninstallEngine.swift */,
 				DD00002F000000000000DD00 /* LeftoverMatcher.swift */,
 			);
@@ -240,6 +314,7 @@
 		AA00000A000000000000AA00 /* Docker */ = {
 			isa = PBXGroup;
 			children = (
+				A01316B1023FCFA24908EEED /* DockerStorageSummary.swift */,
 				DD000035000000000000DD00 /* DockerResource.swift */,
 				DD000036000000000000DD00 /* DockerScanParser.swift */,
 				DD000037000000000000DD00 /* DockerCommandRunner.swift */,
@@ -252,6 +327,21 @@
 		AA100001000000000000AA00 /* SpotlessMacTests */ = {
 			isa = PBXGroup;
 			children = (
+				655259F217D35F9DDAB35A61 /* LeftoverSelectionTests.swift */,
+				89761D1DED7B48B83D9A1AFB /* StorageAnalysisStressTests.swift */,
+				9611A2F3721DEA54C1EDA0C0 /* StorageRootRegistryTests.swift */,
+				443305F183C1EAD0B18B04FD /* CleanupAdmissionTests.swift */,
+				4B1DBFEF0E19D67F7F71E8F4 /* DockerStorageSummaryTests.swift */,
+				46D2128E90C84D9EC39EC846 /* AppStorageServiceTests.swift */,
+				9C4C1732D75584381208DAEF /* RecordingScannerTests.swift */,
+				41856C4F957FD318EDE7D29F /* ProjectArtifactsScannerTests.swift */,
+				D778E3ED4CF63785BD041929 /* HuggingFaceCacheScannerTests.swift */,
+				11C247603DE8640E1D0862F1 /* KnownCacheScannerTests.swift */,
+				D9FE6D8819305BD1F2EE0BBC /* CleanupPlanTests.swift */,
+				7D0E545C1AEE79BAD041738C /* StorageAnalysisViewModelTests.swift */,
+				FA887531F60DDFD0B208F677 /* PathPolicyTests.swift */,
+				361B7A2A8E3D01A3B861BAAC /* StorageAnalysisEngineTests.swift */,
+				B26C4F2492FDF6E18E673E45 /* CleanupReportTests.swift */,
 				DD100002000000000000DD00 /* LeftoverMatcherTests.swift */,
 				DD100003000000000000DD00 /* SmartCareSelectionTests.swift */,
 				DD100004000000000000DD00 /* SmartCareLifecycleTests.swift */,
@@ -269,6 +359,17 @@
 		AA000006000000000000AA00 /* ScanEngine */ = {
 			isa = PBXGroup;
 			children = (
+				0C4154803878303226FF62BB /* StorageRootRegistry.swift */,
+				9FA1C24F752851355AAC22D2 /* RecordingScanner.swift */,
+				BF045EC4C5F4E8B662C4DD2C /* ProjectArtifactsScanner.swift */,
+				3F1B06836A970B53DD26BA57 /* OwnerActivityChecker.swift */,
+				CB1BF70DF5DD69335D696E11 /* CleanupPlanBuilder.swift */,
+				0F2D72B68FF8077485A4D733 /* HuggingFaceCacheScanner.swift */,
+				9EEC498C32FD9EE7882BB2E3 /* KnownCacheScanner.swift */,
+				662CD1C6159AFBB2E3BDEC19 /* StorageAnalysisEngine.swift */,
+				76E7D746AA729E24358312CE /* StorageSourceCatalog.swift */,
+				857BCF06A4CCEC7643B4478F /* PathPolicy.swift */,
+				328B5E0DB0BF2C312A89FB94 /* VolumeSpaceReader.swift */,
 				DD000006000000000000DD00 /* Scanner.swift */,
 				DD000007000000000000DD00 /* ScanEngine.swift */,
 				DD000008000000000000DD00 /* SafetyRules.swift */,
@@ -288,6 +389,7 @@
 		AA000007000000000000AA00 /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
+				8085CC0C72A288ABB6CA80F2 /* StorageAnalysisViewModel.swift */,
 				DD000009000000000000DD00 /* ScanViewModel.swift */,
 				DD000023000000000000DD00 /* UninstallViewModel.swift */,
 				DD000026000000000000DD00 /* HealthScore.swift */,
@@ -393,6 +495,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EE000040000000000000EE00 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -403,6 +506,21 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				582DE52D853D916A88432071 /* LeftoverSelectionTests.swift in Sources */,
+				C53DABBB8BFE54D44723A554 /* StorageAnalysisStressTests.swift in Sources */,
+				0233CC4F9F88868B29E132A8 /* StorageRootRegistryTests.swift in Sources */,
+				B1F4B621F842F5BA5D4D4EB5 /* CleanupAdmissionTests.swift in Sources */,
+				588335D976F4BEF112904DA0 /* DockerStorageSummaryTests.swift in Sources */,
+				5D933F12C6073B6442C5CC9B /* AppStorageServiceTests.swift in Sources */,
+				0DD7219E40F224273762C536 /* RecordingScannerTests.swift in Sources */,
+				0E569131C3DD5FA9E3C3B899 /* ProjectArtifactsScannerTests.swift in Sources */,
+				95FB0B7496DE13B1D8E90166 /* HuggingFaceCacheScannerTests.swift in Sources */,
+				4F5D5D9E801C022ECAFE2465 /* KnownCacheScannerTests.swift in Sources */,
+				D9D877B32EC0D4EDE013C105 /* CleanupPlanTests.swift in Sources */,
+				AC88102856BE1ED71EB71523 /* StorageAnalysisViewModelTests.swift in Sources */,
+				EA19949991DE641A5703873F /* PathPolicyTests.swift in Sources */,
+				66B58F9AA9A58AE4789F3298 /* StorageAnalysisEngineTests.swift in Sources */,
+				F78D75EB9FFB54DF9F52599D /* CleanupReportTests.swift in Sources */,
 				EE100001000000000000EE00 /* LeftoverMatcherTests.swift in Sources */,
 				EE100002000000000000EE00 /* SmartCareSelectionTests.swift in Sources */,
 				EE100003000000000000EE00 /* SmartCareLifecycleTests.swift in Sources */,
@@ -420,6 +538,24 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F0B9616E8465CDAB0D1B368F /* StorageRootRegistry.swift in Sources */,
+				652C636491B7C47BEFE7B067 /* DockerStorageSummary.swift in Sources */,
+				B9F13CFDCDA140694659C434 /* AppStorageService.swift in Sources */,
+				19AAD73A4E59FE3565571FA9 /* AppStorageSummary.swift in Sources */,
+				48D25F0C399CE777A17283B6 /* RecordingScanner.swift in Sources */,
+				997C85C9D3BCF8AB57C8F52C /* ProjectArtifactsScanner.swift in Sources */,
+				E0997554F80458BF9CC1B129 /* OwnerActivityChecker.swift in Sources */,
+				7AC0EF43C864103881636011 /* CleanupPlanBuilder.swift in Sources */,
+				E36A5EA81DF9B90B51B8665A /* HuggingFaceCacheScanner.swift in Sources */,
+				39998D04C762A2DF12224B4F /* KnownCacheScanner.swift in Sources */,
+				E91D0CA604716451AE1CB178 /* CleanupPolicy.swift in Sources */,
+				7CA2BEE0885632B93BE5E7C9 /* StorageAnalysisViewModel.swift in Sources */,
+				63A5207F397F50053CBA2CA1 /* StorageAnalysisEngine.swift in Sources */,
+				49A4ACAA14B39852EE628AC8 /* StorageSourceCatalog.swift in Sources */,
+				9836C0A95FA6BD5EFD19EEEA /* PathPolicy.swift in Sources */,
+				3F6BE75A7B122B328D5914D6 /* StorageMeasurement.swift in Sources */,
+				94182E7A2F4F56102B8AC8A6 /* VolumeSpaceReader.swift in Sources */,
+				D30912E88A4B5A90E18B3C77 /* CleanupReport.swift in Sources */,
 				EE000001000000000000EE00 /* SpotlessMacApp.swift in Sources */,
 				EE000002000000000000EE00 /* ContentView.swift in Sources */,
 				EE000003000000000000EE00 /* ScanCategory.swift in Sources */,
@@ -627,6 +763,7 @@
 		CC000005000000000000CC00 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = SpotlessMac/SpotlessMac.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -649,6 +786,7 @@
 		CC000006000000000000CC00 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = SpotlessMac/SpotlessMac.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;

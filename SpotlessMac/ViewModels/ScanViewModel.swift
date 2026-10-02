@@ -19,7 +19,9 @@ final class ScanViewModel {
     var isPreparingSmartCare = false
     var isCleaning = false
     var currentCleaningItem: ScanItem?
-    var bytesFreedSoFar: Int64 = 0
+    var bytesFreedSoFar: Int64 = 0 // Compatibility: bytes moved to Trash, not reclaimed.
+    var cleanupReports: [CleanupReport] = []
+    var cleanupReport: CleanupReport? { cleanupReports.first }
     var completedCategories: Set<ScanCategory> = []
     var cleaningStartedAt: Date?
     private(set) var activeSmartCareRun: SmartCareRun?
@@ -34,6 +36,7 @@ final class ScanViewModel {
     private let smartCareDelete: SmartCareDelete
     private let scanItems: ScanItems
     private let deleteItems: DeleteItems
+    private let sampleSpace: @Sendable (URL) async -> VolumeSample?
     private var cleaningTask: Task<Void, Never>?
     private var cleaningCancellation: CleaningCancellation?
 
@@ -44,9 +47,11 @@ final class ScanViewModel {
         engine: ScanEngine = ScanEngine(),
         smartCareDelete: SmartCareDelete? = nil,
         scanItems: ScanItems? = nil,
-        deleteItems: DeleteItems? = nil
+        deleteItems: DeleteItems? = nil,
+        sampleSpace: @escaping @Sendable (URL) async -> VolumeSample? = { try? await VolumeSpaceReader.sample(at: $0) }
     ) {
         self.engine = engine
+        self.sampleSpace = sampleSpace
         self.smartCareDelete = smartCareDelete ?? { items, cancellation in
             engine.deleteWithProgress(items: items, cancellation: cancellation)
         }
@@ -81,7 +86,7 @@ final class ScanViewModel {
     }
 
     var smartCareSelectedItems: [ScanItem] {
-        items.filter { smartCareCategories.contains($0.category) && $0.isSelected }
+        (try? CleanupPlanBuilder.make(items: items.filter { smartCareCategories.contains($0.category) && $0.isSelected })) ?? []
     }
 
     var smartCareSelectedBytes: Int64 {
@@ -125,11 +130,13 @@ final class ScanViewModel {
         isDeleting = true
         defer { isDeleting = false }
         deletionFailures = []
+        let before = await samples(for: targetItems)
         let failures = await deleteItems(targetItems)
         deletionFailures = failures
         let failedIDs = Set(failures.map(\.item.id))
         let successIDs = Set(targetItems.map(\.id)).subtracting(failedIDs)
         items.removeAll { successIDs.contains($0.id) }
+        cleanupReports = await reports(for: targetItems.filter { successIDs.contains($0.id) }, before: before)
         return .completed(failures)
     }
 
@@ -160,7 +167,7 @@ final class ScanViewModel {
 
     var cleanableItems: [ScanItem] { items.filter { $0.category.isBatchCleanable } }
     var largeFileItems: [ScanItem] { items.filter { $0.category == .largeFiles } }
-    var selectedItems: [ScanItem] { cleanableItems.filter(\.isSelected) }
+    var selectedItems: [ScanItem] { (try? CleanupPlanBuilder.make(items: cleanableItems.filter(\.isSelected))) ?? [] }
     var totalSelectedSize: Int64 { selectedItems.reduce(0) { $0 + $1.size } }
     var hasSelection: Bool { !selectedItems.isEmpty }
 
@@ -233,6 +240,8 @@ final class ScanViewModel {
         cancellation: CleaningCancellation,
         recordSuccessfulClean: @escaping @MainActor () -> Void
     ) async {
+        cleanupReports = []
+        let before = await samples(for: run.items)
         for await event in smartCareDelete(run.items, cancellation) {
             switch event {
             case .itemProcessed(let item, let failure):
@@ -262,10 +271,36 @@ final class ScanViewModel {
         if !successfulSmartCareItemIDs.isEmpty {
             recordSuccessfulClean()
         }
+        cleanupReports = await reports(for: run.items.filter { successfulSmartCareItemIDs.contains($0.id) }, before: before)
         isCleaning = false
         currentCleaningItem = nil
         cleaningCancellation = nil
         cleaningTask = nil
+    }
+
+    private func samples(for candidates: [ScanItem]) async -> [String: VolumeSample] {
+        var result: [String: VolumeSample] = [:]
+        for parent in Set(candidates.map { $0.path.deletingLastPathComponent() }) {
+            if let sample = await sampleSpace(parent) { result[sample.volumeID] = sample }
+        }
+        return result
+    }
+
+    private func reports(for succeeded: [ScanItem], before: [String: VolumeSample]) async -> [CleanupReport] {
+        var byVolume: [String: (VolumeSample, Int64, Int)] = [:]
+        var unknownBytes: Int64 = 0
+        var unknownCount = 0
+        for item in succeeded {
+            if let after = await sampleSpace(item.path.deletingLastPathComponent()) {
+                let previous = byVolume[after.volumeID]
+                byVolume[after.volumeID] = (after, (previous?.1 ?? 0) + item.size, (previous?.2 ?? 0) + 1)
+            } else { unknownBytes += item.size; unknownCount += 1 }
+        }
+        var reports = byVolume.sorted { $0.key < $1.key }.map { id, value in
+            CleanupReport(trashedBytes: value.1, successfulItems: value.2, before: before[id], after: value.0)
+        }
+        if unknownCount > 0 { reports.append(CleanupReport(trashedBytes: unknownBytes, successfulItems: unknownCount, before: nil, after: nil)) }
+        return reports
     }
 
     private func updateCompletedCategories(for run: SmartCareRun) {

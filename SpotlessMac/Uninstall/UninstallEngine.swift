@@ -7,9 +7,29 @@ struct UninstallFailure: Sendable {
 
 actor UninstallEngine {
     private let leftoverRoots: [URL]
+    private let cacheLocations: [KnownCacheLocation]
+    private let activity: @Sendable (ScanItem) async -> OwnerActivity
+    private let validate: @Sendable (LeftoverItem) -> String?
+    private let trash: @Sendable (URL) throws -> Void
 
-    init(leftoverRoots: [URL] = SafetyRules.uninstallLeftoverRoots) {
+    init(leftoverRoots: [URL] = SafetyRules.uninstallLeftoverRoots,
+         cacheLocations: [KnownCacheLocation] = KnownCacheScanner.locations(home: FileManager.default.homeDirectoryForCurrentUser),
+         activity: @escaping @Sendable (ScanItem) async -> OwnerActivity = OwnerActivityChecker.check,
+         validate: @escaping @Sendable (LeftoverItem) -> String? = UninstallEngine.validationFailure,
+         trash: @escaping @Sendable (URL) throws -> Void = {
+             guard SafetyRules.isSafeToUninstall(url: $0) else { throw CocoaError(.fileWriteNoPermission) }
+             try FileManager.default.trashItem(at: $0, resultingItemURL: nil)
+         }) {
         self.leftoverRoots = leftoverRoots
+        self.cacheLocations = cacheLocations
+        self.activity = activity; self.validate = validate; self.trash = trash
+    }
+    private nonisolated static func validationFailure(_ item: LeftoverItem) -> String? {
+        guard SafetyRules.isSafeToUninstall(url: item.path), let current = StorageFileIdentity.read(item.path),
+              !current.isSymbolicLink, current.isDirectory || current.isRegularFile, item.identity == current else {
+            return "Путь или объект изменился после предпросмотра. Сканируйте снова."
+        }
+        return nil
     }
 
     // Lists actionable apps in /Applications and ~/Applications.
@@ -17,13 +37,14 @@ actor UninstallEngine {
     // never enumerated.
     func listApps() async -> [InstalledApp] {
         var result: [InstalledApp] = []
-        for root in SafetyRules.uninstallAppRoots {
+        for root in SafetyRules.uninstallAppRoots where SafetyRules.rootIsTrusted(root) {
             guard let entries = try? FileManager.default.contentsOfDirectory(
                 at: root,
                 includingPropertiesForKeys: nil,
                 options: [.skipsHiddenFiles]
             ) else { continue }
             for url in entries where url.pathExtension == "app" {
+                guard StorageFileIdentity.read(url)?.isDirectory == true else { continue }
                 let info = Self.readInfoPlist(appURL: url)
                 let bundleID = info?["CFBundleIdentifier"] as? String
                 if let bundleID, bundleID.hasPrefix("com.apple.") { continue }
@@ -47,6 +68,7 @@ actor UninstallEngine {
         var nameURLs: [(URL, String)] = []
 
         for root in leftoverRoots {
+            if SafetyRules.uninstallLeftoverRoots.contains(root) && !SafetyRules.rootIsTrusted(root) { continue }
             let label = root.lastPathComponent
             guard let entries = try? FileManager.default.contentsOfDirectory(
                 at: root,
@@ -56,7 +78,7 @@ actor UninstallEngine {
             for url in entries {
                 let comp = url.lastPathComponent
                 if let bundleID,
-                   LeftoverMatcher.isExact(component: comp, bundleID: bundleID, rootName: label) {
+                   (LeftoverMatcher.isExact(component: comp, bundleID: bundleID, rootName: label) || (label == "Application Support" && comp == AppStorageService.supportAlias(bundleID: bundleID))) {
                     exactURLs.append((url, label))
                 } else if (bundleID.map { LeftoverMatcher.isRelatedCandidate(component: comp, bundleID: $0) } ?? false)
                             || Self.matchesName(comp, displayName: displayName, fileName: bundleFileName) {
@@ -65,7 +87,12 @@ actor UninstallEngine {
             }
         }
 
-        // Size everything in parallel off the main actor.
+        if let alias = AppStorageService.supportAlias(bundleID: bundleID) {
+            for cache in KnownCacheScanner.locations(home: FileManager.default.homeDirectoryForCurrentUser) where cache.owner == alias || cache.owner.lowercased() == alias.lowercased() {
+                if SafetyRules.rootIsTrusted(cache.url), StorageFileIdentity.read(cache.url)?.isDirectory == true { exactURLs.append((cache.url, "Кэш приложения")) }
+            }
+        }
+        // Size confirmed roots without preselecting personal data.
         let appURL = app.bundleURL
         let exactInputs = exactURLs
         let nameInputs = nameURLs
@@ -82,7 +109,7 @@ actor UninstallEngine {
                 group.addTask(priority: .utility) {
                     let size = Self.recursiveSize(url)
                     return LeftoverItem(path: url, size: size, location: label,
-                                        confidence: .exact, isSelected: true)
+                                        confidence: .exact, isSelected: ["Caches", "Logs"].contains(label))
                 }
             }
             for (url, label) in nameInputs {
@@ -106,19 +133,33 @@ actor UninstallEngine {
     // Trash-only deletion. Every item is gated through isSafeToUninstall.
     func uninstall(items: [LeftoverItem]) async -> [UninstallFailure] {
         var failures: [UninstallFailure] = []
-        let fm = FileManager.default
-        for item in items {
-            guard SafetyRules.isSafeToUninstall(url: item.path) else {
-                failures.append(UninstallFailure(
-                    item: item,
-                    reason: "Путь не разрешён правилами безопасности."
-                ))
-                continue
+        for item in LeftoverItem.nonOverlapping(items) {
+            if let reason = validate(item) {
+                failures.append(UninstallFailure(item: item, reason: reason)); continue
             }
-            do {
-                try fm.trashItem(at: item.path, resultingItemURL: nil)
-            } catch {
-                failures.append(UninstallFailure(item: item, reason: error.localizedDescription))
+            // A containing personal-data directory can also include a catalogued cache.
+            let affected = cacheLocations.filter {
+                PathPolicy.contains(PathPolicy.canonical($0.url), in: PathPolicy.canonical(item.path))
+                    || PathPolicy.contains(PathPolicy.canonical(item.path), in: PathPolicy.canonical($0.url))
+            }
+            var ownerFailure: String?
+            for cache in affected {
+                let candidate = ScanItem(path: cache.url, size: 0, category: .knownAppCaches,
+                    cleanupPolicy: .init(disposition: .rebuildable, reason: "Кэш приложения", requiresClosedOwner: true), owner: cache.owner)
+                if await activity(candidate) != .closed {
+                    ownerFailure = "Закройте приложение. Не удалось подтвердить, что кэш не используется."; break
+                }
+            }
+            if let reason = ownerFailure ?? validate(item) {
+                failures.append(UninstallFailure(item: item, reason: reason)); continue
+            }
+            do { try trash(item.path) }
+            catch { failures.append(UninstallFailure(item: item, reason: error.localizedDescription)) }
+        }
+        let failedTargets = failures
+        for item in items where !failures.contains(where: { $0.item.id == item.id }) {
+            if let parentFailure = failedTargets.first(where: { PathPolicy.contains(PathPolicy.canonical(item.path), in: PathPolicy.canonical($0.item.path)) }) {
+                failures.append(UninstallFailure(item: item, reason: parentFailure.reason))
             }
         }
         return failures
@@ -143,26 +184,6 @@ actor UninstallEngine {
     }
 
     private nonisolated static func recursiveSize(_ url: URL) -> Int64 {
-        var isDir: ObjCBool = false
-        guard FileManager.default.fileExists(atPath: url.path(percentEncoded: false), isDirectory: &isDir) else {
-            return 0
-        }
-        if !isDir.boolValue {
-            let rv = try? url.resourceValues(forKeys: [.fileSizeKey])
-            return Int64(rv?.fileSize ?? 0)
-        }
-        guard let enumerator = FileManager.default.enumerator(
-            at: url,
-            includingPropertiesForKeys: [.fileSizeKey, .isRegularFileKey],
-            options: []
-        ) else { return 0 }
-        var total: Int64 = 0
-        for case let file as URL in enumerator {
-            let rv = try? file.resourceValues(forKeys: [.fileSizeKey, .isRegularFileKey])
-            if rv?.isRegularFile == true {
-                total += Int64(rv?.fileSize ?? 0)
-            }
-        }
-        return total
+        (try? StorageAnalysisEngine.measureNow(url, policy: PathPolicy(readRoots: [url])).allocatedBytes) ?? 0
     }
 }

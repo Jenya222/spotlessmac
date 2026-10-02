@@ -15,6 +15,9 @@ struct LeftoverItem: Identifiable, Hashable, Sendable {
     let location: String          // human label, e.g. "Программа", "Caches"
     let confidence: MatchConfidence
     var isSelected: Bool
+    let identity: StorageFileIdentity?
+    var isCache: Bool { ["Caches", "Logs", "Кэш приложения"].contains(location) }
+    var dispositionLabel: String { isCache ? "Восстанавливаемый кэш" : location == "Программа" ? "Программа" : "Личные данные/настройки" }
 
     init(path: URL, size: Int64, location: String, confidence: MatchConfidence, isSelected: Bool) {
         self.id = UUID()
@@ -23,6 +26,15 @@ struct LeftoverItem: Identifiable, Hashable, Sendable {
         self.location = location
         self.confidence = confidence
         self.isSelected = isSelected
+        self.identity = StorageFileIdentity.read(path)
+    }
+
+    static func nonOverlapping(_ items: [LeftoverItem]) -> [LeftoverItem] {
+        var result: [LeftoverItem] = []
+        for item in items.sorted(by: { PathPolicy.canonical($0.path).count < PathPolicy.canonical($1.path).count }) {
+            if !result.contains(where: { PathPolicy.contains(PathPolicy.canonical(item.path), in: PathPolicy.canonical($0.path)) }) { result.append(item) }
+        }
+        return result
     }
 
     var formattedSize: String {

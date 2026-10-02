@@ -121,6 +121,20 @@ struct DockerCleanupView: View {
     private func readyContent(serverVersion: String?) -> some View {
         VStack(spacing: 0) {
             summary(serverVersion: serverVersion)
+            VStack(alignment: .leading, spacing: 5) {
+                if let endpoint = viewModel.endpoint { Text("Подключение: " + endpoint).font(.caption).textSelection(.enabled) }
+                if let bytes = viewModel.storageSummary.virtualDiskAllocatedBytes {
+                    Text("Виртуальный диск на Mac: " + ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file))
+                }
+                if let bytes = viewModel.storageSummary.engineReclaimableBytes {
+                    Text("Оценка Docker для неиспользуемых ресурсов: " + ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file))
+                } else { Text("Оценка освобождаемого объёма недоступна") }
+                Text("Размеры образов могут включать общие слои. Удаление ресурсов не гарантирует мгновенное уменьшение виртуального диска.")
+                if let report = viewModel.storageSummary.report {
+                    Text("Удалено ресурсов: \(report.successfulItems). " + report.measurementDescription)
+                    Text("Изменение свободного места зависит также от других процессов.")
+                }
+            }.font(.caption).foregroundStyle(.secondary).frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 24).padding(.bottom, 12)
             if viewModel.resources.isEmpty {
                 ContentUnavailableView(
                     "Docker уже чист",
@@ -144,7 +158,7 @@ struct DockerCleanupView: View {
                     countStyle: .file
                 ))
                 .font(.system(size: 28, weight: .bold, design: .rounded))
-                Text("выбрано для очистки")
+                Text("сумма размеров выбранных ресурсов")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -214,7 +228,7 @@ struct DockerCleanupView: View {
                     .foregroundStyle(.red)
                     .lineLimit(2)
             } else {
-                Label("Команды выполняются по точным ID. Широкий prune не используется.", systemImage: "checkmark.shield")
+                Label("Проверьте выбранные ресурсы. Тома могут содержать базы данных.", systemImage: "checkmark.shield")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

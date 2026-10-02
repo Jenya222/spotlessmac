@@ -9,7 +9,7 @@ enum SafetyRules {
         ]
     }()
 
-    static let allowedRoots: [URL] = {
+    static let legacyAllowedRoots: [URL] = {
         let home = FileManager.default.homeDirectoryForCurrentUser
         return [
             home.appending(path: "Library/Caches",   directoryHint: .isDirectory),
@@ -25,6 +25,22 @@ enum SafetyRules {
         ] + developerCacheRoots
     }()
 
+    static var huggingFaceRoot: URL { FileManager.default.homeDirectoryForCurrentUser.appending(path: ".cache/huggingface/hub") }
+    static var recordingsRoot: URL { FileManager.default.homeDirectoryForCurrentUser.appending(path: "Library/Application Support/wooffoow/recordings") }
+    static var projectRoots: [URL] { [FileManager.default.homeDirectoryForCurrentUser.appending(path: "MyProjects")] + StorageRootRegistry.roots(kind: .projects) }
+    static var huggingFaceRoots: [URL] { [huggingFaceRoot] + StorageRootRegistry.roots(kind: .huggingFace) }
+    static func rootIsTrusted(_ root: URL) -> Bool {
+        let home = FileManager.default.homeDirectoryForCurrentUser
+        let registered = StorageRootRegistry.roots(kind: .projects) + StorageRootRegistry.roots(kind: .huggingFace)
+        if registered.contains(where: { PathPolicy.canonical($0) == PathPolicy.canonical(root) }) { return true }
+        if PathPolicy.contains(root.standardizedFileURL.path(percentEncoded: false), in: home.standardizedFileURL.path(percentEncoded: false)) {
+            return PathPolicy.isUnredirected(root, below: home)
+        }
+        return !PathPolicy.isForbidden(PathPolicy.canonical(root))
+    }
+    static var knownCacheRoots: [URL] { KnownCacheScanner.locations(home: FileManager.default.homeDirectoryForCurrentUser).map(\.url) }
+    static var allowedRoots: [URL] { legacyAllowedRoots + knownCacheRoots + huggingFaceRoots + [recordingsRoot] + projectRoots }
+
     static let forbiddenPrefixes: [String] = [
         "/System",
         "/private/var/vm",
@@ -33,14 +49,18 @@ enum SafetyRules {
     ]
 
     static func isSafe(url: URL) -> Bool {
-        let path = canonicalPath(url)
-        guard allowedRoots.contains(where: { root in
-            let rootPath = canonicalPath(root)
-            return path == rootPath || path.hasPrefix(rootPath + "/")
-        }) else {
-            return false
+        let path = PathPolicy.canonical(url)
+        guard !PathPolicy.isForbidden(path), StorageFileIdentity.read(url)?.isSymbolicLink != true else { return false }
+        if legacyAllowedRoots.contains(where: { rootIsTrusted($0) && PathPolicy.contains(path, in: PathPolicy.canonical($0), includeRoot: false) }) { return true }
+        if knownCacheRoots.contains(where: { rootIsTrusted($0) && path == PathPolicy.canonical($0) && StorageFileIdentity.read($0)?.isSymbolicLink != true }) { return true }
+        if huggingFaceRoots.contains(where: { rootIsTrusted($0) && PathPolicy.canonical(url.deletingLastPathComponent()) == PathPolicy.canonical($0) }) {
+            return HuggingFaceCacheScanner.isRepositoryName(url.lastPathComponent) && StorageFileIdentity.read(url)?.isDirectory == true
         }
-        return !forbiddenPrefixes.contains(where: { path.hasPrefix($0) })
+        if rootIsTrusted(recordingsRoot) && PathPolicy.canonical(url.deletingLastPathComponent()) == PathPolicy.canonical(recordingsRoot) { return RecordingScanner.isStandalone(url) }
+        if projectRoots.contains(where: { rootIsTrusted($0) && PathPolicy.contains(path, in: PathPolicy.canonical($0), includeRoot: false) }) {
+            return StorageFileIdentity.read(url)?.isDirectory == true && ProjectArtifactsScanner.hasMarker(url) && !ProjectArtifactsScanner.containsGitMetadata(url)
+        }
+        return false
     }
 
     // MARK: - Uninstall whitelist (separate from the cleaner's whitelist)
@@ -73,25 +93,26 @@ enum SafetyRules {
     // Gates every uninstall delete (defense in depth). True only when url is
     // either a *.app directly inside an app root, or strictly inside a
     // leftover root (never a root directory itself).
-    static func isSafeToUninstall(url: URL) -> Bool {
-        let path = url.standardizedFileURL.path(percentEncoded: false)
-        guard !forbiddenPrefixes.contains(where: { path.hasPrefix($0) }) else {
+    static func isSafeToUninstall(url: URL, appRoots: [URL] = uninstallAppRoots,
+                                  rootTrust: (URL) -> Bool = rootIsTrusted) -> Bool {
+        let path = PathPolicy.canonical(url)
+        guard StorageFileIdentity.read(url)?.isSymbolicLink != true else { return false }
+        guard !PathPolicy.isForbidden(path) else {
             return false
         }
 
         // Case 1: an .app bundle directly inside an app root.
         if url.pathExtension == "app" {
-            let parent = url.standardizedFileURL.deletingLastPathComponent()
-                .standardizedFileURL.path(percentEncoded: false)
-            let appRoot = uninstallAppRoots.contains { root in
-                trimSlash(root.path(percentEncoded: false)) == trimSlash(parent)
+            let parent = PathPolicy.canonical(url.deletingLastPathComponent())
+            let appRoot = appRoots.contains { root in
+                rootTrust(root) && PathPolicy.canonical(root) == trimSlash(parent)
             }
             if appRoot { return true }
         }
 
         // Case 2: a child strictly inside a leftover root (not the root itself).
-        for root in uninstallLeftoverRoots {
-            let rootPath = trimSlash(root.path(percentEncoded: false))
+        for root in uninstallLeftoverRoots where rootIsTrusted(root) {
+            let rootPath = PathPolicy.canonical(root)
             if path.hasPrefix(rootPath + "/") && trimSlash(path) != rootPath {
                 return true
             }

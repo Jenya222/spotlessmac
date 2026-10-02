@@ -107,6 +107,20 @@ final class DockerClientTests: XCTestCase {
         ])
     }
 
+    func testDeleteRejectsNewlyAttachedVolume() async {
+        let recorder = DockerCommandRecorder(responses: [
+            "context inspect desktop-linux --format {{json .Endpoints.docker.Host}}": .success(#""unix:///docker.sock""#),
+            "--context desktop-linux container ls --all --filter volume=volume-name --quiet": .success("using-container")
+        ], defaultResult: .success("removed"))
+        let resource = deletionFixtures()[2]
+        let snapshot = safeSnapshot(resources: [resource])
+        let client = DockerClient(run: { try await recorder.run($0) })
+        let failures = await client.delete([resource], from: snapshot)
+        let calls = await recorder.recordedCalls()
+        XCTAssertEqual(failures.count, 1)
+        XCTAssertFalse(calls.contains { $0.contains("rm") })
+    }
+
     func testDeleteBuildsOnlyExactResourceCommands() async throws {
         let recorder = DockerCommandRecorder(defaultResult: .success("removed"))
         let resources = deletionFixtures()
@@ -123,6 +137,10 @@ final class DockerClientTests: XCTestCase {
         await recorder.setResponses([
             "context inspect desktop-linux --format {{json .Endpoints.docker.Host}}": .success(#""unix:///docker.sock""#),
             "--context desktop-linux buildx ls --format json": .success(buildxListJSON),
+            "--context desktop-linux container inspect --format {{json .State.Running}} container-id": .success("false"),
+            "--context desktop-linux container ls --all --quiet --no-trunc": .success(""),
+            "--context desktop-linux container ls --all --filter volume=volume-name --quiet": .success(""),
+            "--context desktop-linux buildx du --builder desktop-linux --format json": .success(#"{"ID":"cache-id","Reclaimable":true,"Size":100,"LastAccessedAt":"2026-01-01T00:00:00Z"}"#),
         ])
         let client = DockerClient(run: { arguments in try await recorder.run(arguments) })
 
@@ -130,9 +148,7 @@ final class DockerClientTests: XCTestCase {
         let calls = await recorder.recordedCalls()
 
         XCTAssertTrue(failures.isEmpty)
-        XCTAssertEqual(calls, [
-            ["context", "inspect", "desktop-linux", "--format", "{{json .Endpoints.docker.Host}}"],
-            ["--context", "desktop-linux", "buildx", "ls", "--format", "json"],
+        XCTAssertEqual(calls.filter { $0.contains("rm") || $0.contains("prune") }, [
             ["--context", "desktop-linux", "container", "rm", "container-id"],
             ["--context", "desktop-linux", "image", "rm", "sha256:image-id"],
             ["--context", "desktop-linux", "volume", "rm", "volume-name"],
@@ -183,6 +199,7 @@ final class DockerClientTests: XCTestCase {
         let resource = deletionFixtures()[0]
         let recorder = DockerCommandRecorder(responses: [
             "context inspect desktop-linux --format {{json .Endpoints.docker.Host}}": .success(#""unix:///docker.sock""#),
+            "--context desktop-linux container inspect --format {{json .State.Running}} container-id": .success("false"),
             "--context desktop-linux container rm container-id": DockerCommandResult(
                 stdout: "", stderr: "builder endpoint not found", exitCode: 1
             ),

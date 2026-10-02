@@ -2,6 +2,18 @@ import XCTest
 @testable import SpotlessMac
 
 final class SafetyRulesTests: XCTestCase {
+    func testRedirectedAppParentAfterPreviewIsRejected() throws {
+        let home = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+        let apps = home.appending(path: "Applications")
+        let app = apps.appending(path: "Example.app")
+        try FileManager.default.createDirectory(at: app, withIntermediateDirectories: true)
+        let before = StorageFileIdentity.read(app)
+        let moved = home.appending(path: "Moved")
+        try FileManager.default.moveItem(at: apps, to: moved)
+        try FileManager.default.createSymbolicLink(at: apps, withDestinationURL: moved)
+        XCTAssertEqual(before, StorageFileIdentity.read(app))
+        XCTAssertFalse(SafetyRules.isSafeToUninstall(url: app, appRoots: [apps], rootTrust: { PathPolicy.isUnredirected($0, below: home) }))
+    }
     func testCleanerRejectsSiblingWhoseNameSharesAllowedPrefix() {
         let root = SafetyRules.allowedRoots[0]
         let sibling = root.deletingLastPathComponent()

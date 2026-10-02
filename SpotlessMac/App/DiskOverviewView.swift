@@ -1,8 +1,11 @@
 import SwiftUI
+import AppKit
 
 struct DiskOverviewView: View {
     var viewModel: ScanViewModel
     var licenseManager: LicenseManager
+    var onOpenDocker: () -> Void = {}
+    @State private var analysis = StorageAnalysisViewModel()
 
     @State private var overview: DiskSpaceOverview?
     @State private var largestFolders: [FolderEntry] = []
@@ -15,21 +18,22 @@ struct DiskOverviewView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 header
-                if let overview {
+                if let overview, overview.capacityKnown {
                     segmentedBar(overview)
                     legend(overview)
+                    if !overview.isComplete { Text("Измерение неполное: часть папок недоступна. В сегментах показан измеренный объём.").font(.caption).foregroundStyle(.orange) }
                 }
                 storageRecoveryCard
-                largestFoldersSection
+                sourcesSection
             }
             .padding(24)
         }
         .task {
-            async let ov = DiskSpaceService.overview()
-            async let folders = DiskSpaceService.largestHomeFolders()
-            overview = await ov
-            largestFolders = await folders
+            overview = await DiskSpaceService.overview(sourceResults: [])
+            await analysis.scanSources()
+            overview = await DiskSpaceService.overview(sourceResults: analysis.sourceResults)
         }
+        .onDisappear { analysis.cancel() }
         .sheet(isPresented: $showDrillDown) {
             NavigationStack {
                 DiskUsageView(startingURL: drillDownURL)
@@ -107,7 +111,11 @@ struct DiskOverviewView: View {
     }
 
     private func refreshDiskOverview() {
-        Task { overview = await DiskSpaceService.overview() }
+        Task {
+            overview = await DiskSpaceService.overview(sourceResults: [])
+            await analysis.scanSources()
+            overview = await DiskSpaceService.overview(sourceResults: analysis.sourceResults)
+        }
     }
 
     private var header: some View {
@@ -135,7 +143,7 @@ struct DiskOverviewView: View {
         GeometryReader { geo in
             let total = max(1, overview.usedBytes)
             HStack(spacing: 0) {
-                segment(width: geo.size.width * CGFloat(overview.systemBytes) / CGFloat(total), color: Theme.accentGradientEnd)
+                segment(width: geo.size.width * CGFloat(overview.unclassifiedBytes) / CGFloat(total), color: Theme.accentGradientEnd)
                 segment(width: geo.size.width * CGFloat(overview.applicationsBytes) / CGFloat(total), color: Theme.accentGradientStart)
                 segment(width: geo.size.width * CGFloat(overview.documentsBytes) / CGFloat(total), color: Theme.healthGreen)
             }
@@ -151,7 +159,7 @@ struct DiskOverviewView: View {
 
     private func legend(_ overview: DiskSpaceOverview) -> some View {
         HStack(spacing: 18) {
-            legendDot(color: Theme.accentGradientEnd, label: "Система", bytes: overview.systemBytes)
+            legendDot(color: Theme.accentGradientEnd, label: "Прочее и неразобранное", bytes: overview.unclassifiedBytes)
             legendDot(color: Theme.accentGradientStart, label: "Программы", bytes: overview.applicationsBytes)
             legendDot(color: Theme.healthGreen, label: "Документы", bytes: overview.documentsBytes)
         }
@@ -163,6 +171,53 @@ struct DiskOverviewView: View {
             Text("\(label) · \(ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file))")
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(Color(white: 0.35))
+        }
+    }
+
+    private func chooseRoot(kind: StorageRootKind) {
+        let panel = NSOpenPanel()
+        panel.canChooseDirectories = true; panel.canChooseFiles = false; panel.allowsMultipleSelection = false
+        panel.message = kind == .projects ? "Выберите папку проектов. Исходники не предлагаются к удалению." : "Выберите папку hub с репозиториями Hugging Face."
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        do { try StorageRootRegistry.register(url, kind: kind); refreshDiskOverview() }
+        catch { analysis.errorMessage = "Выберите конкретную папку, а не весь диск или домашний каталог." }
+    }
+
+    private var sourcesSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("ИСТОЧНИКИ ЗАНЯТОГО МЕСТА").font(.caption.bold())
+                Spacer()
+                if analysis.isLoading {
+                    ProgressView().controlSize(.small)
+                    Button("Остановить") { analysis.cancel() }
+                } else { Button("Обновить") { refreshDiskOverview() } }
+            }
+            HStack {
+                Button("Добавить папку проектов") { chooseRoot(kind: .projects) }
+                Button("Добавить кэш Hugging Face") { chooseRoot(kind: .huggingFace) }
+            }
+            if let error = analysis.errorMessage { Text(error).font(.caption).foregroundStyle(.red) }
+            Text("Размер на диске. Измеренные источники не повторяют категории macOS; общие APFS-данные могут влиять на итог.")
+                .font(.caption).foregroundStyle(.secondary)
+            if analysis.isStale { Text("Не обновлено — показан предыдущий снимок").font(.caption).foregroundStyle(.orange) }
+            ForEach(analysis.sourceResults) { result in
+                VStack(alignment: .leading, spacing: 5) {
+                    HStack {
+                        Button(result.source.title) {
+                            drillDownURL = result.source.url; showDrillDown = true
+                        }.disabled(result.measurement == nil)
+                        Spacer()
+                        if let size = result.measurement {
+                            Text((size.isComplete ? "" : "Не менее ") + ByteCountFormatter.string(fromByteCount: size.allocatedBytes, countStyle: .file)).monospacedDigit()
+                        } else { Text("Недоступно").foregroundStyle(.secondary) }
+                        if result.source.url.lastPathComponent == "Containers" { Button("Docker", action: onOpenDocker) }
+                    }
+                    Text(result.errorMessage ?? result.source.explanation).font(.caption).foregroundStyle(.secondary)
+                    Text(result.source.url.path(percentEncoded: false)).font(.caption2).foregroundStyle(.secondary).textSelection(.enabled)
+                }.padding(12).background(Color(nsColor: .textBackgroundColor)).clipShape(RoundedRectangle(cornerRadius: 8))
+            }
+            if let date = analysis.sampledAt { Text("Измерено: \(date.formatted())").font(.caption).foregroundStyle(.secondary) }
         }
     }
 
