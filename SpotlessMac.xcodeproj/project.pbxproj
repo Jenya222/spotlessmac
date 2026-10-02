@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		37B1806C8919C854011F82E1 /* AssistantSettingsCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DDCFDCD6005F4D774DA8F9C /* AssistantSettingsCard.swift */; };
 		D6C07DEC10B49A2FAA5D1658 /* AssistantView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3806CFF47B5F6997893713EA /* AssistantView.swift */; };
 		EF09753AF7E85149CEA82638 /* AssistantMessageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4057900B379CDA0455F53DAE /* AssistantMessageView.swift */; };
 		DBA59E6A0C404FCB16E85152 /* AssistantMarkdownView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21A0DC3BD607D444DD7FFDAE /* AssistantMarkdownView.swift */; };
@@ -158,6 +159,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		6DDCFDCD6005F4D774DA8F9C /* AssistantSettingsCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantSettingsCard.swift; sourceTree = "<group>"; };
 		3806CFF47B5F6997893713EA /* AssistantView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantView.swift; sourceTree = "<group>"; };
 		4057900B379CDA0455F53DAE /* AssistantMessageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantMessageView.swift; sourceTree = "<group>"; };
 		21A0DC3BD607D444DD7FFDAE /* AssistantMarkdownView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantMarkdownView.swift; sourceTree = "<group>"; };
@@ -424,6 +426,7 @@
 		AA000004000000000000AA00 /* App */ = {
 			isa = PBXGroup;
 			children = (
+				6DDCFDCD6005F4D774DA8F9C /* AssistantSettingsCard.swift */,
 				3806CFF47B5F6997893713EA /* AssistantView.swift */,
 				4057900B379CDA0455F53DAE /* AssistantMessageView.swift */,
 				21A0DC3BD607D444DD7FFDAE /* AssistantMarkdownView.swift */,
@@ -747,6 +750,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				37B1806C8919C854011F82E1 /* AssistantSettingsCard.swift in Sources */,
 				D6C07DEC10B49A2FAA5D1658 /* AssistantView.swift in Sources */,
 				EF09753AF7E85149CEA82638 /* AssistantMessageView.swift in Sources */,
 				DBA59E6A0C404FCB16E85152 /* AssistantMarkdownView.swift in Sources */,

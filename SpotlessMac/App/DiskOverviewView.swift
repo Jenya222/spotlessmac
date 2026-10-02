@@ -34,6 +34,11 @@ struct DiskOverviewView: View {
             overview = await DiskSpaceService.overview(sourceResults: analysis.sourceResults)
         }
         .onDisappear { analysis.cancel() }
+        .onChange(of: viewModel.recoveryPreviewRequested, initial: true) { _, requested in
+            guard requested else { return }
+            viewModel.recoveryPreviewRequested = false
+            showStorageRecovery = true
+        }
         .sheet(isPresented: $showDrillDown) {
             NavigationStack {
                 DiskUsageView(startingURL: drillDownURL)
@@ -48,7 +53,10 @@ struct DiskOverviewView: View {
             }
             .frame(width: 640, height: 480)
         }
-        .sheet(isPresented: $showStorageRecovery, onDismiss: refreshDiskOverview) {
+        .sheet(isPresented: $showStorageRecovery, onDismiss: {
+            viewModel.clearAssistantStaging()
+            refreshDiskOverview()
+        }) {
             StorageRecoveryView(viewModel: viewModel, licenseManager: licenseManager)
         }
     }

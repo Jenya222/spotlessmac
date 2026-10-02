@@ -2,9 +2,9 @@ import SwiftUI
 import AppKit
 
 struct UninstallerView: View {
+    @Bindable var viewModel: UninstallViewModel
     var licenseManager: LicenseManager
 
-    @State private var viewModel = UninstallViewModel()
     @State private var showConfirmation = false
     @State private var showActivation = false
     @State private var pendingItems: [LeftoverItem] = []
@@ -21,7 +21,6 @@ struct UninstallerView: View {
         .task {
             if viewModel.apps.isEmpty { await viewModel.loadApps() }
         }
-        .onDisappear { viewModel.cancelSizing() }
         .sheet(isPresented: Binding(get: { !pendingCache.isEmpty }, set: { if !$0 { pendingCache = [] } })) {
             VStack(alignment: .leading, spacing: 16) {
                 Text("Переместить кэш в Корзину?").font(.title2.bold())

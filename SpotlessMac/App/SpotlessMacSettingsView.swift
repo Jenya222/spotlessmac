@@ -4,6 +4,7 @@ import SwiftUI
 struct SpotlessMacSettingsView: View {
     var viewModel: ScanViewModel
     var licenseManager: LicenseManager
+    var assistant: AssistantViewModel? = nil
     @Binding var showActivation: Bool
     @Binding var showOnboarding: Bool
 
@@ -18,6 +19,7 @@ struct SpotlessMacSettingsView: View {
             VStack(alignment: .leading, spacing: 22) {
                 header
                 generalCard
+                assistantCard
                 accessCard
                 licenseCard
                 aboutCard
@@ -72,6 +74,15 @@ struct SpotlessMacSettingsView: View {
                 .labelsHidden()
                 .frame(width: 150)
                 .accessibilityLabel("Стартовый раздел")
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var assistantCard: some View {
+        if let assistant {
+            settingsCard("АССИСТЕНТ", icon: "sparkles", iconColor: Theme.accentGradientStart) {
+                AssistantSettingsCard(assistant: assistant)
             }
         }
     }

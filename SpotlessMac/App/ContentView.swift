@@ -7,9 +7,10 @@ enum AppTab: String, CaseIterable {
     case diskUsage = "Диск"
     case memory = "Память"
     case docker = "Docker"
+    case assistant = "Ассистент"
     case settings = "Настройки"
 
-    static let mainTabs: [AppTab] = [.care, .cleaning, .uninstall, .diskUsage, .memory, .docker]
+    static let mainTabs: [AppTab] = [.care, .cleaning, .uninstall, .diskUsage, .memory, .docker, .assistant]
 
     static func launchTab(from defaults: UserDefaults = .standard) -> AppTab {
         guard let value = defaults.string(forKey: "launchTab"),
@@ -23,6 +24,9 @@ struct ContentView: View {
     @State private var dockerViewModel = DockerCleanupViewModel()
     @State private var memoryViewModel = MemoryViewModel()
     @State private var licenseManager = LicenseManager()
+    @State private var uninstallViewModel = UninstallViewModel()
+    @State private var assistantMemory = AssistantMemoryCache()
+    @State private var assistant: AssistantViewModel?
     @Binding var selectedTab: AppTab
     @AppStorage("hasSeenFDAOnboarding") private var hasSeenFDAOnboarding = false
     @State private var showOnboarding = false
@@ -35,7 +39,7 @@ struct ContentView: View {
         }
         .frame(minWidth: 920, minHeight: 604)
         .overlay(alignment: .topTrailing) {
-            if selectedTab != .settings {
+            if selectedTab != .settings && selectedTab != .assistant {
                 HStack(spacing: 10) {
                     licenseBadge
                     fdaBadge
@@ -44,6 +48,7 @@ struct ContentView: View {
             }
         }
         .onAppear {
+            if assistant == nil { assistant = makeAssistant() }
             viewModel.checkFDA()
             if !hasSeenFDAOnboarding {
                 showOnboarding = true
@@ -77,21 +82,54 @@ struct ContentView: View {
         case .cleaning:
             CleaningProgressView(viewModel: viewModel, selectedTab: $selectedTab)
         case .uninstall:
-            UninstallerView(licenseManager: licenseManager)
+            UninstallerView(viewModel: uninstallViewModel, licenseManager: licenseManager)
         case .diskUsage:
             DiskOverviewView(viewModel: viewModel, licenseManager: licenseManager, onOpenDocker: { selectedTab = .docker })
         case .memory:
             MemoryView(viewModel: memoryViewModel)
         case .docker:
             DockerCleanupView(viewModel: dockerViewModel, licenseManager: licenseManager)
+        case .assistant:
+            if let assistant {
+                AssistantView(
+                    viewModel: assistant,
+                    onOpenSettings: { selectedTab = .settings },
+                    onScan: { Task { await viewModel.scan() } }
+                )
+            }
         case .settings:
             SpotlessMacSettingsView(
                 viewModel: viewModel,
                 licenseManager: licenseManager,
+                assistant: assistant,
                 showActivation: $showActivation,
                 showOnboarding: $showOnboarding
             )
         }
+    }
+
+    private func makeAssistant() -> AssistantViewModel {
+        let scan = viewModel
+        let docker = dockerViewModel
+        let uninstall = uninstallViewModel
+        let memory = assistantMemory
+        let tab = $selectedTab
+        return AssistantViewModel(dependencies: .init(
+            settingsStore: AssistantSettingsStore(),
+            keyStore: KeychainAPIKeyStore(),
+            makeClient: { settings, key in try LLMClientFactory.make(settings: settings, apiKey: key) },
+            snapshot: {
+                AssistantSnapshotBuilder.make(scan: scan, docker: docker, uninstall: uninstall, memory: memory.latest,
+                                              volume: AssistantSnapshotBuilder.readVolume(), now: Date())
+            },
+            stagePlan: { plan in
+                scan.stageSelection(Set(plan.itemIDs))
+                tab.wrappedValue = .diskUsage
+            },
+            conversationStore: ConversationStore(fileURL: ConversationStore.defaultFileURL()),
+            homePath: NSHomeDirectory(),
+            refreshContext: { await memory.refresh() }
+        ))
     }
 
     @ViewBuilder

@@ -9,6 +9,7 @@ extension AppTab {
         case .diskUsage: return "chart.pie"
         case .memory: return "memorychip"
         case .docker: return "shippingbox"
+        case .assistant: return "sparkles"
         case .settings: return "gearshape"
         }
     }
@@ -20,6 +21,7 @@ extension AppTab {
         case .diskUsage: return "Диск"
         case .memory: return "Память"
         case .docker: return "Docker"
+        case .assistant: return "Помощь"
         case .settings: return "Настройки"
         }
     }

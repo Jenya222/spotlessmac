@@ -43,6 +43,7 @@ struct StorageRecoveryView: View {
     var body: some View {
         VStack(spacing: 0) {
             header
+            if let staging = viewModel.assistantStaging { assistantBanner(staging) }
             controls
             Divider()
             results
@@ -121,6 +122,25 @@ struct StorageRecoveryView: View {
             Button("Закрыть") { dismiss() }
         }
         .padding(20)
+    }
+
+    private func assistantBanner(_ staging: ScanViewModel.AssistantStaging) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: "sparkles").foregroundStyle(Theme.accentGradientStart)
+            Text("Выбрано ассистентом: \(staging.count) элементов, \(ByteCountFormatter.string(fromByteCount: staging.bytes, countStyle: .file)). Проверьте список перед удалением.")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(Theme.textPrimary)
+            Spacer()
+            Button("Сбросить выбор") {
+                viewModel.selectNone()
+                viewModel.clearAssistantStaging()
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 10)
+        .background(Theme.warningBackground)
     }
 
     private var controls: some View {
