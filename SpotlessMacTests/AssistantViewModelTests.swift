@@ -1,0 +1,317 @@
+import XCTest
+@testable import SpotlessMac
+
+@MainActor
+final class AssistantViewModelTests: XCTestCase {
+    private var staged: [AssistantPlan] = []
+    private var settingsStore: AssistantSettingsStore!
+
+    private func makeViewModel(
+        _ client: FakeLLMClient,
+        provider: AssistantProvider = .ollamaLocal,
+        toolMode: AssistantToolMode = .auto,
+        conversationStore: ConversationStore? = nil,
+        snapshot: SystemSnapshot = .sample()
+    ) -> AssistantViewModel {
+        settingsStore = AssistantSettingsStore(defaults: makeDefaults())
+        var settings = AssistantSettings()
+        settings.switchProvider(to: provider)
+        settings.toolMode = toolMode
+        settingsStore.save(settings)
+        staged = []
+        return AssistantViewModel(dependencies: .init(
+            settingsStore: settingsStore,
+            keyStore: FakeKeyStore("key"),
+            makeClient: { _, _ in client },
+            snapshot: { snapshot },
+            stagePlan: { [unowned self] plan in self.staged.append(plan) },
+            conversationStore: conversationStore,
+            homePath: SystemSnapshot.testHome,
+            now: { SystemSnapshot.testDate }
+        ))
+    }
+
+    private func sendAndWait(_ vm: AssistantViewModel, _ text: String) async {
+        vm.send(text)
+        await vm.waitUntilIdle()
+    }
+
+    func testStreamsTextIntoAssistantMessage() async {
+        let client = FakeLLMClient([.events([.text("Это "), .text("кеш Xcode."), .done])])
+        let vm = makeViewModel(client)
+        await sendAndWait(vm, "Что такое DerivedData?")
+        XCTAssertEqual(vm.messages.map(\.role), [.user, .assistant])
+        XCTAssertEqual(vm.messages[1].text, "Это кеш Xcode.")
+        XCTAssertEqual(vm.messages[1].status, .complete)
+        XCTAssertFalse(vm.isStreaming)
+        let request = client.requests[0]
+        XCTAssertEqual(request.messages.first?.role, .system)
+        XCTAssertTrue(request.messages[1].content.contains("Снимок системы"))
+        XCTAssertEqual(request.messages.last?.content, "Что такое DerivedData?")
+        XCTAssertFalse(request.tools.isEmpty)
+    }
+
+    func testToolLoopFeedsResultsBack() async {
+        let call = ToolCall(id: "call_1", name: "list_items", argumentsJSON: #"{"category":"logs"}"#)
+        let client = FakeLLMClient([.events([.toolCalls([call]), .done]), .events([.text("Логи можно удалить."), .done])])
+        let vm = makeViewModel(client)
+        await sendAndWait(vm, "Что с логами?")
+        XCTAssertEqual(client.requests.count, 2)
+        let second = client.requests[1].messages
+        XCTAssertEqual(second[second.count - 2].toolCalls, [call])
+        XCTAssertEqual(second.last?.role, .tool)
+        XCTAssertTrue(second.last?.content.contains("c5 |") ?? false)
+        XCTAssertEqual(vm.messages.last?.text, "Логи можно удалить.")
+    }
+
+    func testToolRoundsAreCapped() async {
+        let call = ToolCall(id: "c", name: "item_details", argumentsJSON: #"{"id":"c1"}"#)
+        let steps = Array(repeating: FakeLLMClient.Step.events([.toolCalls([call]), .done]), count: 6)
+        let client = FakeLLMClient(steps)
+        let vm = makeViewModel(client)
+        await sendAndWait(vm, "?")
+        XCTAssertEqual(client.requests.count, AssistantViewModel.maxToolRounds + 1)
+        XCTAssertTrue(client.requests.last?.tools.isEmpty ?? false)
+        XCTAssertEqual(vm.messages.last?.status, .complete)
+    }
+
+    func testAutoFallsBackWhenToolsUnsupported() async {
+        let reply = "Почистите кеши.\n```spotless-plan\n{\"items\":[\"c1\",\"c3\"],\"reason\":\"кеши\"}\n```"
+        let client = FakeLLMClient([.failure(LLMError.toolsUnsupported), .events([.text(reply), .done])])
+        let vm = makeViewModel(client)
+        await sendAndWait(vm, "Освободи место")
+        XCTAssertEqual(client.requests.count, 2)
+        XCTAssertTrue(client.requests[1].tools.isEmpty)
+        XCTAssertTrue(client.requests[1].messages[0].content.contains("```spotless-plan"))
+        XCTAssertEqual(settingsStore.toolSupport(for: vm.settings.toolSupportKey), false)
+        XCTAssertEqual(vm.messages.last?.text, "Почистите кеши.")
+        XCTAssertEqual(vm.messages.last?.plan?.itemIDs.count, 2)
+    }
+
+    func testRemembersToolSupportAndOffModeSendsNoTools() async {
+        let client = FakeLLMClient([.events([.text("ok"), .done])])
+        let vm = makeViewModel(client, toolMode: .off)
+        await sendAndWait(vm, "?")
+        XCTAssertTrue(client.requests[0].tools.isEmpty)
+        XCTAssertTrue(client.requests[0].messages[0].content.contains("```spotless-plan"))
+    }
+
+    func testProposePlanCreatesCardButStagesOnlyOnOpen() async {
+        let call = ToolCall(id: "p", name: "propose_plan", argumentsJSON: #"{"items":["c1"],"reason":"DerivedData"}"#)
+        let client = FakeLLMClient([.events([.toolCalls([call]), .done]), .events([.text("Предлагаю удалить DerivedData."), .done])])
+        let vm = makeViewModel(client)
+        await sendAndWait(vm, "Освободи место")
+        guard let message = vm.messages.last else { return XCTFail("no message") }
+        XCTAssertEqual(message.plan?.itemIDs.count, 1)
+        XCTAssertTrue(staged.isEmpty)
+        vm.openPlan(messageID: message.id)
+        XCTAssertEqual(staged.count, 1)
+        vm.dismissPlan(messageID: message.id)
+        XCTAssertTrue(vm.messages.last?.planDismissed ?? false)
+    }
+
+    // Review focus 1: tool proposal wins over a text block.
+    func testToolProposalWinsOverTextBlock() async {
+        let call = ToolCall(id: "p", name: "propose_plan", argumentsJSON: #"{"items":["c1"]}"#)
+        let text = "План.\n```spotless-plan\n{\"items\":[\"c3\",\"c5\"]}\n```"
+        let client = FakeLLMClient([.events([.toolCalls([call]), .done]), .events([.text(text), .done])])
+        let vm = makeViewModel(client)
+        await sendAndWait(vm, "?")
+        XCTAssertEqual(vm.messages.last?.plan?.itemIDs.count, 1)
+        XCTAssertEqual(vm.messages.last?.text, "План.")
+    }
+
+    func testErrorsAreShownWithSettingsHint() async {
+        let client = FakeLLMClient([.failure(LLMError.unauthorized)])
+        let vm = makeViewModel(client)
+        await sendAndWait(vm, "?")
+        let message = vm.messages.last
+        XCTAssertEqual(message?.status, .failed)
+        XCTAssertEqual(message?.errorText, LLMError.unauthorized.userMessage)
+        XCTAssertEqual(message?.errorOpensSettings, true)
+    }
+
+    // Review focus 5: partial answer then dropped stream.
+    func testInterruptedStreamKeepsPartialText() async {
+        final class DroppingClient: LLMClient, @unchecked Sendable {
+            func stream(_ request: ChatRequest) -> AsyncThrowingStream<ChatEvent, Error> {
+                AsyncThrowingStream { continuation in
+                    continuation.yield(.text("Частично"))
+                    continuation.finish(throwing: LLMError.streamInterrupted)
+                }
+            }
+            func listModels() async throws -> [String] { [] }
+        }
+        settingsStore = AssistantSettingsStore(defaults: makeDefaults())
+        var settings = AssistantSettings()
+        settings.switchProvider(to: .ollamaLocal)
+        settingsStore.save(settings)
+        let vm = AssistantViewModel(dependencies: .init(
+            settingsStore: settingsStore, keyStore: FakeKeyStore(), makeClient: { _, _ in DroppingClient() },
+            snapshot: { .sample() }, stagePlan: { _ in }, conversationStore: nil, homePath: SystemSnapshot.testHome))
+        await sendAndWait(vm, "?")
+        XCTAssertEqual(vm.messages.last?.text, "Частично")
+        XCTAssertEqual(vm.messages.last?.status, .interrupted)
+        XCTAssertNotNil(vm.messages.last?.errorText)
+        vm.retry()
+        await vm.waitUntilIdle()
+        XCTAssertEqual(vm.messages.count, 2)
+    }
+
+    func testStopMarksMessageStopped() async {
+        let client = FakeLLMClient([.hang])
+        let vm = makeViewModel(client)
+        vm.send("?")
+        XCTAssertTrue(vm.isStreaming)
+        try? await Task.sleep(for: .milliseconds(50))
+        vm.stop()
+        await vm.waitUntilIdle()
+        XCTAssertEqual(vm.messages.last?.status, .stopped)
+        XCTAssertFalse(vm.isStreaming)
+    }
+
+    // Review focus 4: new conversation while streaming.
+    func testNewConversationWhileStreaming() async {
+        let client = FakeLLMClient([.hang])
+        let vm = makeViewModel(client)
+        vm.send("?")
+        vm.newConversation()
+        await vm.waitUntilIdle()
+        XCTAssertTrue(vm.messages.isEmpty)
+        XCTAssertFalse(vm.isStreaming)
+    }
+
+    func testCloudDisclosureGatesFirstSend() async {
+        let client = FakeLLMClient([.events([.text("ok"), .done])])
+        let vm = makeViewModel(client, provider: .ollamaCloud)
+        vm.draft = "Почему диск заполнен?"
+        vm.send()
+        XCTAssertTrue(vm.isCloudDisclosurePresented)
+        XCTAssertTrue(client.requests.isEmpty)
+        vm.acceptCloudDisclosure()
+        await vm.waitUntilIdle()
+        XCTAssertEqual(client.requests.count, 1)
+        XCTAssertEqual(vm.draft, "")
+        XCTAssertTrue(settingsStore.cloudDisclosureAccepted)
+    }
+
+    func testCloudRequestsAreRedactedAndAnswerRestored() async {
+        let client = FakeLLMClient([.events([.text("Папка <папка-1> — это зависимости."), .done])])
+        let vm = makeViewModel(client, provider: .ollamaCloud)
+        settingsStore.cloudDisclosureAccepted = true
+        await sendAndWait(vm, "Можно удалить /Users/tester/Projects/secret-client/node_modules?")
+        let everything = client.requests[0].messages.map(\.content).joined(separator: "\n")
+        XCTAssertFalse(everything.contains("/Users/tester"))
+        XCTAssertFalse(everything.contains("secret-client"))
+        XCTAssertTrue(everything.contains("<папка-1>"))
+        XCTAssertEqual(vm.messages.last?.text, "Папка secret-client — это зависимости.")
+        XCTAssertTrue(vm.messages.first?.text.contains("secret-client") ?? false, "local history keeps real text")
+    }
+
+    // Controller ruling R3: tool output (item card) must be redacted for cloud providers too.
+    func testCloudToolOutputIsRedacted() async {
+        let call = ToolCall(id: "d", name: "item_details", argumentsJSON: #"{"id":"c2"}"#)
+        let client = FakeLLMClient([.events([.toolCalls([call]), .done]), .events([.text("Это зависимости проекта."), .done])])
+        let vm = makeViewModel(client, provider: .ollamaCloud)
+        settingsStore.cloudDisclosureAccepted = true
+        await sendAndWait(vm, "Что в c2?")
+        XCTAssertEqual(client.requests.count, 2)
+        for (index, request) in client.requests.enumerated() {
+            for message in request.messages {
+                XCTAssertFalse(message.content.contains("secret-client"), "request \(index) leaks the folder name")
+                XCTAssertFalse(message.content.contains("/Users/tester"), "request \(index) leaks the home path")
+            }
+        }
+        let toolMessage = client.requests[1].messages.last
+        XCTAssertEqual(toolMessage?.role, .tool)
+        XCTAssertTrue(toolMessage?.content.contains("~/Projects/<папка-1>/node_modules") ?? false)
+    }
+
+    // Controller rulings R1/R2: item reasons are free text and may name a project folder.
+    func testCloudToolOutputRedactsFolderNamesInReasons() async {
+        var snapshot = SystemSnapshot.sample()
+        snapshot.items = snapshot.items.map { item in
+            guard item.shortID == "c2" else { return item }
+            return SnapshotItem(shortID: item.shortID, itemID: item.itemID, path: item.path, bytes: item.bytes,
+                                category: item.category, disposition: item.disposition,
+                                reason: "Зависимости проекта secret-client", modifiedAt: item.modifiedAt, owner: item.owner)
+        }
+        let call = ToolCall(id: "d", name: "item_details", argumentsJSON: #"{"id":"c2"}"#)
+        let client = FakeLLMClient([.events([.toolCalls([call]), .done]), .events([.text("ok"), .done])])
+        let vm = makeViewModel(client, provider: .ollamaCloud, snapshot: snapshot)
+        settingsStore.cloudDisclosureAccepted = true
+        await sendAndWait(vm, "Что в c2?")
+        let toolMessage = client.requests[1].messages.last
+        XCTAssertTrue(toolMessage?.content.contains("Причина: Зависимости проекта <папка-1>") ?? false)
+        for request in client.requests {
+            for message in request.messages {
+                XCTAssertFalse(message.content.contains("secret-client"))
+            }
+        }
+    }
+
+    // Controller ruling R2: the snapshot is rendered before the history, so both share one alias per folder.
+    func testCloudHistoryReusesSnapshotAliases() async {
+        let client = FakeLLMClient([.events([.text("ok"), .done])])
+        let vm = makeViewModel(client, provider: .ollamaCloud)
+        settingsStore.cloudDisclosureAccepted = true
+        await sendAndWait(vm, "Можно удалить /Users/tester/Downloads/big.iso?")
+        let messages = client.requests[0].messages
+        XCTAssertTrue(messages[1].content.contains("c6 | ~/Downloads/<папка-3> |"), "snapshot numbers aliases in item order")
+        XCTAssertEqual(messages.last?.content, "Можно удалить ~/Downloads/<папка-3>?")
+    }
+
+    func testAskAboutFocusSendsCard() async {
+        let client = FakeLLMClient([.events([.text("ok"), .done])])
+        let vm = makeViewModel(client)
+        vm.ask(about: AssistantFocus(title: "DerivedData", path: "/Users/tester/Library/Developer/Xcode/DerivedData", facts: ["Размер: 9,8 ГБ"]))
+        await vm.waitUntilIdle()
+        let question = client.requests[0].messages.last?.content ?? ""
+        XCTAssertTrue(question.hasPrefix("Что это и можно ли это удалить?"))
+        XCTAssertTrue(question.contains("Путь: /Users/tester/Library/Developer/Xcode/DerivedData"))
+        XCTAssertTrue(question.contains("- Размер: 9,8 ГБ"))
+    }
+
+    func testPersistsAndRestoresConversation() async {
+        let dir = FileManager.default.temporaryDirectory.appending(path: "assistant-vm-\(UUID().uuidString)")
+        let store = ConversationStore(fileURL: dir.appending(path: "c.json"))
+        let vm = makeViewModel(FakeLLMClient([.events([.text("ok"), .done])]), conversationStore: store)
+        await sendAndWait(vm, "привет")
+        let restored = makeViewModel(FakeLLMClient([]), conversationStore: store)
+        XCTAssertEqual(restored.messages.map(\.text), ["привет", "ok"])
+    }
+
+    func testRefreshesContextBeforeEachAnswer() async {
+        settingsStore = AssistantSettingsStore(defaults: makeDefaults())
+        var settings = AssistantSettings()
+        settings.switchProvider(to: .ollamaLocal)
+        settingsStore.save(settings)
+        // Reference box: closures may be inferred @Sendable, so no captured `var`s.
+        @MainActor final class Context { var refreshes = 0; var memory: MemoryInfo? }
+        let context = Context()
+        let client = FakeLLMClient([.events([.text("ok"), .done])])
+        let vm = AssistantViewModel(dependencies: .init(
+            settingsStore: settingsStore, keyStore: FakeKeyStore(), makeClient: { _, _ in client },
+            snapshot: { var s = SystemSnapshot.sample(); s.memory = context.memory; return s },
+            stagePlan: { _ in }, conversationStore: nil, homePath: SystemSnapshot.testHome,
+            refreshContext: {
+                context.refreshes += 1
+                context.memory = MemoryInfo(load: .critical, usedBytes: 15_000_000_000, physicalBytes: 16_000_000_000,
+                                            swapUsedBytes: 6_000_000_000, topApps: [])
+            }
+        ))
+        await sendAndWait(vm, "Почему тормозит?")
+        XCTAssertEqual(context.refreshes, 1)
+        XCTAssertTrue(client.requests[0].messages[1].content.contains("давление критическое"))
+    }
+
+    func testIsConfiguredRequiresKeyForCloud() {
+        settingsStore = AssistantSettingsStore(defaults: makeDefaults())
+        let vm = AssistantViewModel(dependencies: .init(
+            settingsStore: settingsStore, keyStore: FakeKeyStore(""), makeClient: { _, _ in FakeLLMClient([]) },
+            snapshot: { .sample() }, stagePlan: { _ in }, conversationStore: nil, homePath: SystemSnapshot.testHome))
+        XCTAssertFalse(vm.isConfigured)
+        vm.saveSettings(vm.settings, apiKey: "abc")
+        XCTAssertTrue(vm.isConfigured)
+    }
+}

@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1ABF981BE6CB80095542636D /* AssistantViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DC98D18391E2F37F39A3D6F /* AssistantViewModel.swift */; };
+		EA7E392EBFB12035F333D0A9 /* AssistantViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9E7E47D6EF36792EBFD458C /* AssistantViewModelTests.swift */; };
 		777F6EC9427B160A34FCCD12 /* ConversationStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95F35774C814FFBEE9EE789C /* ConversationStore.swift */; };
 		C5A2FD842B78AE7BC79406C4 /* AssistantMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = D84F7BF39AE9CA59A1BB3DDC /* AssistantMessage.swift */; };
 		1BC1E4AF95FBCA4E8348743D /* ConversationStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DAD9062E054609A3D289B00 /* ConversationStoreTests.swift */; };
@@ -147,6 +149,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		2DC98D18391E2F37F39A3D6F /* AssistantViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantViewModel.swift; sourceTree = "<group>"; };
+		E9E7E47D6EF36792EBFD458C /* AssistantViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantViewModelTests.swift; sourceTree = "<group>"; };
 		95F35774C814FFBEE9EE789C /* ConversationStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationStore.swift; sourceTree = "<group>"; };
 		D84F7BF39AE9CA59A1BB3DDC /* AssistantMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantMessage.swift; sourceTree = "<group>"; };
 		2DAD9062E054609A3D289B00 /* ConversationStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationStoreTests.swift; sourceTree = "<group>"; };
@@ -311,6 +315,7 @@
 		B2B489C2435F0FB76091E6B5 /* Assistant */ = {
 			isa = PBXGroup;
 			children = (
+				2DC98D18391E2F37F39A3D6F /* AssistantViewModel.swift */,
 				95F35774C814FFBEE9EE789C /* ConversationStore.swift */,
 				D84F7BF39AE9CA59A1BB3DDC /* AssistantMessage.swift */,
 				C161D1C0D0DACA6F57A89A55 /* AssistantToolbox.swift */,
@@ -464,6 +469,7 @@
 		AA100001000000000000AA00 /* SpotlessMacTests */ = {
 			isa = PBXGroup;
 			children = (
+				E9E7E47D6EF36792EBFD458C /* AssistantViewModelTests.swift */,
 				2DAD9062E054609A3D289B00 /* ConversationStoreTests.swift */,
 				AF3CFD3F729863EA9A7EDB3B /* AssistantToolboxTests.swift */,
 				55B2A47F764F4D62F36BEBA7 /* AssistantPlanTests.swift */,
@@ -660,6 +666,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EA7E392EBFB12035F333D0A9 /* AssistantViewModelTests.swift in Sources */,
 				1BC1E4AF95FBCA4E8348743D /* ConversationStoreTests.swift in Sources */,
 				234ACB8F42A82FD0A707F7CD /* AssistantToolboxTests.swift in Sources */,
 				BE0F65E226B1675DC39E0823 /* AssistantPlanTests.swift in Sources */,
@@ -710,6 +717,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1ABF981BE6CB80095542636D /* AssistantViewModel.swift in Sources */,
 				777F6EC9427B160A34FCCD12 /* ConversationStore.swift in Sources */,
 				C5A2FD842B78AE7BC79406C4 /* AssistantMessage.swift in Sources */,
 				C91E72F7F455ACF6C5D11128 /* AssistantToolbox.swift in Sources */,
