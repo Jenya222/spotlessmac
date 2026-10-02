@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		C91E72F7F455ACF6C5D11128 /* AssistantToolbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = C161D1C0D0DACA6F57A89A55 /* AssistantToolbox.swift */; };
+		BA7C04A8ACB0FB5D4D2AE8E4 /* AssistantTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44FF482794B3082EFD45DB61 /* AssistantTool.swift */; };
+		234ACB8F42A82FD0A707F7CD /* AssistantToolboxTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF3CFD3F729863EA9A7EDB3B /* AssistantToolboxTests.swift */; };
 		E34E0F0FE212EEF04171E725 /* PlanParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49FFEEAEDA3E9C85681861E7 /* PlanParser.swift */; };
 		27D19168387F85F0C304E71E /* AssistantPlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = C77FADB3BE8D7148FBEB7D1F /* AssistantPlan.swift */; };
 		BE0F65E226B1675DC39E0823 /* AssistantPlanTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55B2A47F764F4D62F36BEBA7 /* AssistantPlanTests.swift */; };
@@ -141,6 +144,9 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		C161D1C0D0DACA6F57A89A55 /* AssistantToolbox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantToolbox.swift; sourceTree = "<group>"; };
+		44FF482794B3082EFD45DB61 /* AssistantTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantTool.swift; sourceTree = "<group>"; };
+		AF3CFD3F729863EA9A7EDB3B /* AssistantToolboxTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantToolboxTests.swift; sourceTree = "<group>"; };
 		49FFEEAEDA3E9C85681861E7 /* PlanParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanParser.swift; sourceTree = "<group>"; };
 		C77FADB3BE8D7148FBEB7D1F /* AssistantPlan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantPlan.swift; sourceTree = "<group>"; };
 		55B2A47F764F4D62F36BEBA7 /* AssistantPlanTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantPlanTests.swift; sourceTree = "<group>"; };
@@ -299,6 +305,8 @@
 		B2B489C2435F0FB76091E6B5 /* Assistant */ = {
 			isa = PBXGroup;
 			children = (
+				C161D1C0D0DACA6F57A89A55 /* AssistantToolbox.swift */,
+				44FF482794B3082EFD45DB61 /* AssistantTool.swift */,
 				49FFEEAEDA3E9C85681861E7 /* PlanParser.swift */,
 				C77FADB3BE8D7148FBEB7D1F /* AssistantPlan.swift */,
 				74AE49E0F73A6631193442EE /* AssistantPrompt.swift */,
@@ -448,6 +456,7 @@
 		AA100001000000000000AA00 /* SpotlessMacTests */ = {
 			isa = PBXGroup;
 			children = (
+				AF3CFD3F729863EA9A7EDB3B /* AssistantToolboxTests.swift */,
 				55B2A47F764F4D62F36BEBA7 /* AssistantPlanTests.swift */,
 				E5C52CB048B15D809D1332A6 /* SnapshotRendererTests.swift */,
 				4FC76C0B5C8B0E7521981401 /* PathRedactorTests.swift */,
@@ -642,6 +651,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				234ACB8F42A82FD0A707F7CD /* AssistantToolboxTests.swift in Sources */,
 				BE0F65E226B1675DC39E0823 /* AssistantPlanTests.swift in Sources */,
 				1DBA997480D59CD62AF37E2A /* SnapshotRendererTests.swift in Sources */,
 				F467F708098E9D834219651D /* PathRedactorTests.swift in Sources */,
@@ -690,6 +700,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C91E72F7F455ACF6C5D11128 /* AssistantToolbox.swift in Sources */,
+				BA7C04A8ACB0FB5D4D2AE8E4 /* AssistantTool.swift in Sources */,
 				E34E0F0FE212EEF04171E725 /* PlanParser.swift in Sources */,
 				27D19168387F85F0C304E71E /* AssistantPlan.swift in Sources */,
 				DF0DCAD99C99643670E693A5 /* AssistantPrompt.swift in Sources */,
