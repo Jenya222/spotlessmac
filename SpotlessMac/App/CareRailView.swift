@@ -7,6 +7,7 @@ extension AppTab {
         case .cleaning: return "wand.and.stars"
         case .uninstall: return "trash"
         case .diskUsage: return "chart.pie"
+        case .memory: return "memorychip"
         case .docker: return "shippingbox"
         case .settings: return "gearshape"
         }
@@ -17,6 +18,7 @@ extension AppTab {
         case .cleaning: return "Чистка"
         case .uninstall: return "Прогр."
         case .diskUsage: return "Диск"
+        case .memory: return "Память"
         case .docker: return "Docker"
         case .settings: return "Настройки"
         }

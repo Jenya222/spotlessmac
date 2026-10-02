@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		484156751CE35F1F82709FD4 /* MemoryQuitSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 053C94B4BEE5C8ABDB853F96 /* MemoryQuitSheet.swift */; };
+		A5F1E96E66CD4F4F93F69FBF /* MemoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21A751DFC984DBD2A5DFB6E0 /* MemoryView.swift */; };
 		52EFA46EBB0F4DD33B739AC2 /* MemoryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 374BC7ACD20CEE7F7D7CF08E /* MemoryViewModel.swift */; };
 		EAB8D02030D444907CC70F83 /* MemoryViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3E4750E133FA40F702F5B38 /* MemoryViewModelTests.swift */; };
 		8A52BF4B2755F6E08EC666E6 /* MemoryVerdict.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C560EBCBA1BAC2ABAA394FA /* MemoryVerdict.swift */; };
@@ -115,6 +117,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		053C94B4BEE5C8ABDB853F96 /* MemoryQuitSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryQuitSheet.swift; sourceTree = "<group>"; };
+		21A751DFC984DBD2A5DFB6E0 /* MemoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryView.swift; sourceTree = "<group>"; };
 		374BC7ACD20CEE7F7D7CF08E /* MemoryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryViewModel.swift; sourceTree = "<group>"; };
 		C3E4750E133FA40F702F5B38 /* MemoryViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryViewModelTests.swift; sourceTree = "<group>"; };
 		3C560EBCBA1BAC2ABAA394FA /* MemoryVerdict.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryVerdict.swift; sourceTree = "<group>"; };
@@ -308,6 +312,8 @@
 		AA000004000000000000AA00 /* App */ = {
 			isa = PBXGroup;
 			children = (
+				053C94B4BEE5C8ABDB853F96 /* MemoryQuitSheet.swift */,
+				21A751DFC984DBD2A5DFB6E0 /* MemoryView.swift */,
 				DD000002000000000000DD00 /* SpotlessMacApp.swift */,
 				DD000003000000000000DD00 /* ContentView.swift */,
 				DD000010000000000000DD00 /* FDAOnboardingView.swift */,
@@ -594,6 +600,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				484156751CE35F1F82709FD4 /* MemoryQuitSheet.swift in Sources */,
+				A5F1E96E66CD4F4F93F69FBF /* MemoryView.swift in Sources */,
 				52EFA46EBB0F4DD33B739AC2 /* MemoryViewModel.swift in Sources */,
 				8A52BF4B2755F6E08EC666E6 /* MemoryVerdict.swift in Sources */,
 				89507767455D6EFEFC9D0EBF /* ProcessSafetyRules.swift in Sources */,

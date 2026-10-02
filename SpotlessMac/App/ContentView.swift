@@ -5,10 +5,11 @@ enum AppTab: String, CaseIterable {
     case cleaning = "Чистка"
     case uninstall = "Программы"
     case diskUsage = "Диск"
+    case memory = "Память"
     case docker = "Docker"
     case settings = "Настройки"
 
-    static let mainTabs: [AppTab] = [.care, .cleaning, .uninstall, .diskUsage, .docker]
+    static let mainTabs: [AppTab] = [.care, .cleaning, .uninstall, .diskUsage, .memory, .docker]
 
     static func launchTab(from defaults: UserDefaults = .standard) -> AppTab {
         guard let value = defaults.string(forKey: "launchTab"),
@@ -20,6 +21,7 @@ enum AppTab: String, CaseIterable {
 struct ContentView: View {
     @State private var viewModel = ScanViewModel()
     @State private var dockerViewModel = DockerCleanupViewModel()
+    @State private var memoryViewModel = MemoryViewModel()
     @State private var licenseManager = LicenseManager()
     @Binding var selectedTab: AppTab
     @AppStorage("hasSeenFDAOnboarding") private var hasSeenFDAOnboarding = false
@@ -78,6 +80,8 @@ struct ContentView: View {
             UninstallerView(licenseManager: licenseManager)
         case .diskUsage:
             DiskOverviewView(viewModel: viewModel, licenseManager: licenseManager, onOpenDocker: { selectedTab = .docker })
+        case .memory:
+            MemoryView(viewModel: memoryViewModel)
         case .docker:
             DockerCleanupView(viewModel: dockerViewModel, licenseManager: licenseManager)
         case .settings:
