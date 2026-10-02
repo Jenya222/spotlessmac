@@ -412,6 +412,22 @@ final class AssistantViewModelTests: XCTestCase {
         XCTAssertTrue(question.contains("- Размер: 9,8 ГБ"))
     }
 
+    // Fix round 1 (task 16): asking from a result row on an unconfigured assistant must do nothing
+    // here (ContentView still switches to the tab, which shows the setup screen).
+    func testAskAboutFocusIsIgnoredWhenNotConfigured() async {
+        settingsStore = AssistantSettingsStore(defaults: makeDefaults())
+        let client = FakeLLMClient([.events([.text("ok"), .done])])
+        let vm = AssistantViewModel(dependencies: .init(
+            settingsStore: settingsStore, keyStore: FakeKeyStore(""), makeClient: { _, _ in client },
+            snapshot: { .sample() }, stagePlan: { _ in true }, conversationStore: nil, homePath: SystemSnapshot.testHome))
+        XCTAssertFalse(vm.isConfigured)
+        vm.ask(about: AssistantFocus(title: "DerivedData", path: "/Users/tester/Library/Developer/Xcode/DerivedData", facts: ["Размер: 9,8 ГБ"]))
+        await vm.waitUntilIdle()
+        XCTAssertTrue(vm.messages.isEmpty)
+        XCTAssertFalse(vm.isCloudDisclosurePresented)
+        XCTAssertTrue(client.requests.isEmpty)
+    }
+
     func testPersistsAndRestoresConversation() async {
         let dir = FileManager.default.temporaryDirectory.appending(path: "assistant-vm-\(UUID().uuidString)")
         let store = ConversationStore(fileURL: dir.appending(path: "c.json"))

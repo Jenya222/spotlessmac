@@ -302,8 +302,6 @@ private struct LeftoverRow: View {
         }
         .contentShape(Rectangle())
         .onTapGesture(perform: onToggle)
-        .contextMenu {
-            if let onAsk { Button("Спросить ассистента", systemImage: "sparkles", action: onAsk) }
-        }
+        .askAssistantMenu(onAsk)
     }
 }

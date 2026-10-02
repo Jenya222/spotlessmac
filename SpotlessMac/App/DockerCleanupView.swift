@@ -385,9 +385,7 @@ private struct DockerResourceRow: View {
             guard !disabled else { return }
             onToggle()
         }
-        .contextMenu {
-            if let onAsk { Button("Спросить ассистента", systemImage: "sparkles", action: onAsk) }
-        }
+        .askAssistantMenu(onAsk)
     }
 
     private var selectionColor: Color {

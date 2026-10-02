@@ -418,9 +418,7 @@ private struct StorageRecoveryRow: View {
         }
         .padding(.vertical, 4)
         .help(item.path.path(percentEncoded: false))
-        .contextMenu {
-            if let onAsk { Button("Спросить ассистента", systemImage: "sparkles", action: onAsk) }
-        }
+        .askAssistantMenu(onAsk)
     }
 
     private var icon: String {

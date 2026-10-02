@@ -34,3 +34,11 @@ struct AskAssistantButton: View {
         .accessibilityLabel("Спросить ассистента")
     }
 }
+
+extension View {
+    func askAssistantMenu(_ onAsk: (() -> Void)?) -> some View {
+        contextMenu {
+            if let onAsk { Button("Спросить ассистента", systemImage: "sparkles", action: onAsk) }
+        }
+    }
+}

@@ -79,6 +79,9 @@ final class AssistantViewModel {
     }
 
     func ask(about focus: AssistantFocus) {
+        // Row shortcuts can fire before the model is set up; the caller switches to the tab,
+        // which shows the setup screen. Never queue a hidden exchange or a disclosure here.
+        guard isConfigured else { return }
         let facts = focus.facts.map { "- \($0)" }.joined(separator: "\n")
         send("Что это и можно ли это удалить?\n\n\(focus.title)\nПуть: \(focus.path)\n\(facts)")
     }
