@@ -8,7 +8,7 @@ struct CareDashboardView: View {
     @Binding var showOnboarding: Bool
 
     @AppStorage("lastSmartCareTimestamp") private var lastSmartCareTimestamp: Double = 0
-    @State private var memoryStats: MemoryStats?
+    @State private var memorySample: MemorySample?
     @State private var diskOverview: DiskSpaceOverview?
     @State private var showConfirmSheet = false
 
@@ -24,6 +24,15 @@ struct CareDashboardView: View {
     }
     private var band: HealthBand { HealthScoreCalculator.band(for: healthScore) }
 
+    private var memorySubtitle: String {
+        guard let sample = memorySample else { return "…" }
+        let pressure = MemoryView.label(for: sample.system.pressure).lowercased()
+        let header = "Давление: \(pressure) · своп \(MemoryVerdict.format(sample.system.swapUsed))"
+        let top = sample.groups.filter { $0.kind == .userApp }.prefix(3)
+            .map { "\($0.displayName) — \(MemoryVerdict.format($0.footprint))" }
+        return ([header] + top).joined(separator: "\n")
+    }
+
     var body: some View {
         HStack(spacing: 0) {
             centerColumn
@@ -31,9 +40,9 @@ struct CareDashboardView: View {
         }
         .task {
             if viewModel.items.isEmpty { await viewModel.scan() }
-            async let mem = MemoryStatsService.current()
+            async let mem = MemoryMonitor().sample()
             async let disk = DiskSpaceService.overview()
-            memoryStats = await mem
+            memorySample = await mem
             diskOverview = await disk
         }
         .sheet(isPresented: $showConfirmSheet) {
@@ -128,9 +137,13 @@ struct CareDashboardView: View {
                      iconColor: Theme.healthGreenText, title: "Чистота",
                      subtitle: "\(ByteCountFormatter.string(fromByteCount: cleanableBytes, countStyle: .file)) мусора найдено")
 
-            statCard(iconBackground: Theme.accentGradientStart.opacity(0.12), icon: "bolt.fill",
-                     iconColor: Theme.accentGradientStart, title: "Память",
-                     subtitle: memoryStats.map { "свободно \($0.formattedFree)" } ?? "…")
+            Button { selectedTab = .memory } label: {
+                statCard(iconBackground: Theme.accentGradientStart.opacity(0.12), icon: "memorychip",
+                         iconColor: Theme.accentGradientStart, title: "Память",
+                         subtitle: memorySubtitle)
+            }
+            .buttonStyle(.plain)
+            .help("Открыть раздел «Память»")
 
             statCard(iconBackground: Theme.warningOrange.opacity(0.15), icon: "chart.pie.fill",
                      iconColor: Theme.warningOrange, title: "Диск",
