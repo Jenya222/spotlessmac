@@ -33,6 +33,12 @@ final class AssistantSettingsTests: XCTestCase {
         XCTAssertFalse(settings.sendsDataOffDevice)
         settings.baseURL = "http://127.0.0.1:1234"
         XCTAssertFalse(settings.sendsDataOffDevice)
+        settings.baseURL = "http://[::1]:1234"
+        XCTAssertFalse(settings.sendsDataOffDevice)
+        // Local Ollama pointed at a LAN/remote host still leaves this Mac.
+        settings.switchProvider(to: .ollamaLocal)
+        settings.baseURL = "http://192.168.1.10:11434"
+        XCTAssertTrue(settings.sendsDataOffDevice)
     }
 
     func testKeyRequirements() {

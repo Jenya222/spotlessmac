@@ -67,11 +67,13 @@ struct AssistantSettings: Codable, Equatable, Sendable {
     var sendsDataOffDevice: Bool {
         switch provider {
         case .ollamaCloud: return true
-        case .ollamaLocal: return false
-        case .openAICompatible:
-            let host = URL(string: baseURL)?.host()?.lowercased() ?? ""
-            return !["localhost", "127.0.0.1", "::1", "[::1]"].contains(host)
+        case .ollamaLocal, .openAICompatible: return !pointsAtLoopback
         }
+    }
+
+    private var pointsAtLoopback: Bool {
+        let host = URL(string: baseURL)?.host()?.lowercased() ?? ""
+        return ["localhost", "127.0.0.1", "::1"].contains(host)
     }
 
     var toolSupportKey: String { "\(provider.rawValue)|\(baseURL)|\(trimmedModel)" }
