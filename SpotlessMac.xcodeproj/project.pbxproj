@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		64B6305C20B70CEB6AB52E38 /* ProcessGrouper.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB6A2C1871B3AD238E6C5AD0 /* ProcessGrouper.swift */; };
+		EC5502B3939BC0BCA07A531F /* MemoryModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93AD136E39435023E11DF6F3 /* MemoryModels.swift */; };
+		16BB3C4DEB398C278ACEEB63 /* ProcessGrouperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12B48AD45296042943A6C5C2 /* ProcessGrouperTests.swift */; };
+		590FDC812BC7315B73CD5879 /* MemoryFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = 843595FB7E623F506109D79C /* MemoryFixtures.swift */; };
 		EE000040000000000000EE00 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = DD000040000000000000DD00 /* Assets.xcassets */; };
 		EE100001000000000000EE00 /* LeftoverMatcherTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD100002000000000000DD00 /* LeftoverMatcherTests.swift */; };
 		EE100002000000000000EE00 /* SmartCareSelectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD100003000000000000DD00 /* SmartCareSelectionTests.swift */; };
@@ -101,6 +105,10 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		AB6A2C1871B3AD238E6C5AD0 /* ProcessGrouper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessGrouper.swift; sourceTree = "<group>"; };
+		93AD136E39435023E11DF6F3 /* MemoryModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryModels.swift; sourceTree = "<group>"; };
+		12B48AD45296042943A6C5C2 /* ProcessGrouperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessGrouperTests.swift; sourceTree = "<group>"; };
+		843595FB7E623F506109D79C /* MemoryFixtures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryFixtures.swift; sourceTree = "<group>"; };
 		DD000040000000000000DD00 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		DD100001000000000000DD00 /* SpotlessMacTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SpotlessMacTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		DD100002000000000000DD00 /* LeftoverMatcherTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeftoverMatcherTests.swift; sourceTree = "<group>"; };
@@ -216,6 +224,15 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		45819CC578BB45491CC3FC92 /* Memory */ = {
+			isa = PBXGroup;
+			children = (
+				AB6A2C1871B3AD238E6C5AD0 /* ProcessGrouper.swift */,
+				93AD136E39435023E11DF6F3 /* MemoryModels.swift */,
+			);
+			path = Memory;
+			sourceTree = "<group>";
+		};
 		AA000000000000000000AA00 = {
 			isa = PBXGroup;
 			children = (
@@ -237,6 +254,7 @@
 		AA000003000000000000AA00 /* SpotlessMac */ = {
 			isa = PBXGroup;
 			children = (
+				45819CC578BB45491CC3FC92 /* Memory */,
 				DD000040000000000000DD00 /* Assets.xcassets */,
 				AA000004000000000000AA00 /* App */,
 				AA000005000000000000AA00 /* Models */,
@@ -327,6 +345,8 @@
 		AA100001000000000000AA00 /* SpotlessMacTests */ = {
 			isa = PBXGroup;
 			children = (
+				12B48AD45296042943A6C5C2 /* ProcessGrouperTests.swift */,
+				843595FB7E623F506109D79C /* MemoryFixtures.swift */,
 				655259F217D35F9DDAB35A61 /* LeftoverSelectionTests.swift */,
 				89761D1DED7B48B83D9A1AFB /* StorageAnalysisStressTests.swift */,
 				9611A2F3721DEA54C1EDA0C0 /* StorageRootRegistryTests.swift */,
@@ -506,6 +526,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				16BB3C4DEB398C278ACEEB63 /* ProcessGrouperTests.swift in Sources */,
+				590FDC812BC7315B73CD5879 /* MemoryFixtures.swift in Sources */,
 				582DE52D853D916A88432071 /* LeftoverSelectionTests.swift in Sources */,
 				C53DABBB8BFE54D44723A554 /* StorageAnalysisStressTests.swift in Sources */,
 				0233CC4F9F88868B29E132A8 /* StorageRootRegistryTests.swift in Sources */,
@@ -538,6 +560,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				64B6305C20B70CEB6AB52E38 /* ProcessGrouper.swift in Sources */,
+				EC5502B3939BC0BCA07A531F /* MemoryModels.swift in Sources */,
 				F0B9616E8465CDAB0D1B368F /* StorageRootRegistry.swift in Sources */,
 				652C636491B7C47BEFE7B067 /* DockerStorageSummary.swift in Sources */,
 				B9F13CFDCDA140694659C434 /* AppStorageService.swift in Sources */,
