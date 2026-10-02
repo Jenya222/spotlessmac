@@ -48,6 +48,16 @@ final class ProcessSafetyRulesTests: XCTestCase {
         XCTAssertNotEqual(decide(byName, [F.app(6, "/Applications/Weird.app")]), .allowed)
     }
 
+    func testProtectedBundleIDAloneDeniesQuit() {
+        // Neutral process name and a path outside /System, so only the bundle-id rule can decide.
+        let path = "/Applications/Weird.app"
+        let group = F.userGroup(path, processes: [F.process(12, name: "Helper")])
+        XCTAssertEqual(decide(group, [F.app(12, path, id: "com.apple.controlcenter")]),
+                       .denied("Это системный компонент macOS."))
+        XCTAssertEqual(decide(group, [F.app(12, path, id: "com.example.weird")]), .allowed,
+                       "same group with an ordinary bundle id is quittable")
+    }
+
     func testAppWithoutRunningApplicationIsDenied() {
         let group = F.userGroup("/Applications/Xcode.app", processes: [F.process(7, name: "SourceKitService")])
         XCTAssertNotEqual(decide(group, []), .allowed)

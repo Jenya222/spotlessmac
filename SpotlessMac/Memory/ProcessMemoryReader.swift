@@ -47,7 +47,7 @@ enum ProcessMemoryReader {
         let path = string(capacity: Int(MAXPATHLEN) * 4) { proc_pidpath(pid, $0, $1) }
         let name = argumentZero(pid: pid)
             ?? string(capacity: 256) { proc_name(pid, $0, $1) }
-            ?? path.map { URL(fileURLWithPath: $0).lastPathComponent }
+            ?? path.map { ($0 as NSString).lastPathComponent }
         guard hasBSD || path != nil || name != nil else { return nil } // process exited
 
         var usage = rusage_info_v4()
@@ -87,7 +87,8 @@ enum ProcessMemoryReader {
         while index < size, buffer[index] != 0 { index += 1 }
         guard index > start else { return nil }
         let argument = String(decoding: buffer[start..<index], as: UTF8.self)
-        let name = URL(fileURLWithPath: argument).lastPathComponent
+        // NSString, not URL: `URL(fileURLWithPath:)` stats the filesystem, and this runs per process.
+        let name = (argument as NSString).lastPathComponent
         return name.isEmpty ? nil : name
     }
 

@@ -31,6 +31,11 @@ final class SystemMemoryReaderTests: XCTestCase {
         XCTAssertEqual(MemoryPressure(sysctlLevel: nil), .unknown)
     }
 
+    /// Smoke test: notices if a future macOS drops the private responsibility symbol.
+    func testResponsibilitySymbolResolves() {
+        XCTAssertNotNil(ResponsibilityResolver.live.responsiblePID(for: getpid()))
+    }
+
     func testLiveReadersReturnPlausibleData() {
         let system = SystemMemoryReader.current()
         XCTAssertEqual(system.physical, ProcessInfo.processInfo.physicalMemory)

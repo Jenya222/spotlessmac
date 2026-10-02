@@ -6,6 +6,12 @@ enum ProcessGrouper {
     static let systemGroupID = "system"
     private static let maxParentDepth = 32
 
+    /// `/Applications/Google Chrome.app` → `Google Chrome`. String-based on purpose:
+    /// `URL(fileURLWithPath:)` stats the filesystem, and this runs on every sample.
+    private static func displayName(forBundle path: String) -> String {
+        ((path as NSString).lastPathComponent as NSString).deletingPathExtension
+    }
+
     static func group(
         _ processes: [ProcessMemorySample],
         runningApps: [RunningAppInfo],
@@ -56,7 +62,7 @@ enum ProcessGrouper {
         var groups = userApps.map { path, list in
             AppMemoryGroup(
                 id: path,
-                displayName: URL(fileURLWithPath: path).deletingPathExtension().lastPathComponent,
+                displayName: displayName(forBundle: path),
                 kind: .userApp, bundlePath: path, processes: sorted(list)
             )
         }
