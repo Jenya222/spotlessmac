@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		845D2B330BBF9D11646005DF /* MemoryMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6593FCC39A0414E0C3E12AC7 /* MemoryMonitor.swift */; };
+		9474754DBF36232DDFACDA41 /* ProcessMemoryReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A9E701D4C357F3BB5B3AA5 /* ProcessMemoryReader.swift */; };
+		B57E97755426D13D1692ADED /* SystemMemoryReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88D1D79F6604C3F5FCFC427D /* SystemMemoryReader.swift */; };
+		4039E8972DAFA49F05DFE984 /* SystemMemoryReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF40178ECCEF9479DADD6608 /* SystemMemoryReaderTests.swift */; };
 		64B6305C20B70CEB6AB52E38 /* ProcessGrouper.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB6A2C1871B3AD238E6C5AD0 /* ProcessGrouper.swift */; };
 		EC5502B3939BC0BCA07A531F /* MemoryModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93AD136E39435023E11DF6F3 /* MemoryModels.swift */; };
 		16BB3C4DEB398C278ACEEB63 /* ProcessGrouperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12B48AD45296042943A6C5C2 /* ProcessGrouperTests.swift */; };
@@ -105,6 +109,10 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		6593FCC39A0414E0C3E12AC7 /* MemoryMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryMonitor.swift; sourceTree = "<group>"; };
+		F1A9E701D4C357F3BB5B3AA5 /* ProcessMemoryReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessMemoryReader.swift; sourceTree = "<group>"; };
+		88D1D79F6604C3F5FCFC427D /* SystemMemoryReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemMemoryReader.swift; sourceTree = "<group>"; };
+		EF40178ECCEF9479DADD6608 /* SystemMemoryReaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemMemoryReaderTests.swift; sourceTree = "<group>"; };
 		AB6A2C1871B3AD238E6C5AD0 /* ProcessGrouper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessGrouper.swift; sourceTree = "<group>"; };
 		93AD136E39435023E11DF6F3 /* MemoryModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryModels.swift; sourceTree = "<group>"; };
 		12B48AD45296042943A6C5C2 /* ProcessGrouperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessGrouperTests.swift; sourceTree = "<group>"; };
@@ -227,6 +235,9 @@
 		45819CC578BB45491CC3FC92 /* Memory */ = {
 			isa = PBXGroup;
 			children = (
+				6593FCC39A0414E0C3E12AC7 /* MemoryMonitor.swift */,
+				F1A9E701D4C357F3BB5B3AA5 /* ProcessMemoryReader.swift */,
+				88D1D79F6604C3F5FCFC427D /* SystemMemoryReader.swift */,
 				AB6A2C1871B3AD238E6C5AD0 /* ProcessGrouper.swift */,
 				93AD136E39435023E11DF6F3 /* MemoryModels.swift */,
 			);
@@ -345,6 +356,7 @@
 		AA100001000000000000AA00 /* SpotlessMacTests */ = {
 			isa = PBXGroup;
 			children = (
+				EF40178ECCEF9479DADD6608 /* SystemMemoryReaderTests.swift */,
 				12B48AD45296042943A6C5C2 /* ProcessGrouperTests.swift */,
 				843595FB7E623F506109D79C /* MemoryFixtures.swift */,
 				655259F217D35F9DDAB35A61 /* LeftoverSelectionTests.swift */,
@@ -526,6 +538,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4039E8972DAFA49F05DFE984 /* SystemMemoryReaderTests.swift in Sources */,
 				16BB3C4DEB398C278ACEEB63 /* ProcessGrouperTests.swift in Sources */,
 				590FDC812BC7315B73CD5879 /* MemoryFixtures.swift in Sources */,
 				582DE52D853D916A88432071 /* LeftoverSelectionTests.swift in Sources */,
@@ -560,6 +573,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				845D2B330BBF9D11646005DF /* MemoryMonitor.swift in Sources */,
+				9474754DBF36232DDFACDA41 /* ProcessMemoryReader.swift in Sources */,
+				B57E97755426D13D1692ADED /* SystemMemoryReader.swift in Sources */,
 				64B6305C20B70CEB6AB52E38 /* ProcessGrouper.swift in Sources */,
 				EC5502B3939BC0BCA07A531F /* MemoryModels.swift in Sources */,
 				F0B9616E8465CDAB0D1B368F /* StorageRootRegistry.swift in Sources */,
