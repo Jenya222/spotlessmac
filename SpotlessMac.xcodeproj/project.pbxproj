@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		DF0DCAD99C99643670E693A5 /* AssistantPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74AE49E0F73A6631193442EE /* AssistantPrompt.swift */; };
+		A591BFE9C431C81748C10A87 /* SnapshotRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51526CF98A3253875C50198E /* SnapshotRenderer.swift */; };
+		1DBA997480D59CD62AF37E2A /* SnapshotRendererTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5C52CB048B15D809D1332A6 /* SnapshotRendererTests.swift */; };
 		AC2CE8020E626DE8D3F209E6 /* PathRedactor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 918AB89C2AD40D9CF2317556 /* PathRedactor.swift */; };
 		FE5ACF3D2ADA39B4EFE45CC3 /* SystemSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25213A9F91176DA17420F184 /* SystemSnapshot.swift */; };
 		F467F708098E9D834219651D /* PathRedactorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FC76C0B5C8B0E7521981401 /* PathRedactorTests.swift */; };
@@ -135,6 +138,9 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		74AE49E0F73A6631193442EE /* AssistantPrompt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantPrompt.swift; sourceTree = "<group>"; };
+		51526CF98A3253875C50198E /* SnapshotRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnapshotRenderer.swift; sourceTree = "<group>"; };
+		E5C52CB048B15D809D1332A6 /* SnapshotRendererTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnapshotRendererTests.swift; sourceTree = "<group>"; };
 		918AB89C2AD40D9CF2317556 /* PathRedactor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PathRedactor.swift; sourceTree = "<group>"; };
 		25213A9F91176DA17420F184 /* SystemSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemSnapshot.swift; sourceTree = "<group>"; };
 		4FC76C0B5C8B0E7521981401 /* PathRedactorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PathRedactorTests.swift; sourceTree = "<group>"; };
@@ -287,6 +293,8 @@
 		B2B489C2435F0FB76091E6B5 /* Assistant */ = {
 			isa = PBXGroup;
 			children = (
+				74AE49E0F73A6631193442EE /* AssistantPrompt.swift */,
+				51526CF98A3253875C50198E /* SnapshotRenderer.swift */,
 				918AB89C2AD40D9CF2317556 /* PathRedactor.swift */,
 				25213A9F91176DA17420F184 /* SystemSnapshot.swift */,
 				ACF965FB2ACC075885C1328C /* AssistantConnectionTester.swift */,
@@ -432,6 +440,7 @@
 		AA100001000000000000AA00 /* SpotlessMacTests */ = {
 			isa = PBXGroup;
 			children = (
+				E5C52CB048B15D809D1332A6 /* SnapshotRendererTests.swift */,
 				4FC76C0B5C8B0E7521981401 /* PathRedactorTests.swift */,
 				DFD359242E27551A5EAF8BC2 /* AssistantSnapshotFixtures.swift */,
 				7E5F36F71E52A85DB782C0F5 /* LLMClientFactoryTests.swift */,
@@ -624,6 +633,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1DBA997480D59CD62AF37E2A /* SnapshotRendererTests.swift in Sources */,
 				F467F708098E9D834219651D /* PathRedactorTests.swift in Sources */,
 				63E06D7EAAD98C26F1C53281 /* AssistantSnapshotFixtures.swift in Sources */,
 				3C0C4FE80D86614D31BCDD16 /* LLMClientFactoryTests.swift in Sources */,
@@ -670,6 +680,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DF0DCAD99C99643670E693A5 /* AssistantPrompt.swift in Sources */,
+				A591BFE9C431C81748C10A87 /* SnapshotRenderer.swift in Sources */,
 				AC2CE8020E626DE8D3F209E6 /* PathRedactor.swift in Sources */,
 				FE5ACF3D2ADA39B4EFE45CC3 /* SystemSnapshot.swift in Sources */,
 				B73583321664E7C6B72F0075 /* AssistantConnectionTester.swift in Sources */,
