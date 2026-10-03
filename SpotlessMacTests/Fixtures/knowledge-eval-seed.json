@@ -1,0 +1,10 @@
+[
+  {"query": "что за процесс mds_stores грузит процессор", "expected": "proc.spotlight-indexing"},
+  {"query": "mdworker_shared ест cpu", "expected": "proc.spotlight-indexing"},
+  {"query": "идёт индексация после обновления", "expected": "proc.spotlight-indexing"},
+  {"query": "можно ли удалить DerivedData", "expected": "path.xcode-deriveddata"},
+  {"query": "xcode сборки занимают много места", "expected": "path.xcode-deriveddata"},
+  {"query": "что значит жёлтое давление памяти", "expected": "guide.memory-pressure"},
+  {"query": "оперативка занята почти вся это плохо", "expected": "guide.memory-pressure"},
+  {"query": "сжатая память что это", "expected": "guide.memory-pressure"}
+]
