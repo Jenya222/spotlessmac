@@ -100,6 +100,8 @@ struct KnowledgeSearch: Sendable {
                 length += weight
             }
         }
+        // The tokenizer splits the id at dots and hyphens, so "proc.kernel-task" is found by "kernel task".
+        add(article.id, weight: 1)
         add(article.title, weight: 3)
         for value in article.aliases + article.keywords + article.processes + article.bundles { add(value, weight: 2) }
         add(article.summary, weight: 1.5)

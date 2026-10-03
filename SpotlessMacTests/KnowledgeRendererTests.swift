@@ -4,9 +4,7 @@ import XCTest
 final class KnowledgeRendererTests: XCTestCase {
     private let swap = KnowledgeFixtures.article("guide.swap", title: "Своп", summary: "Файл подкачки.",
                                                  related: ["guide.memory"])
-    // The English keyword is what an unknown id like guide.memory-pressure is matched against (ids themselves are not indexed).
-    private let memory = KnowledgeFixtures.article("guide.memory", title: "Давление памяти", summary: "Как читать.",
-                                                   keywords: ["memory pressure"])
+    private let memory = KnowledgeFixtures.article("guide.memory", title: "Давление памяти", summary: "Как читать.")
 
     func testArticleText() {
         let text = KnowledgeRenderer.article(swap)
@@ -45,6 +43,11 @@ final class KnowledgeRendererTests: XCTestCase {
         let text = KnowledgeRenderer.lookup(id: nil, query: "кэш", in: KnowledgeFixtures.base(big))
         XCTAssertLessThanOrEqual(text.count, KnowledgeRenderer.lookupLimit)
         XCTAssertTrue(text.contains("[guide.big1]"))
+        // The header counts the articles that fit under the cap, not every hit.
+        let included = text.components(separatedBy: "[guide.big").count - 1
+        let header = text.dropFirst("Найдено в справке: ".count).prefix { $0.isNumber }
+        XCTAssertLessThan(included, big.count)
+        XCTAssertEqual(Int(header), included)
     }
 
     func testInjectedReference() {

@@ -55,6 +55,15 @@ final class KnowledgeSearchTests: XCTestCase {
         XCTAssertEqual(search.search("не хватает памяти", limit: 1).first?.article.id, "guide.ram")
     }
 
+    // Nothing but the id mentions "kernel" or "task": the title, summary and body are Cyrillic.
+    func testArticleIsFoundByTheSegmentsOfItsID() {
+        let target = KnowledgeFixtures.article("proc.kernel-task", kind: .process, title: "Ядро")
+        let other = KnowledgeFixtures.article("guide.swap", title: "Своп")
+        let search = KnowledgeSearch(articles: [other, target])
+        XCTAssertEqual(search.search("kernel task", limit: 3).map(\.article.id), ["proc.kernel-task"])
+        XCTAssertEqual(search.search("proc.kernel-task", limit: 3).first?.article.id, "proc.kernel-task")
+    }
+
     func testNoMatchEmptyQueryAndLimit() {
         let articles = (1...5).map { KnowledgeFixtures.article("guide.a\($0)", title: "Кэш номер \($0)") }
         let search = KnowledgeSearch(articles: articles)

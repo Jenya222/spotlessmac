@@ -33,14 +33,14 @@ enum KnowledgeRenderer {
             return prefix + "Похожие статьи: "
                 + hits.map { "\($0.article.id) — \($0.article.title)" }.joined(separator: "; ") + "."
         }
-        return prefix + joined(hits.map(\.article), header: "Найдено в справке: \(hits.count).", limit: lookupLimit)
+        return prefix + joined(hits.map(\.article), header: { "Найдено в справке: \($0)." }, limit: lookupLimit)
     }
 
     // Tools-off mode: the best articles for the user's question, sent as one more system message.
     static func injected(for question: String, in base: KnowledgeBase) -> String? {
         let hits = base.search(question, limit: 2)
         guard !hits.isEmpty else { return nil }
-        return joined(hits.map(\.article), header: "Справка SpotlessMac по вопросу:", limit: injectedLimit)
+        return joined(hits.map(\.article), header: { _ in "Справка SpotlessMac по вопросу:" }, limit: injectedLimit)
     }
 
     // Each matched article once, the one covering the most bytes first.
@@ -69,14 +69,17 @@ enum KnowledgeRenderer {
         return lines.count > 1 ? lines.joined(separator: "\n") : nil
     }
 
-    private static func joined(_ articles: [KnowledgeArticle], header: String, limit: Int) -> String {
-        var text = header
+    // The header is built from the number of articles that actually fit under `limit`.
+    private static func joined(_ articles: [KnowledgeArticle], header: (Int) -> String, limit: Int) -> String {
+        var blocks: [String] = []
+        var used = header(articles.count).count
         for item in articles {
             let block = "\n\n" + article(item)
-            guard text.count + block.count <= limit else { break }
-            text += block
+            guard used + block.count <= limit else { break }
+            blocks.append(block)
+            used += block.count
         }
-        return text
+        return header(blocks.count) + blocks.joined()
     }
 
     private static func truncated(_ text: String, to limit: Int) -> String {
