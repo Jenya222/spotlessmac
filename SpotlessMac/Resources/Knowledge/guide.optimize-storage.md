@@ -9,7 +9,7 @@ keywords: [icloud, фото, музыка, apple tv, корзина, автом�
 related: [guide.system-data, guide.space-not-freed, guide.desktop-organization, guide.free-space-target, proc.icloud-sync, path.photos-library, path.trash]
 macOS: 14-26
 reviewed: 2026-10-03
-sources: [https://support.apple.com/ru-ru/guide/mac-help/sysp4ee93ca4/14/mac, https://support.apple.com/ru-ru/guide/mac-help/sysp4ee93ca4/26/mac/26, https://support.apple.com/ru-ru/guide/mac-help/syspf5a64aa6/mac, https://support.apple.com/ru-ru/guide/photos/phta9b4673b4/mac, https://support.apple.com/ru-ru/102344, https://support.apple.com/ru-ru/HT213050]
+sources: [https://support.apple.com/ru-ru/guide/mac-help/sysp4ee93ca4/14/mac, https://support.apple.com/ru-ru/guide/mac-help/sysp4ee93ca4/26/mac/26, https://support.apple.com/ru-ru/guide/mac-help/syspf5a64aa6/mac, https://support.apple.com/ru-ru/guide/photos/phta9b4673b4/mac, https://support.apple.com/ru-ru/102344, https://support.apple.com/ru-ru/HT213050, https://support.apple.com/ru-ru/108816, https://support.apple.com/ru-ru/119602]
 ---
 ## Что это
 В «Системные настройки → Основные → Хранилище» macOS показывает рекомендации (в старых версиях это был «Об этом Mac → Хранилище»). Три основные:
@@ -22,7 +22,7 @@ Apple уточняет: рекомендации действуют только
 1. Откройте «Хранилище» и включите рекомендации, которые подходят вам.
 2. Фото: «Фото → Настройки → iCloud» и «Оптимизировать хранилище Mac». На Mac остаются уменьшенные копии, оригиналы лежат в iCloud; вернуть их можно командой «Загрузить оригиналы на этот Mac». Нужна включённая «Фото iCloud».
 3. Музыка: у скачанных песен выберите «Удалить загрузку» — копия исчезнет только с Mac, в медиатеке песня останется и будет играть онлайн.
-4. Apple TV: в разделе «Загруженные» удалите загруженные фильмы и сериалы, которые уже смотрели.
+4. Apple TV: на боковой панели откройте «Загруженные», наведите указатель на фильм или сериал, нажмите «Еще» и «Удалить из медиатеки», затем подтвердите. Купленное можно скачать заново, а аренда ограничена по времени (30 дней до начала просмотра, 48 часов после) — не удаляйте аренду, которую ещё не досмотрели.
 5. В SpotlessMac используйте «Диск → Освободить место» для кэшей, журналов и крупных файлов; всё удалённое идёт в Корзину.
 
 ## Чего не делать

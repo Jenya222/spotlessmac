@@ -19,7 +19,7 @@
   {"query": "как навести порядок на рабочем столе мака", "expected": "guide.desktop-organization"},
   {"query": "что такое стопки на рабочем столе", "expected": "guide.desktop-organization"},
   {"query": "как организовать файлы на маке теги и смарт-папки", "expected": "guide.file-organization"},
-  {"query": "в папке куча записей с диктофона можно их удалять", "expected": "guide.file-organization"},
+  {"query": "что за личные записи нашёл spotlessmac можно ли их удалять", "expected": "guide.file-organization"},
   {"query": "что значит оптимизировать хранилище на маке", "expected": "guide.optimize-storage"},
   {"query": "как работает сохранить в icloud и автоочистка корзины", "expected": "guide.optimize-storage"},
   {"query": "сколько свободного места нужно оставлять на диске мака", "expected": "guide.free-space-target"},
