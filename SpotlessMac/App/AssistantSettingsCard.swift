@@ -20,6 +20,7 @@ struct AssistantSettingsCard: View {
                 .pickerStyle(.segmented)
                 .labelsHidden()
                 .frame(width: 430)
+                .pointingHandCursor()
             }
             row("Адрес сервера") {
                 TextField(draft.provider.defaultBaseURL, text: $draft.baseURL)
@@ -68,9 +69,11 @@ struct AssistantSettingsCard: View {
                 .pickerStyle(.segmented)
                 .labelsHidden()
                 .frame(width: 200)
+                .pointingHandCursor()
             }
             row("Тайм-аут") {
                 Stepper("\(draft.timeoutSeconds) с", value: $draft.timeoutSeconds, in: AssistantSettings.timeoutRange, step: 10)
+                    .pointingHandCursor()
             }
 
             Divider()
@@ -91,9 +94,9 @@ struct AssistantSettingsCard: View {
                     assistant.saveSettings(draft, apiKey: apiKey)
                     status = ConnectionCheckResult(ok: true, message: "Сохранено", toolsSupported: nil)
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.borderedProminentHand)
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.borderedHand)
 
             Text("Для облачных провайдеров пути обезличиваются: имя пользователя заменяется на ~, названия папок и файлов в личных папках и папках проектов — на <папка-N>. Содержимое файлов не отправляется.")
                 .font(.system(size: 11))

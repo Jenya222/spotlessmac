@@ -102,7 +102,7 @@ struct DiskOverviewView: View {
                     )
                 }
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.borderedProminentHand)
             .disabled(viewModel.isScanning || viewModel.isCleaning)
         }
         .padding(16)
@@ -143,7 +143,7 @@ struct DiskOverviewView: View {
                     showLargeFiles = true
                 }
             }
-                .buttonStyle(.bordered)
+                .buttonStyle(.borderedHand)
         }
     }
 
@@ -242,8 +242,7 @@ struct DiskOverviewView: View {
                 } label: {
                     folderRow(entry, maxSize: maxSize)
                 }
-                .buttonStyle(.plain)
-                .pointingHandCursor()
+                .buttonStyle(.plainHand)
             }
         }
     }

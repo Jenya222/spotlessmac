@@ -39,8 +39,7 @@ struct ActivationView: View {
                         NSWorkspace.shared.open(url)
                     }
                 }
-                .buttonStyle(.plain)
-                .pointingHandCursor()
+                .buttonStyle(.plainHand)
                 .foregroundStyle(Color.accentColor)
 
                 Spacer()
@@ -51,7 +50,7 @@ struct ActivationView: View {
                 Button("Активировать") {
                     licenseManager.activate(key: keyInput)
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.borderedProminentHand)
                 .disabled(keyInput.trimmingCharacters(in: .whitespaces).isEmpty)
                 .keyboardShortcut(.defaultAction)
             }

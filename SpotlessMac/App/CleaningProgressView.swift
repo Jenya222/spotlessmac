@@ -62,11 +62,11 @@ struct CleaningProgressView: View {
                 }
                 if viewModel.isCleaning {
                     Button("Остановить") { viewModel.stopSmartCare() }
-                        .buttonStyle(.bordered)
+                        .buttonStyle(.borderedHand)
                         .padding(.top, 6)
                 } else {
                     Button("Готово") { selectedTab = .care }
-                        .buttonStyle(.bordered)
+                        .buttonStyle(.borderedHand)
                         .padding(.top, 6)
                 }
             }

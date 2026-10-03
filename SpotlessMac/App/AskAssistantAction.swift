@@ -28,8 +28,7 @@ struct AskAssistantButton: View {
         Button(action: action) {
             Image(systemName: "questionmark.circle")
         }
-        .buttonStyle(.plain)
-        .pointingHandCursor()
+        .buttonStyle(.plainHand)
         .foregroundStyle(Theme.textSecondary)
         .help("Спросить ассистента")
         .accessibilityLabel("Спросить ассистента")

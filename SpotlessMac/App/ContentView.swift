@@ -38,6 +38,7 @@ struct ContentView: View {
             tabContent
         }
         .frame(minWidth: 920, minHeight: 604)
+        .buttonStyle(.automaticHand)
         .environment(\.askAssistant, AskAssistantAction { focus in
             selectedTab = .assistant
             assistant?.ask(about: focus)
@@ -168,8 +169,7 @@ struct ContentView: View {
                 } label: {
                     Label("Активировать", systemImage: "lock").font(.caption)
                 }
-                .buttonStyle(.plain)
-                .pointingHandCursor()
+                .buttonStyle(.plainHand)
                 .foregroundStyle(.orange)
             } else {
                 Label("Пробный", systemImage: "clock")
@@ -193,8 +193,7 @@ struct ContentView: View {
             } label: {
                 Label("FDA", systemImage: "exclamationmark.shield").font(.caption)
             }
-            .buttonStyle(.plain)
-            .pointingHandCursor()
+            .buttonStyle(.plainHand)
             .foregroundStyle(.orange)
         case .unknown:
             EmptyView()
@@ -214,8 +213,7 @@ struct ScanItemRow: View {
                     .imageScale(.large)
                     .foregroundStyle(item.isSelected ? Color.accentColor : Color.gray)
             }
-            .buttonStyle(.plain)
-            .pointingHandCursor()
+            .buttonStyle(.plainHand)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(item.path.lastPathComponent).lineLimit(1)

@@ -13,11 +13,18 @@ struct UninstallerView: View {
     @State private var cacheFailure: String?
 
     var body: some View {
-        NavigationSplitView {
-            appList
-                .navigationSplitViewColumnWidth(min: 200, ideal: 240)
-        } detail: {
+        // Plain split instead of NavigationSplitView: its toolbar items were drawn
+        // into the window title bar and overlapped the rail and content.
+        HStack(spacing: 0) {
+            VStack(spacing: 0) {
+                sidebarHeader
+                Divider()
+                appList
+            }
+            .frame(width: 260)
+            Divider()
             detailPane
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .task {
             if viewModel.apps.isEmpty { await viewModel.loadApps() }
@@ -83,18 +90,26 @@ struct UninstallerView: View {
                     }
                 )) { app in
                     AppRow(app: app, summary: viewModel.storageSummaries[app.id]).tag(app.id)
-                }.disabled(viewModel.isDeleting)
+                }
+                .listStyle(.sidebar)
+                .disabled(viewModel.isDeleting)
             }
         }
-        .toolbar {
-            ToolbarItem {
-                Toggle("По размеру", isOn: $viewModel.sortBySize)
-            }
-            ToolbarItem {
-                Button("Обновить") { Task { await viewModel.loadApps() } }
-                    .disabled(viewModel.isLoadingApps || viewModel.isDeleting)
-            }
+    }
+
+    private var sidebarHeader: some View {
+        HStack(spacing: 8) {
+            Toggle("По размеру", isOn: $viewModel.sortBySize)
+                .toggleStyle(.checkbox)
+                .pointingHandCursor()
+            Spacer()
+            Button("Обновить", systemImage: "arrow.clockwise") { Task { await viewModel.loadApps() } }
+                .buttonStyle(.borderedHand)
+                .controlSize(.small)
+                .disabled(viewModel.isLoadingApps || viewModel.isDeleting)
         }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
     }
 
     // MARK: - Detail
@@ -224,8 +239,7 @@ struct UninstallerView: View {
                 pendingCache = viewModel.supportedCacheItems
             }.disabled(viewModel.supportedCacheItems.isEmpty || viewModel.isDeleting)
             Button("Снять выделение") { viewModel.selectNone() }
-                .buttonStyle(.plain)
-                .pointingHandCursor()
+                .buttonStyle(.plainHand)
                 .foregroundStyle(Color.accentColor)
                 .disabled(!viewModel.hasSelection)
             Button {
@@ -244,8 +258,7 @@ struct UninstallerView: View {
                     .background(Theme.destructiveGradient)
                     .clipShape(RoundedRectangle(cornerRadius: 11))
             }
-            .buttonStyle(.plain)
-            .pointingHandCursor()
+            .buttonStyle(.plainHand)
             .disabled(!viewModel.hasSelection || viewModel.isDeleting)
         }
         .padding(.horizontal, 16)
@@ -270,7 +283,10 @@ private struct AppRow: View {
                     Text((summary.isComplete ? "" : "Не менее ") + ByteCountFormatter.string(fromByteCount: summary.confirmedTotalBytes, countStyle: .file)).font(.caption2).foregroundStyle(.secondary)
                 } else { Text("Размер не измерен").font(.caption2).foregroundStyle(.secondary) }
             }
+            Spacer(minLength: 0)
         }
+        .contentShape(Rectangle())
+        .pointingHandCursor()
     }
 }
 
@@ -286,8 +302,7 @@ private struct LeftoverRow: View {
                 Image(systemName: item.isSelected ? "checkmark.square.fill" : "square")
                     .foregroundStyle(item.isSelected ? Color.accentColor : Color.secondary)
             }
-            .buttonStyle(.plain)
-            .pointingHandCursor()
+            .buttonStyle(.plainHand)
 
             Text(item.dispositionLabel + " · " + item.path.path(percentEncoded: false))
                 .font(.caption)

@@ -34,7 +34,7 @@ struct FDAOnboardingView: View {
                 Button("Открыть Системные настройки") {
                     NSWorkspace.shared.open(settingsURL)
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.borderedProminentHand)
 
                 Button("Проверить ещё раз") {
                     status = FDAService.detect()
@@ -45,8 +45,7 @@ struct FDAOnboardingView: View {
             Button("Продолжить без полного доступа") {
                 onDismiss()
             }
-            .buttonStyle(.plain)
-            .pointingHandCursor()
+            .buttonStyle(.plainHand)
             .foregroundStyle(.secondary)
         }
         .padding(32)

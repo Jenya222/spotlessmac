@@ -122,8 +122,7 @@ private struct LargeFileRow: View {
             Button(role: .destructive, action: onDelete) {
                 Image(systemName: "trash")
             }
-            .buttonStyle(.plain)
-            .pointingHandCursor()
+            .buttonStyle(.plainHand)
             .foregroundStyle(.red.opacity(0.8))
             .disabled(isDeleteDisabled)
         }

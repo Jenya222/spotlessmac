@@ -45,7 +45,7 @@ struct SmartCareConfirmSheet: View {
                 Button("Отмена", action: onCancel)
                 Spacer()
                 Button("Начать очистку", action: onConfirm)
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(.borderedProminentHand)
                     .disabled(viewModel.smartCareSelectedItems.isEmpty || viewModel.isCleaning)
             }
         }

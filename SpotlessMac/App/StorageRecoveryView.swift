@@ -136,7 +136,7 @@ struct StorageRecoveryView: View {
                 viewModel.selectNone()
                 viewModel.clearAssistantStaging()
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.borderedHand)
             .controlSize(.small)
         }
         .padding(.horizontal, 20)
@@ -172,6 +172,7 @@ struct StorageRecoveryView: View {
             }
             .labelsHidden()
             .frame(width: 150)
+            .pointingHandCursor()
         }
         .padding(.horizontal, 20)
         .padding(.bottom, 14)
@@ -246,7 +247,7 @@ struct StorageRecoveryView: View {
                     Text("Очистить выбранное · \(ByteCountFormatter.string(fromByteCount: selectedBytes, countStyle: .file))")
                 }
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.borderedProminentHand)
             .disabled(viewModel.selectedItems.isEmpty || viewModel.isDeleting || viewModel.isCleaning || viewModel.isScanning)
         }
         .padding(20)
@@ -359,8 +360,7 @@ private struct StorageRecoveryRow: View {
                         .font(.system(size: 17))
                         .foregroundStyle(item.isSelected ? Color.accentColor : Color.secondary)
                 }
-                .buttonStyle(.plain)
-                .pointingHandCursor()
+                .buttonStyle(.plainHand)
                 .disabled(isDestructiveActionDisabled)
                 .accessibilityLabel(item.isSelected ? "Исключить из очистки" : "Добавить в очистку")
             } else {
@@ -404,16 +404,14 @@ private struct StorageRecoveryRow: View {
             Button(action: onReveal) {
                 Image(systemName: "folder")
             }
-            .buttonStyle(.plain)
-            .pointingHandCursor()
+            .buttonStyle(.plainHand)
             .help("Показать в Finder")
 
             if !item.category.isBatchCleanable && item.cleanupPolicy.canDelete {
                 Button(role: .destructive, action: onDelete) {
                     Image(systemName: "trash")
                 }
-                .buttonStyle(.plain)
-                .pointingHandCursor()
+                .buttonStyle(.plainHand)
                 .foregroundStyle(.red)
                 .disabled(isDestructiveActionDisabled)
                 .help("Переместить в Корзину")

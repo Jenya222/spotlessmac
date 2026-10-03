@@ -209,8 +209,7 @@ struct MemoryView: View {
                     Image(systemName: expanded ? "chevron.down" : "chevron.right")
                         .frame(width: 14)
                 }
-                .buttonStyle(.plain)
-                .pointingHandCursor()
+                .buttonStyle(.plainHand)
 
                 icon(for: group).frame(width: 22, height: 22)
 

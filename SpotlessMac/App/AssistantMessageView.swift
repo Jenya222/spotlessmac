@@ -69,7 +69,7 @@ struct AssistantMessageView: View, Equatable {
                         Button("Настройки", action: onOpenSettings).controlSize(.small)
                     }
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.borderedHand)
             }
             HStack(spacing: 8) {
                 Text(caption)
@@ -77,7 +77,7 @@ struct AssistantMessageView: View, Equatable {
                     .foregroundStyle(Theme.textTertiary)
                 Spacer()
                 if canRetry && [.failed, .interrupted, .stopped].contains(message.status) {
-                    Button("Повторить", action: onRetry).buttonStyle(.bordered).controlSize(.small)
+                    Button("Повторить", action: onRetry).buttonStyle(.borderedHand).controlSize(.small)
                 }
             }
         }
@@ -133,10 +133,10 @@ struct AssistantPlanCard: View {
                 .foregroundStyle(Theme.textTertiary)
             HStack(spacing: 8) {
                 Button("Открыть в превью", action: onOpen)
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(.borderedProminentHand)
                     .disabled(plan.isEmpty)
                 Button("Отклонить", action: onDismiss)
-                    .buttonStyle(.bordered)
+                    .buttonStyle(.borderedHand)
             }
         }
         .padding(12)
@@ -175,7 +175,7 @@ struct CloudDisclosureSheet: View {
                 Spacer()
                 Button("Использовать локальную Ollama", action: onUseLocal)
                 Button("Понятно", action: onAccept)
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(.borderedProminentHand)
                     .keyboardShortcut(.defaultAction)
             }
         }

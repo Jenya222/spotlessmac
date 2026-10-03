@@ -47,8 +47,7 @@ struct CareRailView: View {
                     .background(selectedTab == .settings ? Color.white.opacity(0.14) : Color.clear)
                     .clipShape(RoundedRectangle(cornerRadius: 11))
             }
-            .buttonStyle(.plain)
-            .pointingHandCursor()
+            .buttonStyle(.plainHand)
             .accessibilityLabel("Настройки")
             .help("Настройки")
         }
@@ -81,7 +80,6 @@ struct CareRailView: View {
             .background(selected ? Color.white.opacity(0.14) : Color.clear)
             .clipShape(RoundedRectangle(cornerRadius: 11))
         }
-        .buttonStyle(.plain)
-        .pointingHandCursor()
+        .buttonStyle(.plainHand)
     }
 }

@@ -73,6 +73,7 @@ struct SpotlessMacSettingsView: View {
                 }
                 .labelsHidden()
                 .frame(width: 150)
+                .pointingHandCursor()
                 .accessibilityLabel("Стартовый раздел")
             }
         }
@@ -117,7 +118,7 @@ struct SpotlessMacSettingsView: View {
                 Spacer()
                 Button("Как включить доступ") { showOnboarding = true }
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.borderedHand)
         }
     }
 
@@ -136,7 +137,7 @@ struct SpotlessMacSettingsView: View {
 #if !DEBUG
                 if !licenseManager.isActivated {
                     Button("Активировать") { showActivation = true }
-                        .buttonStyle(.borderedProminent)
+                        .buttonStyle(.borderedProminentHand)
                 }
 #endif
             }

@@ -248,7 +248,7 @@ struct DockerCleanupView: View {
                     Text("Очистить выбранное · \(ByteCountFormatter.string(fromByteCount: viewModel.selectedKnownBytes, countStyle: .file))")
                 }
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.borderedProminentHand)
             .disabled(viewModel.selectedResources.isEmpty || viewModel.isScanning || viewModel.isDeleting)
         }
         .padding(20)
@@ -273,11 +273,11 @@ struct DockerCleanupView: View {
                 .frame(maxWidth: 480)
             HStack {
                 Button(buttonTitle, action: action)
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(.borderedProminentHand)
                 Button("Проверить снова") {
                     Task { await viewModel.scan() }
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.borderedHand)
             }
         }
         .padding(32)
@@ -338,8 +338,7 @@ private struct DockerResourceRow: View {
                     .font(.system(size: 17))
                     .foregroundStyle(selectionColor)
             }
-            .buttonStyle(.plain)
-            .pointingHandCursor()
+            .buttonStyle(.plainHand)
             .disabled(disabled)
             .accessibilityLabel(resource.isSelected ? "Исключить из очистки" : "Добавить в очистку")
 

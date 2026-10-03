@@ -57,7 +57,7 @@ struct AssistantView: View {
             }
             Spacer()
             Button("Новый диалог", systemImage: "square.and.pencil") { viewModel.newConversation() }
-                .buttonStyle(.bordered)
+                .buttonStyle(.borderedHand)
                 .disabled(viewModel.messages.isEmpty)
         }
         .padding(.horizontal, 24)
@@ -139,8 +139,7 @@ struct AssistantView: View {
                     .clipShape(RoundedRectangle(cornerRadius: Theme.radiusRow))
                     .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
-                .pointingHandCursor()
+                .buttonStyle(.plainHand)
                 .disabled(viewModel.isStreaming)
             }
         }
@@ -157,7 +156,7 @@ struct AssistantView: View {
                 HStack(spacing: 8) {
                     ForEach(suggestions, id: \.self) { suggestion in
                         Button(suggestion) { viewModel.send(suggestion) }
-                            .buttonStyle(.bordered)
+                            .buttonStyle(.borderedHand)
                             .controlSize(.small)
                             .disabled(viewModel.isStreaming)
                     }
@@ -170,10 +169,10 @@ struct AssistantView: View {
                     .onSubmit { viewModel.send() }
                 if viewModel.isStreaming {
                     Button("Стоп", systemImage: "stop.fill") { viewModel.stop() }
-                        .buttonStyle(.bordered)
+                        .buttonStyle(.borderedHand)
                 } else {
                     Button("Отправить", systemImage: "arrow.up.circle.fill") { viewModel.send() }
-                        .buttonStyle(.borderedProminent)
+                        .buttonStyle(.borderedProminentHand)
                         .disabled(viewModel.draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }
@@ -192,7 +191,7 @@ struct AssistantView: View {
             Text("Укажите Ollama Cloud, локальную Ollama или OpenAI-совместимый сервер, чтобы получать советы по очистке.")
         } actions: {
             Button("Открыть настройки", action: onOpenSettings)
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.borderedProminentHand)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
