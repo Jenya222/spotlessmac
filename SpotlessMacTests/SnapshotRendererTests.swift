@@ -88,4 +88,48 @@ final class SnapshotRendererTests: XCTestCase {
             XCTAssertTrue(tools.contains(category.rawValue), category.rawValue)
         }
     }
+
+    private func knowledgeContext() -> KnowledgeContext {
+        let base = KnowledgeFixtures.base([
+            KnowledgeFixtures.article("path.xcode-deriveddata", kind: .path, summary: "Сборки Xcode.", verdict: .safe),
+            KnowledgeFixtures.article("app.xcode", kind: .app, summary: "Xcode.", verdict: .caution),
+            KnowledgeFixtures.article("proc.kernel-task", kind: .process, summary: "Ядро.", verdict: .keep),
+        ])
+        return KnowledgeContext(base: base, annotations: KnowledgeAnnotations(
+            items: ["c1": "path.xcode-deriveddata"], apps: ["Xcode": "app.xcode"], processes: ["kernel_task": "proc.kernel-task"]))
+    }
+
+    func testItemLinesCarryTheArticleColumn() {
+        let text = SnapshotRenderer.render(.sample(), knowledge: knowledgeContext()) { $0 }
+        XCTAssertTrue(text.contains("(ID | путь | размер | категория | политика | изменён | владелец | справка):"))
+        let c1 = text.components(separatedBy: "\n").first { $0.hasPrefix("c1 |") } ?? ""
+        XCTAssertTrue(c1.hasSuffix("| path.xcode-deriveddata"), c1)
+        let c2 = text.components(separatedBy: "\n").first { $0.hasPrefix("c2 |") } ?? ""
+        XCTAssertTrue(c2.hasSuffix("| —"), c2)
+    }
+
+    func testMemoryLinesCarryArticleIDsAndTopProcesses() {
+        var snapshot = SystemSnapshot.sample()
+        snapshot.memory?.topProcesses = [MemoryProcessInfo(name: "kernel_task", bytes: 2_000_000_000),
+                                         MemoryProcessInfo(name: "node", bytes: 1_000_000_000)]
+        let text = SnapshotRenderer.render(snapshot, knowledge: knowledgeContext()) { $0 }
+        XCTAssertTrue(text.contains("Xcode — \(SnapshotRenderer.memoryBytes(4_000_000_000)) [app.xcode]"))
+        XCTAssertTrue(text.contains("Крупные процессы вне программ: kernel_task — \(SnapshotRenderer.memoryBytes(2_000_000_000)) [proc.kernel-task], node — "))
+        XCTAssertTrue(text.contains("Справка SpotlessMac по найденному"))
+        XCTAssertTrue(text.contains("- path.xcode-deriveddata — безопасно — Сборки Xcode."))
+    }
+
+    func testTopProcessNamesAreFormatted() {
+        var snapshot = SystemSnapshot.sample()
+        snapshot.memory?.topProcesses = [MemoryProcessInfo(name: "secret-client-worker", bytes: 1)]
+        let text = SnapshotRenderer.render(snapshot) { $0.replacingOccurrences(of: "secret-client", with: "<папка-1>") }
+        XCTAssertFalse(text.contains("secret-client"))
+        XCTAssertTrue(text.contains("<папка-1>-worker"))
+    }
+
+    func testItemCardShowsTheArticle() {
+        let card = SnapshotRenderer.itemCard(SystemSnapshot.sample().items[0], articleID: "path.xcode-deriveddata") { $0 }
+        XCTAssertTrue(card.hasSuffix("Справка: path.xcode-deriveddata"))
+        XCTAssertFalse(SnapshotRenderer.itemCard(SystemSnapshot.sample().items[0]) { $0 }.contains("Справка:"))
+    }
 }

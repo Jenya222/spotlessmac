@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		61FD4C9E90D66F214E0AC7D5 /* KnowledgeRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 153D9D14927D9FE08B5F6D62 /* KnowledgeRenderer.swift */; };
+		DCE5CB98CBFC4AA7D4C7E3AA /* KnowledgeRendererTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD5BEA61F498FEC15AE9B85E /* KnowledgeRendererTests.swift */; };
 		0708271B3A5A0B8C7AFB47A9 /* KnowledgeMatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = E418ED495F5A5AEDC6C8D6D2 /* KnowledgeMatcher.swift */; };
 		32D3B7EF93514AF28595CCB4 /* KnowledgeMatcherTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A1034281BB4458EA0685882 /* KnowledgeMatcherTests.swift */; };
 		1CA416A5DE08A6D2F1AB876E /* KnowledgeEvalTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB3D937A157D334B33A568EC /* KnowledgeEvalTests.swift */; };
@@ -178,6 +180,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		153D9D14927D9FE08B5F6D62 /* KnowledgeRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnowledgeRenderer.swift; sourceTree = "<group>"; };
+		FD5BEA61F498FEC15AE9B85E /* KnowledgeRendererTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnowledgeRendererTests.swift; sourceTree = "<group>"; };
 		E418ED495F5A5AEDC6C8D6D2 /* KnowledgeMatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnowledgeMatcher.swift; sourceTree = "<group>"; };
 		3A1034281BB4458EA0685882 /* KnowledgeMatcherTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnowledgeMatcherTests.swift; sourceTree = "<group>"; };
 		AB3D937A157D334B33A568EC /* KnowledgeEvalTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnowledgeEvalTests.swift; sourceTree = "<group>"; };
@@ -381,6 +385,7 @@
 		B2B489C2435F0FB76091E6B5 /* Assistant */ = {
 			isa = PBXGroup;
 			children = (
+				153D9D14927D9FE08B5F6D62 /* KnowledgeRenderer.swift */,
 				E418ED495F5A5AEDC6C8D6D2 /* KnowledgeMatcher.swift */,
 				EBA5FCF321C5CFE28050C739 /* KnowledgeBase.swift */,
 				978B03E0343EBF117F9D8C59 /* KnowledgeSearch.swift */,
@@ -551,6 +556,7 @@
 		AA100001000000000000AA00 /* SpotlessMacTests */ = {
 			isa = PBXGroup;
 			children = (
+				FD5BEA61F498FEC15AE9B85E /* KnowledgeRendererTests.swift */,
 				3A1034281BB4458EA0685882 /* KnowledgeMatcherTests.swift */,
 				AB3D937A157D334B33A568EC /* KnowledgeEvalTests.swift */,
 				A9CD1EBACBE838F1D40BE1FE /* KnowledgeCorpusTests.swift */,
@@ -762,6 +768,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DCE5CB98CBFC4AA7D4C7E3AA /* KnowledgeRendererTests.swift in Sources */,
 				32D3B7EF93514AF28595CCB4 /* KnowledgeMatcherTests.swift in Sources */,
 				1CA416A5DE08A6D2F1AB876E /* KnowledgeEvalTests.swift in Sources */,
 				E511185C9F4C1F3A1585AC37 /* KnowledgeCorpusTests.swift in Sources */,
@@ -825,6 +832,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				61FD4C9E90D66F214E0AC7D5 /* KnowledgeRenderer.swift in Sources */,
 				0708271B3A5A0B8C7AFB47A9 /* KnowledgeMatcher.swift in Sources */,
 				B52A34EE400F9080F1385D93 /* KnowledgeBase.swift in Sources */,
 				1975721901D78B2D3EB66C83 /* KnowledgeSearch.swift in Sources */,
