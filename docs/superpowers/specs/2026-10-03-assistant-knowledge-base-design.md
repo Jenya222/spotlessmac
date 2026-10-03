@@ -138,8 +138,11 @@ Spotlight, раздел конфиденциальности.
 
 - `MemoryAppInfo` gains `bundleID: String?` (from `RunningAppInfo.bundleIdentifier` of the group's bundle).
 - `MemoryInfo` gains `topProcesses: [MemoryProcessInfo]` — up to 8 largest processes from the
-  `.system` and `.other` groups (`name`, `bytes`), so `WindowServer`, `kernel_task`,
-  `mds_stores`, `node`, `python3` become visible. Built in `AssistantSnapshotBuilder` (outside
+  `.system` and `.other` groups (`name`, `bytes`), so `WindowServer`, `mds_stores`, `node`,
+  `python3` become visible. Not every process article is reachable this way: `kernel_task`
+  (pid 0) is not read by `ProcessMemoryReader`, and app-grouped helper processes (WebKit,
+  Virtualization) fold into their app, so those articles are reached through search or
+  `lookup_knowledge` rather than through binding. Built in `AssistantSnapshotBuilder` (outside
   `Assistant/`, as today). Names from `.other` groups go through `formatPath` when rendered,
   like any user-derived text.
 

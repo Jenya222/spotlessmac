@@ -100,3 +100,5 @@ See `CachesScanner.swift` as the canonical pattern:
 | `ViewModels/ScanViewModel.swift` | Main scan ViewModel; drives scan + delete from the UI |
 | `Assistant/AssistantViewModel.swift` | AI cleanup assistant; receives only a snapshot closure and `stagePlan` |
 | `Assistant/AssistantGuard.swift` | Prompt-injection defences: local refusal of injection/internals requests, random-boundary fencing of snapshot and tool output, prompt-leak canary, hiding code and terminal commands in answers. Keep all four layers; extend the patterns rather than loosen them |
+| `Assistant/Knowledge*.swift` | Bundled knowledge base: parser, BM25 search, snapshot matching, rendering, `lookup_knowledge` (read-only; covered by `AssistantIsolationTests`) |
+| `Resources/Knowledge/*.md` | Knowledge articles (front matter + fixed sections); lint in `KnowledgeCorpusTests`, retrieval gate in `KnowledgeEvalTests` (≥90% top-3, eval queries in `SpotlessMacTests/Fixtures/knowledge-eval-*.json`); new waves extend `KnowledgeCorpusTests.wave1`-style id sets; articles never contain terminal commands |
