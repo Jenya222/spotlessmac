@@ -82,6 +82,13 @@ enum MemoryLoad: String, Equatable, Sendable {
 struct MemoryAppInfo: Equatable, Sendable {
     let name: String
     let bytes: Int64
+    var bundleID: String? = nil
+}
+
+// A process outside user apps (system service, script) — shown so knowledge articles can be bound to it.
+struct MemoryProcessInfo: Equatable, Sendable {
+    let name: String
+    let bytes: Int64
 }
 
 // Read-only memory context. Quitting apps is never available to the assistant.
@@ -91,6 +98,7 @@ struct MemoryInfo: Equatable, Sendable {
     let physicalBytes: Int64
     let swapUsedBytes: Int64
     let topApps: [MemoryAppInfo]
+    var topProcesses: [MemoryProcessInfo] = []
 }
 
 // Immutable copy of what the assistant may know. Holds no references to live objects.
