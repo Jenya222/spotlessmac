@@ -40,7 +40,7 @@ enum KnowledgeRenderer {
     static func injected(for question: String, in base: KnowledgeBase) -> String? {
         let hits = base.search(question, limit: 2)
         guard !hits.isEmpty else { return nil }
-        return joined(hits.map(\.article), header: { _ in "Справка SpotlessMac по вопросу:" }, limit: injectedLimit)
+        return joined(hits.map(\.article), header: { _ in "Справка SpotlessMac по вопросу (подобрана автоматически и может не относиться к вопросу; если не подходит — скажи, что точных данных нет):" }, limit: injectedLimit)
     }
 
     // Each matched article once, the one covering the most bytes first.

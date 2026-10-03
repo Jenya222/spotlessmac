@@ -53,7 +53,9 @@ final class KnowledgeRendererTests: XCTestCase {
     func testInjectedReference() {
         let base = KnowledgeFixtures.base([swap, memory])
         let text = KnowledgeRenderer.injected(for: "что такое своп", in: base)
-        XCTAssertTrue(text?.hasPrefix("Справка SpotlessMac по вопросу:\n\n[guide.swap]") == true)
+        XCTAssertTrue(text?.hasPrefix("Справка SpotlessMac по вопросу") == true)
+        // The articles are matched automatically, so the header tells the model they may be off-topic.
+        XCTAssertTrue(text?.hasPrefix("Справка SpotlessMac по вопросу (подобрана автоматически и может не относиться к вопросу; если не подходит — скажи, что точных данных нет):\n\n[guide.swap]") == true)
         XCTAssertNil(KnowledgeRenderer.injected(for: "zzzz", in: base))
         XCTAssertLessThanOrEqual(text?.count ?? 0, KnowledgeRenderer.injectedLimit)
     }

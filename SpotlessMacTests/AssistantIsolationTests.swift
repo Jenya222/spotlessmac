@@ -44,7 +44,7 @@ final class AssistantIsolationTests: XCTestCase {
 
     func testAssistantModuleHasNoAccessToDeletionOrProcessAPIs() throws {
         let files = try assistantSources
-        XCTAssertGreaterThanOrEqual(files.count, 18, "Assistant sources not found")
+        XCTAssertGreaterThanOrEqual(files.count, 24, "Assistant sources not found")
         var violations: [String] = []
         for file in files {
             let source = try String(contentsOf: file, encoding: .utf8)

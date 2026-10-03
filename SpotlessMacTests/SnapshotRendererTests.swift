@@ -84,6 +84,8 @@ final class SnapshotRendererTests: XCTestCase {
         let tools = AssistantPrompt.system(toolsEnabled: true)
         XCTAssertTrue(tools.contains("propose_plan"))
         XCTAssertTrue(tools.contains("lookup_knowledge"))
+        // The tool does not exist in tools-off mode, so no part of that prompt may name it.
+        XCTAssertFalse(fallback.contains("lookup_knowledge"))
         XCTAssertTrue(fallback.contains("Справка SpotlessMac"))
         XCTAssertTrue(fallback.contains("Политика элемента в снимке"))
         XCTAssertTrue(fallback.contains("организации файлов"))

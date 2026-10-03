@@ -652,8 +652,15 @@ final class AssistantViewModelTests: XCTestCase {
         await sendAndWait(vm, "Что такое своп?")
         let systems = client.requests[0].messages.filter { $0.role == .system }
         XCTAssertEqual(systems.count, 3)
-        XCTAssertTrue(systems[2].content.hasPrefix("Справка SpotlessMac по вопросу:"))
+        XCTAssertTrue(systems[2].content.hasPrefix("Справка SpotlessMac по вопросу"))
         XCTAssertTrue(systems[2].content.contains("[guide.swap]"))
+    }
+
+    func testToolsOffWithoutMatchesAddsNoReference() async {
+        let client = FakeLLMClient([.events([.text("Ок"), .done])])
+        let vm = makeViewModel(client, toolMode: .off, knowledge: knowledgeBase())
+        await sendAndWait(vm, "zzzz qqqq")
+        XCTAssertEqual(client.requests[0].messages.filter { $0.role == .system }.count, 2)
     }
 
     func testToolsOnDoesNotInject() async {
@@ -669,7 +676,7 @@ final class AssistantViewModelTests: XCTestCase {
         await sendAndWait(vm, "Что такое своп?")
         XCTAssertEqual(client.requests.count, 2)
         XCTAssertTrue(client.requests[1].tools.isEmpty)
-        XCTAssertTrue(client.requests[1].messages.contains { $0.role == .system && $0.content.hasPrefix("Справка SpotlessMac по вопросу:") })
+        XCTAssertTrue(client.requests[1].messages.contains { $0.role == .system && $0.content.hasPrefix("Справка SpotlessMac по вопросу") })
     }
 
     func testCloudRequestWithKnowledgeStaysRedacted() async {
