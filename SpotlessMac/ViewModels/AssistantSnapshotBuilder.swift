@@ -5,6 +5,8 @@ import Observation
 // Lives outside SpotlessMac/Assistant/ on purpose: the assistant never sees these objects.
 @MainActor
 enum AssistantSnapshotBuilder {
+    static let maxTopProcesses = 8
+
     static func make(
         scan: ScanViewModel,
         docker: DockerCleanupViewModel?,
@@ -58,13 +60,26 @@ enum AssistantSnapshotBuilder {
             .filter { $0.kind == .userApp }
             .sorted { $0.footprint > $1.footprint }
             .prefix(5)
-            .map { MemoryAppInfo(name: $0.displayName, bytes: Int64(clamping: $0.footprint)) }
+            .map { group in
+                // Nested helper apps share the outermost bundle path; the regular app's ID is the app's own.
+                let running = sample.runningApps(in: group)
+                let bundleID = running.first { $0.policy == .regular && $0.bundleIdentifier != nil }?.bundleIdentifier
+                    ?? running.compactMap(\.bundleIdentifier).first
+                return MemoryAppInfo(name: group.displayName, bytes: Int64(clamping: group.footprint), bundleID: bundleID)
+            }
+        let topProcesses = sample.groups
+            .filter { $0.kind != .userApp }
+            .flatMap(\.processes)
+            .sorted { $0.footprint != $1.footprint ? $0.footprint > $1.footprint : $0.pid < $1.pid }
+            .prefix(maxTopProcesses)
+            .map { MemoryProcessInfo(name: $0.name, bytes: Int64(clamping: $0.footprint)) }
         return MemoryInfo(
             load: load,
             usedBytes: Int64(clamping: sample.system.used),
             physicalBytes: Int64(clamping: sample.system.physical),
             swapUsedBytes: Int64(clamping: sample.system.swapUsed),
-            topApps: Array(topApps)
+            topApps: Array(topApps),
+            topProcesses: Array(topProcesses)
         )
     }
 
