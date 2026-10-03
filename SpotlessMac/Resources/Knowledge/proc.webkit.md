@@ -5,7 +5,7 @@ title: WebKit — страницы в Safari и других программа�
 summary: Процессы WebKit показывают веб-страницы: у Safari обычно по процессу на вкладку. Не завершайте их принудительно — закрывайте вкладки, сохранив введённое.
 verdict: caution
 aliases: [вебкит, webkit, safari, сафари, веб-контент, safari web content]
-keywords: [вкладки, браузер, страница, веб, память, процессор, cpu, тормозит, грузит, safari, содержимое]
+keywords: [вкладки, страница, веб, память, процессор, cpu, тормозит, грузит, safari, содержимое]
 processes: [com.apple.WebKit.WebContent, com.apple.WebKit.Networking, com.apple.WebKit.GPU]
 related: [guide.browser-memory, guide.memory-pressure, app.chrome]
 macOS: 14-26

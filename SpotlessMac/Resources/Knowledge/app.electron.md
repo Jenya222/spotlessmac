@@ -13,7 +13,7 @@ reviewed: 2026-10-03
 sources: [https://www.electronjs.org/docs/latest/, https://www.electronjs.org/docs/latest/tutorial/process-model, https://www.electronjs.org/apps, https://code.visualstudio.com/docs/supporting/FAQ, https://cursor.com/docs/configuration/migrations/vscode, https://forum.cursor.com/t/cursor-bundle-identifier/779, https://support.apple.com/ru-ru/guide/mac-help/mchl834d18c2/mac, https://learn.microsoft.com/en-us/microsoftteams/troubleshoot/teams-administration/clear-teams-cache]
 ---
 ## Что это
-Slack, Discord, Visual Studio Code и Cursor построены на Electron: этот каркас встраивает в каждую программу браузерный движок Chromium. Cursor основан на кодовой базе VS Code. Каждая такая программа приносит с собой свой браузер и работает в нескольких процессах: главном, по одному на окно и вспомогательных. Новая версия Microsoft Teams ушла от Electron, но советы ниже подходят и ей.
+Slack, Discord, Visual Studio Code и Cursor построены на Electron: этот каркас встраивает в каждую программу браузерный движок Chromium. Cursor основан на кодовой базе VS Code. Каждая такая программа приносит с собой свой браузер и работает в нескольких процессах: главном, по одному на окно и вспомогательных. Microsoft переработала Teams, но советы ниже подходят и ей.
 
 ## Норма
 Эти программы занимают заметный объём памяти и состоят из нескольких процессов (helper, renderer) даже в простое. Чем больше окон, чатов, расширений и открытых проектов, тем больше расход.
