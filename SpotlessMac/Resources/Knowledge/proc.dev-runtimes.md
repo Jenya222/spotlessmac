@@ -6,7 +6,7 @@ summary: Серверы разработки, скрипты и языковые
 verdict: caution
 aliases: [node, nodejs, python, питон, java, джава, ruby, deno, bun, dev server, скрипты]
 keywords: [разработка, сервер, терминал, редактор, языковой сервер, процесс, висит, остался, память, процессор, cpu, зависший, порт]
-processes: [node, python, python3, java, ruby, deno, bun]
+processes: [node, python, python3, java, ruby, deno, bun, Python]
 related: [app.xcode, app.electron, guide.memory-pressure]
 macOS: 14-26
 reviewed: 2026-10-03

@@ -17,6 +17,7 @@
   {"query": "виртуалка держит четыре гига памяти, что делать", "expected": "proc.virtualization"},
   {"query": "node висит в процессах и грузит процессор, хотя я ничего не запускал", "expected": "proc.dev-runtimes"},
   {"query": "остался запущенный python или java, можно убить", "expected": "proc.dev-runtimes"},
+  {"query": "Python.app в мониторинге системы грузит процессор", "expected": "proc.dev-runtimes"},
   {"query": "хром жрёт всю оперативку что делать", "expected": "app.chrome"},
   {"query": "в chrome слишком много вкладок и расширений, как посмотреть что тормозит", "expected": "app.chrome"},
   {"query": "slack и discord занимают кучу памяти зачем", "expected": "app.electron"},
@@ -25,6 +26,7 @@
   {"query": "как уменьшить память виртуальной машины докера", "expected": "app.docker"},
   {"query": "телеграм занимает много места на диске, кэш медиа", "expected": "app.telegram"},
   {"query": "как очистить кэш в телеграме и не потерять переписку", "expected": "app.telegram"},
+  {"query": "как почистить локальное хранилище в telegram desktop", "expected": "app.telegram"},
   {"query": "xcode ест много памяти и места, симуляторы", "expected": "app.xcode"},
   {"query": "как удалить старые симуляторы ios из xcode", "expected": "app.xcode"}
 ]

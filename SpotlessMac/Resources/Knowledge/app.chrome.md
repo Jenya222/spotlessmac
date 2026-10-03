@@ -4,8 +4,8 @@ kind: app
 title: Google Chrome — почему много памяти и как её сэкономить
 summary: Chrome держит вкладки и расширения в отдельных процессах, поэтому занимает много памяти. Закрывайте вкладки и включите «Экономию памяти».
 verdict: safe
-aliases: [Google Chrome, Chrome, хром, гугл хром, браузер]
-keywords: [браузер, вкладки, расширения, память, оперативка, процессор, cpu, тормозит, грузит, диспетчер задач, экономия памяти, helper]
+aliases: [Google Chrome, Chrome, хром, гугл хром]
+keywords: [вкладки, расширения, память, оперативка, процессор, cpu, тормозит, грузит, диспетчер задач, экономия памяти, helper]
 bundles: [com.google.Chrome]
 related: [guide.browser-memory, guide.memory-pressure, proc.webkit]
 macOS: 14-26

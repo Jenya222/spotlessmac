@@ -1,7 +1,7 @@
 ---
 id: app.electron
 kind: app
-title: Приложения на Electron (Slack, Discord, Teams, VS Code, Cursor)
+title: Slack, Discord, VS Code, Cursor и Teams — почему они прожорливы
 summary: Slack, Discord, VS Code и Cursor — это встроенный браузер Chromium, поэтому они прожорливы. Закрывайте их полностью, кэш пересоздастся.
 verdict: safe
 aliases: [Slack, Discord, дискорд, Microsoft Teams, тимс, Visual Studio Code, VS Code, vscode, Cursor, электрон, electron]
