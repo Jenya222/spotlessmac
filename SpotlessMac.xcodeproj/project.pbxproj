@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		41A8FE27CA67CEF311F6399F /* KnowledgeParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B2CA63076BDA920A4F5CCC0 /* KnowledgeParser.swift */; };
+		E7704E1F7DA85E8C1F4B20CE /* KnowledgeArticle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 565F1ABD5332C4A6C624030B /* KnowledgeArticle.swift */; };
+		0C276AFAD0AC6013B2363A61 /* KnowledgeParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 202F2B222F926E1ED2A05439 /* KnowledgeParserTests.swift */; };
+		2095CC1DE7CD145AF162A6F3 /* KnowledgeFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E65839DF74F3E83E0D3E8BF /* KnowledgeFixtures.swift */; };
 		27A2791D8B25D970E77EF276 /* PointingHandCursor.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD88663178515223FA631D9B /* PointingHandCursor.swift */; };
 		B36A06B4CA9C28AA1E5D9809 /* HelperRole.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EEE3602D71CD39BCED4C355 /* HelperRole.swift */; };
 		8635943E930A12F98F6B8561 /* HelperRoleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD9CCE68BED8A442257BB626 /* HelperRoleTests.swift */; };
@@ -165,6 +169,10 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		7B2CA63076BDA920A4F5CCC0 /* KnowledgeParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnowledgeParser.swift; sourceTree = "<group>"; };
+		565F1ABD5332C4A6C624030B /* KnowledgeArticle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnowledgeArticle.swift; sourceTree = "<group>"; };
+		202F2B222F926E1ED2A05439 /* KnowledgeParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnowledgeParserTests.swift; sourceTree = "<group>"; };
+		7E65839DF74F3E83E0D3E8BF /* KnowledgeFixtures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnowledgeFixtures.swift; sourceTree = "<group>"; };
 		DD88663178515223FA631D9B /* PointingHandCursor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PointingHandCursor.swift; sourceTree = "<group>"; };
 		2EEE3602D71CD39BCED4C355 /* HelperRole.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelperRole.swift; sourceTree = "<group>"; };
 		AD9CCE68BED8A442257BB626 /* HelperRoleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelperRoleTests.swift; sourceTree = "<group>"; };
@@ -347,6 +355,8 @@
 		B2B489C2435F0FB76091E6B5 /* Assistant */ = {
 			isa = PBXGroup;
 			children = (
+				7B2CA63076BDA920A4F5CCC0 /* KnowledgeParser.swift */,
+				565F1ABD5332C4A6C624030B /* KnowledgeArticle.swift */,
 				4059926F73DD59390D2F5E32 /* AssistantMarkdownBlocks.swift */,
 				FEC7B4A1C54695EC954AB036 /* ImprovementAdvisor.swift */,
 				2DC98D18391E2F37F39A3D6F /* AssistantViewModel.swift */,
@@ -511,6 +521,8 @@
 		AA100001000000000000AA00 /* SpotlessMacTests */ = {
 			isa = PBXGroup;
 			children = (
+				202F2B222F926E1ED2A05439 /* KnowledgeParserTests.swift */,
+				7E65839DF74F3E83E0D3E8BF /* KnowledgeFixtures.swift */,
 				AD9CCE68BED8A442257BB626 /* HelperRoleTests.swift */,
 				883B7BC5984CA99AFE8ABD0A /* AssistantMarkdownBlocksTests.swift */,
 				80A45EA0025233CABF58A5CA /* AssistantStagingTests.swift */,
@@ -714,6 +726,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0C276AFAD0AC6013B2363A61 /* KnowledgeParserTests.swift in Sources */,
+				2095CC1DE7CD145AF162A6F3 /* KnowledgeFixtures.swift in Sources */,
 				8635943E930A12F98F6B8561 /* HelperRoleTests.swift in Sources */,
 				1094F353D245DEB8CF50B548 /* AssistantMarkdownBlocksTests.swift in Sources */,
 				12A549D05D662DEA6A967FEB /* AssistantStagingTests.swift in Sources */,
@@ -770,6 +784,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				41A8FE27CA67CEF311F6399F /* KnowledgeParser.swift in Sources */,
+				E7704E1F7DA85E8C1F4B20CE /* KnowledgeArticle.swift in Sources */,
 				27A2791D8B25D970E77EF276 /* PointingHandCursor.swift in Sources */,
 				B36A06B4CA9C28AA1E5D9809 /* HelperRole.swift in Sources */,
 				17D643A8F711CB2DCE82016C /* AskAssistantAction.swift in Sources */,
