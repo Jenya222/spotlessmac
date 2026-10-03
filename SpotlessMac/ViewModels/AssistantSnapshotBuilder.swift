@@ -61,8 +61,11 @@ enum AssistantSnapshotBuilder {
             .sorted { $0.footprint > $1.footprint }
             .prefix(5)
             .map { group in
-                MemoryAppInfo(name: group.displayName, bytes: Int64(clamping: group.footprint),
-                              bundleID: sample.runningApps(in: group).compactMap(\.bundleIdentifier).first)
+                // Nested helper apps share the outermost bundle path; the regular app's ID is the app's own.
+                let running = sample.runningApps(in: group)
+                let bundleID = running.first { $0.policy == .regular && $0.bundleIdentifier != nil }?.bundleIdentifier
+                    ?? running.compactMap(\.bundleIdentifier).first
+                return MemoryAppInfo(name: group.displayName, bytes: Int64(clamping: group.footprint), bundleID: bundleID)
             }
         let topProcesses = sample.groups
             .filter { $0.kind != .userApp }

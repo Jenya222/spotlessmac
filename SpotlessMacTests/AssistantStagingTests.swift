@@ -141,10 +141,31 @@ final class AssistantStagingTests: XCTestCase {
         let processes = (1...12).map { MemoryFixtures.process(pid_t($0), name: "p\($0)", footprint: UInt64($0) << 20) }
         let system = AppMemoryGroup(id: ProcessGrouper.systemGroupID, displayName: "Система", kind: .system,
                                     bundlePath: nil, processes: processes)
-        let info = AssistantSnapshotBuilder.memoryInfo(MemoryFixtures.sample(at: SystemSnapshot.testDate, groups: [system]))
+        let notes = MemoryFixtures.userGroup("/Applications/Notes.app",
+                                             processes: [MemoryFixtures.process(500, name: "NotesMain", footprint: 1 << 20)])
+        let info = AssistantSnapshotBuilder.memoryInfo(MemoryFixtures.sample(at: SystemSnapshot.testDate, groups: [system, notes]))
         XCTAssertEqual(info.topProcesses.count, AssistantSnapshotBuilder.maxTopProcesses)
         XCTAssertEqual(info.topProcesses.first?.name, "p12")
-        XCTAssertNil(info.topApps.first?.bundleID)
+        XCTAssertFalse(info.topProcesses.contains { $0.name == "NotesMain" })
+        XCTAssertEqual(info.topApps, [MemoryAppInfo(name: "Notes", bytes: 1 << 20, bundleID: nil)])
+    }
+
+    func testBundleIDPrefersRegularAppOverNestedHelper() {
+        let chrome = MemoryFixtures.userGroup("/Applications/Google Chrome.app",
+                                              processes: [MemoryFixtures.process(10, footprint: 3 << 30)])
+        let helper = MemoryFixtures.app(11, "/Applications/Google Chrome.app", id: "com.google.Chrome.helper", policy: .accessory)
+        let main = MemoryFixtures.app(10, "/Applications/Google Chrome.app", id: "com.google.Chrome")
+        let sample = MemoryFixtures.sample(at: SystemSnapshot.testDate, groups: [chrome], runningApps: [helper, main])
+        XCTAssertEqual(AssistantSnapshotBuilder.memoryInfo(sample).topApps.first?.bundleID, "com.google.Chrome")
+    }
+
+    func testBundleIDFallsBackToFirstNonNilWhenNoRegularApp() {
+        let agent = MemoryFixtures.userGroup("/Applications/Agent.app",
+                                             processes: [MemoryFixtures.process(20, footprint: 1 << 20)])
+        let unnamed = MemoryFixtures.app(21, "/Applications/Agent.app", id: nil, policy: .accessory)
+        let named = MemoryFixtures.app(20, "/Applications/Agent.app", id: "com.example.agent", policy: .accessory)
+        let sample = MemoryFixtures.sample(at: SystemSnapshot.testDate, groups: [agent], runningApps: [unnamed, named])
+        XCTAssertEqual(AssistantSnapshotBuilder.memoryInfo(sample).topApps.first?.bundleID, "com.example.agent")
     }
 
     func testMemoryCacheRefreshes() async {
