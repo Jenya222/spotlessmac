@@ -339,6 +339,7 @@ private struct DockerResourceRow: View {
                     .foregroundStyle(selectionColor)
             }
             .buttonStyle(.plain)
+            .pointingHandCursor()
             .disabled(disabled)
             .accessibilityLabel(resource.isSelected ? "Исключить из очистки" : "Добавить в очистку")
 
@@ -385,6 +386,7 @@ private struct DockerResourceRow: View {
             guard !disabled else { return }
             onToggle()
         }
+        .pointingHandCursor()
         .askAssistantMenu(onAsk)
     }
 

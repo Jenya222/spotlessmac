@@ -243,6 +243,7 @@ struct DiskOverviewView: View {
                     folderRow(entry, maxSize: maxSize)
                 }
                 .buttonStyle(.plain)
+                .pointingHandCursor()
             }
         }
     }

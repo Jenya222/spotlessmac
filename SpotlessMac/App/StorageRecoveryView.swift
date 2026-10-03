@@ -360,6 +360,7 @@ private struct StorageRecoveryRow: View {
                         .foregroundStyle(item.isSelected ? Color.accentColor : Color.secondary)
                 }
                 .buttonStyle(.plain)
+                .pointingHandCursor()
                 .disabled(isDestructiveActionDisabled)
                 .accessibilityLabel(item.isSelected ? "Исключить из очистки" : "Добавить в очистку")
             } else {
@@ -404,6 +405,7 @@ private struct StorageRecoveryRow: View {
                 Image(systemName: "folder")
             }
             .buttonStyle(.plain)
+            .pointingHandCursor()
             .help("Показать в Finder")
 
             if !item.category.isBatchCleanable && item.cleanupPolicy.canDelete {
@@ -411,6 +413,7 @@ private struct StorageRecoveryRow: View {
                     Image(systemName: "trash")
                 }
                 .buttonStyle(.plain)
+                .pointingHandCursor()
                 .foregroundStyle(.red)
                 .disabled(isDestructiveActionDisabled)
                 .help("Переместить в Корзину")

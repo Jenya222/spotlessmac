@@ -40,6 +40,7 @@ struct ActivationView: View {
                     }
                 }
                 .buttonStyle(.plain)
+                .pointingHandCursor()
                 .foregroundStyle(Color.accentColor)
 
                 Spacer()

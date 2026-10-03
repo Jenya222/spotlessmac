@@ -169,6 +169,7 @@ struct ContentView: View {
                     Label("Активировать", systemImage: "lock").font(.caption)
                 }
                 .buttonStyle(.plain)
+                .pointingHandCursor()
                 .foregroundStyle(.orange)
             } else {
                 Label("Пробный", systemImage: "clock")
@@ -193,6 +194,7 @@ struct ContentView: View {
                 Label("FDA", systemImage: "exclamationmark.shield").font(.caption)
             }
             .buttonStyle(.plain)
+            .pointingHandCursor()
             .foregroundStyle(.orange)
         case .unknown:
             EmptyView()
@@ -213,6 +215,7 @@ struct ScanItemRow: View {
                     .foregroundStyle(item.isSelected ? Color.accentColor : Color.gray)
             }
             .buttonStyle(.plain)
+            .pointingHandCursor()
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(item.path.lastPathComponent).lineLimit(1)
@@ -230,5 +233,6 @@ struct ScanItemRow: View {
         }
         .contentShape(Rectangle())
         .onTapGesture(perform: onToggle)
+        .pointingHandCursor()
     }
 }

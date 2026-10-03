@@ -49,6 +49,7 @@ struct AssistantSettingsCard: View {
                         Image(systemName: "list.bullet")
                     }
                     .menuStyle(.borderlessButton)
+                    .pointingHandCursor()
                     .frame(width: 32)
                     .disabled(models.isEmpty)
                     .help("Выбрать из списка")

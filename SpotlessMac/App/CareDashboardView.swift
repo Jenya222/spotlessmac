@@ -91,6 +91,7 @@ struct CareDashboardView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 14))
             }
             .buttonStyle(.plain)
+            .pointingHandCursor()
             .disabled(viewModel.isScanning || viewModel.isPreparingSmartCare)
 
             Text("Проверит безопасные кеши и логи — \(ByteCountFormatter.string(fromByteCount: cleanableBytes, countStyle: .file)) можно освободить")
@@ -145,6 +146,7 @@ struct CareDashboardView: View {
                          subtitle: memorySubtitle)
             }
             .buttonStyle(.plain)
+            .pointingHandCursor()
             .help("Открыть раздел «Память»")
 
             statCard(iconBackground: Theme.warningOrange.opacity(0.15), icon: "chart.pie.fill",
@@ -196,6 +198,7 @@ struct CareDashboardView: View {
                         statusDot(color: Theme.warningOrange, text: "не предоставлен")
                     }
                     .buttonStyle(.plain)
+                    .pointingHandCursor()
                 case .unknown:
                     statusDot(color: Theme.textTertiary, text: "проверяется…")
                 }

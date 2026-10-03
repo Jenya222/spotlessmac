@@ -225,6 +225,7 @@ struct UninstallerView: View {
             }.disabled(viewModel.supportedCacheItems.isEmpty || viewModel.isDeleting)
             Button("Снять выделение") { viewModel.selectNone() }
                 .buttonStyle(.plain)
+                .pointingHandCursor()
                 .foregroundStyle(Color.accentColor)
                 .disabled(!viewModel.hasSelection)
             Button {
@@ -244,6 +245,7 @@ struct UninstallerView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 11))
             }
             .buttonStyle(.plain)
+            .pointingHandCursor()
             .disabled(!viewModel.hasSelection || viewModel.isDeleting)
         }
         .padding(.horizontal, 16)
@@ -285,6 +287,7 @@ private struct LeftoverRow: View {
                     .foregroundStyle(item.isSelected ? Color.accentColor : Color.secondary)
             }
             .buttonStyle(.plain)
+            .pointingHandCursor()
 
             Text(item.dispositionLabel + " · " + item.path.path(percentEncoded: false))
                 .font(.caption)
@@ -302,6 +305,7 @@ private struct LeftoverRow: View {
         }
         .contentShape(Rectangle())
         .onTapGesture(perform: onToggle)
+        .pointingHandCursor()
         .askAssistantMenu(onAsk)
     }
 }

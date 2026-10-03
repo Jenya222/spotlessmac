@@ -140,6 +140,7 @@ struct AssistantView: View {
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .pointingHandCursor()
                 .disabled(viewModel.isStreaming)
             }
         }

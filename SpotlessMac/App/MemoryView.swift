@@ -210,6 +210,7 @@ struct MemoryView: View {
                         .frame(width: 14)
                 }
                 .buttonStyle(.plain)
+                .pointingHandCursor()
 
                 icon(for: group).frame(width: 22, height: 22)
 

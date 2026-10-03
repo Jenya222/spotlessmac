@@ -123,6 +123,7 @@ private struct LargeFileRow: View {
                 Image(systemName: "trash")
             }
             .buttonStyle(.plain)
+            .pointingHandCursor()
             .foregroundStyle(.red.opacity(0.8))
             .disabled(isDeleteDisabled)
         }

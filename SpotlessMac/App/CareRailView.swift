@@ -48,6 +48,7 @@ struct CareRailView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 11))
             }
             .buttonStyle(.plain)
+            .pointingHandCursor()
             .accessibilityLabel("Настройки")
             .help("Настройки")
         }
@@ -81,5 +82,6 @@ struct CareRailView: View {
             .clipShape(RoundedRectangle(cornerRadius: 11))
         }
         .buttonStyle(.plain)
+        .pointingHandCursor()
     }
 }

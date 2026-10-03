@@ -27,6 +27,7 @@ struct DiskUsageView: View {
                         if node.isDirectory && !node.isPackage { pathStack.append(node.url) }
                         else { NSWorkspace.shared.activateFileViewerSelecting([node.url]) }
                     }.buttonStyle(.plain)
+                    .pointingHandCursor()
                     Spacer()
                     VStack(alignment: .trailing) {
                         Text((node.measurement.isComplete ? "" : "Не менее ") + ByteCountFormatter.string(fromByteCount: node.measurement.allocatedBytes, countStyle: .file)).monospacedDigit()

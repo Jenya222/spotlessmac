@@ -46,6 +46,7 @@ struct FDAOnboardingView: View {
                 onDismiss()
             }
             .buttonStyle(.plain)
+            .pointingHandCursor()
             .foregroundStyle(.secondary)
         }
         .padding(32)
