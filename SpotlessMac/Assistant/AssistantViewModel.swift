@@ -16,6 +16,8 @@ final class AssistantViewModel {
         var homePath: String
         // Registered project roots (absolute paths): redacted like personal folders for cloud providers.
         var personalRoots: [String] = []
+        // Bundled read-only articles about macOS; the assistant only ever reads them.
+        var knowledge: KnowledgeBase = .empty
         // Refreshes read-only context (memory sample) before each answer.
         var refreshContext: @MainActor () async -> Void = {}
         var now: @MainActor () -> Date = { Date() }
@@ -244,6 +246,11 @@ final class AssistantViewModel {
         let tokens = AssistantGuard.Tokens.random()
         await deps.refreshContext()
         let snapshot = Self.prepared(deps.snapshot(), redacts: redacts)
+        // Matching runs on real paths; only article ids and article text reach the model.
+        let knowledge = KnowledgeContext(
+            base: deps.knowledge,
+            annotations: KnowledgeMatcher.annotate(snapshot, knowledge: deps.knowledge, homePath: deps.homePath))
+        let question = messages.last(where: { $0.role == .user })?.text ?? ""
         do {
             let client = try deps.makeClient(settings, deps.keyStore.readKey())
             // Stop / new conversation during the context refresh must not render the snapshot
@@ -253,7 +260,7 @@ final class AssistantViewModel {
             // The snapshot does not change within one answer, so it is rendered once. Rendering it
             // first registers folder aliases, so history that names the same folder gets the same alias.
             // File, folder and app names are untrusted: fenced so they read as data, not instructions.
-            let context = AssistantGuard.fence(SnapshotRenderer.render(snapshot) { self.format($0, redacts: redacts) }, tokens: tokens)
+            let context = AssistantGuard.fence(SnapshotRenderer.render(snapshot, knowledge: knowledge) { self.format($0, redacts: redacts) }, tokens: tokens)
             var conversation = wireHistory(excluding: messageID, redacts: redacts)
             var transcript = ""
             var rounds = 0
@@ -263,7 +270,7 @@ final class AssistantViewModel {
                 let offerTools = toolsEnabled && rounds < Self.maxToolRounds
                 let request = ChatRequest(
                     model: settings.trimmedModel,
-                    messages: systemMessages(toolsEnabled: toolsEnabled, context: context, tokens: tokens) + conversation,
+                    messages: systemMessages(toolsEnabled: toolsEnabled, context: context, tokens: tokens, question: question) + conversation,
                     tools: offerTools ? AssistantTool.specs : []
                 )
                 var roundText = ""
@@ -297,7 +304,7 @@ final class AssistantViewModel {
                 conversation.append(WireMessage(role: .assistant, content: roundText, toolCalls: calls))
                 for call in calls {
                     statusLine = Self.status(for: call)
-                    let outcome = AssistantToolbox.execute(call, snapshot: snapshot) { self.format($0, redacts: redacts) }
+                    let outcome = AssistantToolbox.execute(call, snapshot: snapshot, knowledge: knowledge) { self.format($0, redacts: redacts) }
                     if let proposed = outcome.proposal { proposal = proposed }
                     conversation.append(WireMessage(role: .tool, content: AssistantGuard.fence(outcome.resultText, tokens: tokens),
                                                     toolCallID: call.id, toolName: call.name))
@@ -337,11 +344,18 @@ final class AssistantViewModel {
         }
     }
 
-    private func systemMessages(toolsEnabled: Bool, context: String, tokens: AssistantGuard.Tokens) -> [WireMessage] {
-        [
+    private func systemMessages(toolsEnabled: Bool, context: String, tokens: AssistantGuard.Tokens,
+                                question: String) -> [WireMessage] {
+        var result = [
             WireMessage(role: .system, content: AssistantPrompt.system(toolsEnabled: toolsEnabled, tokens: tokens)),
             WireMessage(role: .system, content: context),
         ]
+        // Without tools the model cannot call lookup_knowledge, so the best articles come along.
+        // Bundled articles are trusted text, so this message is not fenced.
+        if !toolsEnabled, let reference = KnowledgeRenderer.injected(for: question, in: deps.knowledge) {
+            result.append(WireMessage(role: .system, content: reference))
+        }
+        return result
     }
 
     private func wireHistory(excluding id: UUID, redacts: Bool) -> [WireMessage] {
@@ -411,6 +425,7 @@ final class AssistantViewModel {
         case "list_items": "Смотрю список найденного…"
         case "item_details": "Изучаю элемент…"
         case "propose_plan": "Составляю план…"
+        case "lookup_knowledge": "Читаю справку…"
         default: "Обрабатываю запрос…"
         }
     }

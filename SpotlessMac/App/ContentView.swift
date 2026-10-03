@@ -124,6 +124,9 @@ struct ContentView: View {
             .filter { root in !homeFolders.contains(root.hasSuffix("/") ? String(root.dropLast()) : root) }
     }
 
+    // Parsed once per launch; the assistant gets it as an immutable value.
+    private static let knowledgeBase = KnowledgeBase.loadBundled(from: .main)
+
     private func makeAssistant() -> AssistantViewModel {
         let scan = viewModel
         let docker = dockerViewModel
@@ -146,6 +149,7 @@ struct ContentView: View {
             conversationStore: ConversationStore(fileURL: ConversationStore.defaultFileURL()),
             homePath: NSHomeDirectory(),
             personalRoots: Self.registeredProjectRoots(home: NSHomeDirectory()),
+            knowledge: Self.knowledgeBase,
             refreshContext: { await memory.refresh() }
         ))
     }

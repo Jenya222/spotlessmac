@@ -122,6 +122,28 @@ final class AssistantGuardTests: XCTestCase {
         XCTAssertTrue(AssistantGuard.screen(dump, tokens: tokens).leaked)
     }
 
+    // The knowledge-base rules are long lines too: an answer that rightly echoes one of them is not a leak,
+    // two of them verbatim still are.
+    func testKnowledgeRuleLinesAreCountedLikeTheOthers() {
+        let guardrails = AssistantPrompt.guardrails(tokens: tokens)
+        let lines = (AssistantPrompt.base + "\n" + guardrails).components(separatedBy: "\n")
+            .map { $0.trimmingCharacters(in: CharacterSet(charactersIn: " -")) }
+        let policy = lines.first { $0.hasPrefix("Политика элемента в снимке") }
+        let invention = lines.first { $0.hasPrefix("Не придумывай пункты Системных настроек") }
+        let scope = lines.first { $0.hasPrefix("Отвечай только на вопросы о месте на диске") }
+        let rules = [policy, invention, scope].compactMap { $0 }
+        XCTAssertEqual(rules.count, 3)
+        for line in rules {
+            XCTAssertFalse(AssistantGuard.screen(line, tokens: tokens).leaked, line)
+        }
+        XCTAssertTrue(AssistantGuard.screen(rules[0] + "\n" + rules[1], tokens: tokens).leaked)
+    }
+
+    func testRefusalMentionsFilesAndIsNotItselfAnInjection() {
+        XCTAssertTrue(AssistantGuard.refusal.contains("порядком в файлах"))
+        XCTAssertFalse(AssistantGuard.isInjectionAttempt(AssistantGuard.refusal))
+    }
+
     func testSystemPromptCarriesBoundaryAndCanary() {
         let prompt = AssistantPrompt.system(toolsEnabled: true, tokens: tokens)
         XCTAssertTrue(prompt.contains("<данные-a1b2c3d4>"))

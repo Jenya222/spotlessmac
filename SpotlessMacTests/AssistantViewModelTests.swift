@@ -13,7 +13,8 @@ final class AssistantViewModelTests: XCTestCase {
         toolMode: AssistantToolMode = .auto,
         conversationStore: ConversationStore? = nil,
         snapshot: SystemSnapshot = .sample(),
-        personalRoots: [String] = []
+        personalRoots: [String] = [],
+        knowledge: KnowledgeBase = .empty
     ) -> AssistantViewModel {
         settingsStore = AssistantSettingsStore(defaults: makeDefaults())
         var settings = AssistantSettings()
@@ -34,6 +35,7 @@ final class AssistantViewModelTests: XCTestCase {
             conversationStore: conversationStore,
             homePath: SystemSnapshot.testHome,
             personalRoots: personalRoots,
+            knowledge: knowledge,
             now: { SystemSnapshot.testDate }
         ))
     }
@@ -617,5 +619,72 @@ final class AssistantViewModelTests: XCTestCase {
         XCTAssertFalse(vm.isConfigured)
         vm.saveSettings(vm.settings, apiKey: "abc")
         XCTAssertTrue(vm.isConfigured)
+    }
+
+    private func knowledgeBase() -> KnowledgeBase {
+        KnowledgeFixtures.base([
+            KnowledgeFixtures.article("guide.swap", title: "Своп и подкачка", summary: "Файл подкачки."),
+            KnowledgeFixtures.article("path.xcode-deriveddata", kind: .path, summary: "Сборки Xcode.", verdict: .safe,
+                                      paths: ["~/Library/Developer/Xcode/DerivedData"]),
+        ])
+    }
+
+    func testContextCarriesKnowledgeSection() async {
+        let client = FakeLLMClient([.events([.text("Ок"), .done])])
+        let vm = makeViewModel(client, knowledge: knowledgeBase())
+        await sendAndWait(vm, "Что занимает место?")
+        let context = client.requests[0].messages[1].content
+        XCTAssertTrue(context.contains("| path.xcode-deriveddata"))
+        XCTAssertTrue(context.contains("- path.xcode-deriveddata — безопасно — Сборки Xcode."))
+    }
+
+    func testLookupToolReadsTheBase() async {
+        let call = ToolCall(id: "k1", name: "lookup_knowledge", argumentsJSON: #"{"query":"своп"}"#)
+        let client = FakeLLMClient([.events([.toolCalls([call]), .done]), .events([.text("Своп — это…"), .done])])
+        let vm = makeViewModel(client, knowledge: knowledgeBase())
+        await sendAndWait(vm, "Что такое своп?")
+        XCTAssertTrue(client.requests[1].messages.last?.content.contains("[guide.swap]") ?? false)
+    }
+
+    func testToolsOffInjectsReference() async {
+        let client = FakeLLMClient([.events([.text("Ок"), .done])])
+        let vm = makeViewModel(client, toolMode: .off, knowledge: knowledgeBase())
+        await sendAndWait(vm, "Что такое своп?")
+        let systems = client.requests[0].messages.filter { $0.role == .system }
+        XCTAssertEqual(systems.count, 3)
+        XCTAssertTrue(systems[2].content.hasPrefix("Справка SpotlessMac по вопросу:"))
+        XCTAssertTrue(systems[2].content.contains("[guide.swap]"))
+    }
+
+    func testToolsOnDoesNotInject() async {
+        let client = FakeLLMClient([.events([.text("Ок"), .done])])
+        let vm = makeViewModel(client, toolMode: .on, knowledge: knowledgeBase())
+        await sendAndWait(vm, "Что такое своп?")
+        XCTAssertEqual(client.requests[0].messages.filter { $0.role == .system }.count, 2)
+    }
+
+    func testFallbackRequestInjectsReferenceAfterToolsUnsupported() async {
+        let client = FakeLLMClient([.failure(LLMError.toolsUnsupported), .events([.text("Ок"), .done])])
+        let vm = makeViewModel(client, toolMode: .auto, knowledge: knowledgeBase())
+        await sendAndWait(vm, "Что такое своп?")
+        XCTAssertEqual(client.requests.count, 2)
+        XCTAssertTrue(client.requests[1].tools.isEmpty)
+        XCTAssertTrue(client.requests[1].messages.contains { $0.role == .system && $0.content.hasPrefix("Справка SpotlessMac по вопросу:") })
+    }
+
+    func testCloudRequestWithKnowledgeStaysRedacted() async {
+        let client = FakeLLMClient([.events([.text("Ок"), .done])])
+        let vm = makeViewModel(client, provider: .ollamaCloud, knowledge: knowledgeBase())
+        vm.acceptCloudDisclosure()
+        await sendAndWait(vm, "Что занимает место?")
+        let everything = client.requests[0].messages.map(\.content).joined(separator: "\n")
+        XCTAssertFalse(everything.contains("/Users/tester"))
+        XCTAssertFalse(everything.contains("secret-client"))
+        XCTAssertTrue(everything.contains("path.xcode-deriveddata"))
+    }
+
+    func testFileOrganizationQuestionIsNotRefusedLocally() {
+        XCTAssertFalse(AssistantGuard.isInjectionAttempt("Как навести порядок в папке Загрузки?"))
+        XCTAssertFalse(AssistantGuard.isInjectionAttempt("Что за процесс kernel_task?"))
     }
 }

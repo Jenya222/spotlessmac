@@ -83,6 +83,10 @@ final class SnapshotRendererTests: XCTestCase {
         XCTAssertTrue(fallback.contains("вкладке «Память»"))
         let tools = AssistantPrompt.system(toolsEnabled: true)
         XCTAssertTrue(tools.contains("propose_plan"))
+        XCTAssertTrue(tools.contains("lookup_knowledge"))
+        XCTAssertTrue(fallback.contains("Справка SpotlessMac"))
+        XCTAssertTrue(fallback.contains("Политика элемента в снимке"))
+        XCTAssertTrue(fallback.contains("организации файлов"))
         XCTAssertFalse(tools.contains("```spotless-plan"))
         for category in ScanCategory.allCases {
             XCTAssertTrue(tools.contains(category.rawValue), category.rawValue)

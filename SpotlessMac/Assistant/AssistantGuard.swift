@@ -11,7 +11,7 @@ import Foundation
 // None of this is a guarantee against a determined jailbreak; it narrows what one can achieve.
 enum AssistantGuard {
     static let refusal = """
-    Я помогаю только с местом на диске, очисткой и памятью этого Mac — с этим вопросом помочь не могу. \
+    Я помогаю только с местом на диске, очисткой, памятью и порядком в файлах этого Mac — с этим вопросом помочь не могу. \
     Спросите, например, что занимает место или что можно безопасно удалить.
     """
 

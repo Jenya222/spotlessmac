@@ -119,9 +119,9 @@ final class AssistantIsolationTests: XCTestCase {
         let labels = Mirror(reflecting: dependencies).children.compactMap(\.label)
         XCTAssertEqual(Set(labels), [
             "settingsStore", "keyStore", "makeClient", "snapshot", "stagePlan", "conversationStore",
-            "homePath", "personalRoots", "refreshContext", "now",
+            "homePath", "personalRoots", "knowledge", "refreshContext", "now",
         ])
-        XCTAssertEqual(labels.count, 10)
+        XCTAssertEqual(labels.count, 11)
     }
 
     func testToolSetIsClosedAndReadOnly() {
