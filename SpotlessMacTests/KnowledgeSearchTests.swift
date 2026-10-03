@@ -1,0 +1,60 @@
+import XCTest
+@testable import SpotlessMac
+
+final class KnowledgeSearchTests: XCTestCase {
+    func testTokensSplitIdentifiersButKeepThemWhole() {
+        XCTAssertEqual(KnowledgeSearch.tokens("mds_stores"), ["mds_stores", "mds", "stores"])
+        let bundle = KnowledgeSearch.tokens("com.google.Chrome")
+        XCTAssertEqual(bundle.first, "com.google.chrome")
+        XCTAssertTrue(bundle.contains("google"))
+        XCTAssertTrue(bundle.contains("chrome"))
+    }
+
+    func testStopWordsAreDroppedAndYoIsNormalized() {
+        XCTAssertEqual(KnowledgeSearch.tokens("Что это за кэш?"), ["кэш"])
+        XCTAssertEqual(KnowledgeSearch.tokens("растёт"), KnowledgeSearch.tokens("растет"))
+    }
+
+    func testStemmingMergesRussianWordForms() {
+        let pairs = [("кэши", "кэш"), ("памяти", "память"), ("индексация", "индексирует"), ("данных", "данные"),
+                     ("обновления", "обновлений"), ("загрузки", "загрузок"), ("файлов", "файлы")]
+        for (left, right) in pairs {
+            XCTAssertEqual(KnowledgeSearch.stem(left), KnowledgeSearch.stem(right), "\(left) / \(right)")
+        }
+        XCTAssertEqual(KnowledgeSearch.stem("chrome"), "chrome")
+    }
+
+    func testExactProcessNameRanksFirst() {
+        let noisy = KnowledgeFixtures.article("guide.noise", title: "Шум", body: String(repeating: "mds stores ", count: 40))
+        let target = KnowledgeFixtures.article("proc.spotlight", kind: .process, title: "Spotlight", processes: ["mds_stores"])
+        let search = KnowledgeSearch(articles: [noisy, target])
+        XCTAssertEqual(search.search("что за mds_stores?", limit: 3).first?.article.id, "proc.spotlight")
+    }
+
+    func testTitleOutweighsBody() {
+        let titled = KnowledgeFixtures.article("guide.swap", title: "Своп и подкачка")
+        let mentioned = KnowledgeFixtures.article("guide.other", title: "Другое", body: "Тут однажды упомянут своп.")
+        let hits = KnowledgeSearch(articles: [mentioned, titled]).search("своп", limit: 3)
+        XCTAssertEqual(hits.map(\.article.id), ["guide.swap", "guide.other"])
+    }
+
+    func testAliasesAndStemmedFormsMatch() {
+        let article = KnowledgeFixtures.article("guide.ram", title: "Давление памяти", aliases: ["оперативка"])
+        let search = KnowledgeSearch(articles: [article, KnowledgeFixtures.article("guide.x", title: "Диск")])
+        XCTAssertEqual(search.search("оперативка занята", limit: 1).first?.article.id, "guide.ram")
+        XCTAssertEqual(search.search("не хватает памяти", limit: 1).first?.article.id, "guide.ram")
+    }
+
+    func testNoMatchEmptyQueryAndLimit() {
+        let articles = (1...5).map { KnowledgeFixtures.article("guide.a\($0)", title: "Кэш номер \($0)") }
+        let search = KnowledgeSearch(articles: articles)
+        XCTAssertEqual(search.search("zzzz", limit: 3), [])
+        XCTAssertEqual(search.search("   ", limit: 3), [])
+        XCTAssertEqual(search.search("кэш", limit: 0), [])
+        XCTAssertEqual(search.search("кэш", limit: 2).count, 2)
+    }
+
+    func testEmptyIndexReturnsNothing() {
+        XCTAssertEqual(KnowledgeSearch(articles: []).search("кэш", limit: 3), [])
+    }
+}

@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1975721901D78B2D3EB66C83 /* KnowledgeSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 978B03E0343EBF117F9D8C59 /* KnowledgeSearch.swift */; };
+		3385A3C9B030965E8CEA6A89 /* KnowledgeSearchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AB6331E8A8434B5F64FBB2F /* KnowledgeSearchTests.swift */; };
 		41A8FE27CA67CEF311F6399F /* KnowledgeParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B2CA63076BDA920A4F5CCC0 /* KnowledgeParser.swift */; };
 		E7704E1F7DA85E8C1F4B20CE /* KnowledgeArticle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 565F1ABD5332C4A6C624030B /* KnowledgeArticle.swift */; };
 		0C276AFAD0AC6013B2363A61 /* KnowledgeParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 202F2B222F926E1ED2A05439 /* KnowledgeParserTests.swift */; };
@@ -169,6 +171,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		978B03E0343EBF117F9D8C59 /* KnowledgeSearch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnowledgeSearch.swift; sourceTree = "<group>"; };
+		0AB6331E8A8434B5F64FBB2F /* KnowledgeSearchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnowledgeSearchTests.swift; sourceTree = "<group>"; };
 		7B2CA63076BDA920A4F5CCC0 /* KnowledgeParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnowledgeParser.swift; sourceTree = "<group>"; };
 		565F1ABD5332C4A6C624030B /* KnowledgeArticle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnowledgeArticle.swift; sourceTree = "<group>"; };
 		202F2B222F926E1ED2A05439 /* KnowledgeParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnowledgeParserTests.swift; sourceTree = "<group>"; };
@@ -355,6 +359,7 @@
 		B2B489C2435F0FB76091E6B5 /* Assistant */ = {
 			isa = PBXGroup;
 			children = (
+				978B03E0343EBF117F9D8C59 /* KnowledgeSearch.swift */,
 				7B2CA63076BDA920A4F5CCC0 /* KnowledgeParser.swift */,
 				565F1ABD5332C4A6C624030B /* KnowledgeArticle.swift */,
 				4059926F73DD59390D2F5E32 /* AssistantMarkdownBlocks.swift */,
@@ -521,6 +526,7 @@
 		AA100001000000000000AA00 /* SpotlessMacTests */ = {
 			isa = PBXGroup;
 			children = (
+				0AB6331E8A8434B5F64FBB2F /* KnowledgeSearchTests.swift */,
 				202F2B222F926E1ED2A05439 /* KnowledgeParserTests.swift */,
 				7E65839DF74F3E83E0D3E8BF /* KnowledgeFixtures.swift */,
 				AD9CCE68BED8A442257BB626 /* HelperRoleTests.swift */,
@@ -726,6 +732,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3385A3C9B030965E8CEA6A89 /* KnowledgeSearchTests.swift in Sources */,
 				0C276AFAD0AC6013B2363A61 /* KnowledgeParserTests.swift in Sources */,
 				2095CC1DE7CD145AF162A6F3 /* KnowledgeFixtures.swift in Sources */,
 				8635943E930A12F98F6B8561 /* HelperRoleTests.swift in Sources */,
@@ -784,6 +791,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1975721901D78B2D3EB66C83 /* KnowledgeSearch.swift in Sources */,
 				41A8FE27CA67CEF311F6399F /* KnowledgeParser.swift in Sources */,
 				E7704E1F7DA85E8C1F4B20CE /* KnowledgeArticle.swift in Sources */,
 				27A2791D8B25D970E77EF276 /* PointingHandCursor.swift in Sources */,
