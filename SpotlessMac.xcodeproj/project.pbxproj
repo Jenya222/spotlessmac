@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1CA416A5DE08A6D2F1AB876E /* KnowledgeEvalTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB3D937A157D334B33A568EC /* KnowledgeEvalTests.swift */; };
 		B52A34EE400F9080F1385D93 /* KnowledgeBase.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBA5FCF321C5CFE28050C739 /* KnowledgeBase.swift */; };
 		E511185C9F4C1F3A1585AC37 /* KnowledgeCorpusTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9CD1EBACBE838F1D40BE1FE /* KnowledgeCorpusTests.swift */; };
 		C6BCC335EC8E51B30892B22D /* KnowledgeBaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28BAC6F76C08909200266336 /* KnowledgeBaseTests.swift */; };
@@ -175,6 +176,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		AB3D937A157D334B33A568EC /* KnowledgeEvalTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnowledgeEvalTests.swift; sourceTree = "<group>"; };
 		EBA5FCF321C5CFE28050C739 /* KnowledgeBase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnowledgeBase.swift; sourceTree = "<group>"; };
 		A9CD1EBACBE838F1D40BE1FE /* KnowledgeCorpusTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnowledgeCorpusTests.swift; sourceTree = "<group>"; };
 		28BAC6F76C08909200266336 /* KnowledgeBaseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnowledgeBaseTests.swift; sourceTree = "<group>"; };
@@ -544,6 +546,7 @@
 		AA100001000000000000AA00 /* SpotlessMacTests */ = {
 			isa = PBXGroup;
 			children = (
+				AB3D937A157D334B33A568EC /* KnowledgeEvalTests.swift */,
 				A9CD1EBACBE838F1D40BE1FE /* KnowledgeCorpusTests.swift */,
 				28BAC6F76C08909200266336 /* KnowledgeBaseTests.swift */,
 				0AB6331E8A8434B5F64FBB2F /* KnowledgeSearchTests.swift */,
@@ -753,6 +756,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1CA416A5DE08A6D2F1AB876E /* KnowledgeEvalTests.swift in Sources */,
 				E511185C9F4C1F3A1585AC37 /* KnowledgeCorpusTests.swift in Sources */,
 				C6BCC335EC8E51B30892B22D /* KnowledgeBaseTests.swift in Sources */,
 				3385A3C9B030965E8CEA6A89 /* KnowledgeSearchTests.swift in Sources */,
