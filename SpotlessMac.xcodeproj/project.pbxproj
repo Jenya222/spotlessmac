@@ -30,8 +30,10 @@
 		BA7C04A8ACB0FB5D4D2AE8E4 /* AssistantTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44FF482794B3082EFD45DB61 /* AssistantTool.swift */; };
 		234ACB8F42A82FD0A707F7CD /* AssistantToolboxTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF3CFD3F729863EA9A7EDB3B /* AssistantToolboxTests.swift */; };
 		E34E0F0FE212EEF04171E725 /* PlanParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49FFEEAEDA3E9C85681861E7 /* PlanParser.swift */; };
+		FED721409C4141C3AF2746E8 /* AssistantGuard.swift in Sources */ = {isa = PBXBuildFile; fileRef = E31AFC630F3D4E59834A8A8E /* AssistantGuard.swift */; };
 		27D19168387F85F0C304E71E /* AssistantPlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = C77FADB3BE8D7148FBEB7D1F /* AssistantPlan.swift */; };
 		BE0F65E226B1675DC39E0823 /* AssistantPlanTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55B2A47F764F4D62F36BEBA7 /* AssistantPlanTests.swift */; };
+		CDC6F62A67A6444AB8A293CD /* AssistantGuardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B53EE3023D84C89907B98EE /* AssistantGuardTests.swift */; };
 		DF0DCAD99C99643670E693A5 /* AssistantPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74AE49E0F73A6631193442EE /* AssistantPrompt.swift */; };
 		A591BFE9C431C81748C10A87 /* SnapshotRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51526CF98A3253875C50198E /* SnapshotRenderer.swift */; };
 		1DBA997480D59CD62AF37E2A /* SnapshotRendererTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5C52CB048B15D809D1332A6 /* SnapshotRendererTests.swift */; };
@@ -186,8 +188,10 @@
 		44FF482794B3082EFD45DB61 /* AssistantTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantTool.swift; sourceTree = "<group>"; };
 		AF3CFD3F729863EA9A7EDB3B /* AssistantToolboxTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantToolboxTests.swift; sourceTree = "<group>"; };
 		49FFEEAEDA3E9C85681861E7 /* PlanParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanParser.swift; sourceTree = "<group>"; };
+		E31AFC630F3D4E59834A8A8E /* AssistantGuard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantGuard.swift; sourceTree = "<group>"; };
 		C77FADB3BE8D7148FBEB7D1F /* AssistantPlan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantPlan.swift; sourceTree = "<group>"; };
 		55B2A47F764F4D62F36BEBA7 /* AssistantPlanTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantPlanTests.swift; sourceTree = "<group>"; };
+		7B53EE3023D84C89907B98EE /* AssistantGuardTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantGuardTests.swift; sourceTree = "<group>"; };
 		74AE49E0F73A6631193442EE /* AssistantPrompt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantPrompt.swift; sourceTree = "<group>"; };
 		51526CF98A3253875C50198E /* SnapshotRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnapshotRenderer.swift; sourceTree = "<group>"; };
 		E5C52CB048B15D809D1332A6 /* SnapshotRendererTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnapshotRendererTests.swift; sourceTree = "<group>"; };
@@ -351,6 +355,7 @@
 				C161D1C0D0DACA6F57A89A55 /* AssistantToolbox.swift */,
 				44FF482794B3082EFD45DB61 /* AssistantTool.swift */,
 				49FFEEAEDA3E9C85681861E7 /* PlanParser.swift */,
+				E31AFC630F3D4E59834A8A8E /* AssistantGuard.swift */,
 				C77FADB3BE8D7148FBEB7D1F /* AssistantPlan.swift */,
 				74AE49E0F73A6631193442EE /* AssistantPrompt.swift */,
 				51526CF98A3253875C50198E /* SnapshotRenderer.swift */,
@@ -514,6 +519,7 @@
 				2DAD9062E054609A3D289B00 /* ConversationStoreTests.swift */,
 				AF3CFD3F729863EA9A7EDB3B /* AssistantToolboxTests.swift */,
 				55B2A47F764F4D62F36BEBA7 /* AssistantPlanTests.swift */,
+				7B53EE3023D84C89907B98EE /* AssistantGuardTests.swift */,
 				E5C52CB048B15D809D1332A6 /* SnapshotRendererTests.swift */,
 				4FC76C0B5C8B0E7521981401 /* PathRedactorTests.swift */,
 				DFD359242E27551A5EAF8BC2 /* AssistantSnapshotFixtures.swift */,
@@ -716,6 +722,7 @@
 				1BC1E4AF95FBCA4E8348743D /* ConversationStoreTests.swift in Sources */,
 				234ACB8F42A82FD0A707F7CD /* AssistantToolboxTests.swift in Sources */,
 				BE0F65E226B1675DC39E0823 /* AssistantPlanTests.swift in Sources */,
+				CDC6F62A67A6444AB8A293CD /* AssistantGuardTests.swift in Sources */,
 				1DBA997480D59CD62AF37E2A /* SnapshotRendererTests.swift in Sources */,
 				F467F708098E9D834219651D /* PathRedactorTests.swift in Sources */,
 				63E06D7EAAD98C26F1C53281 /* AssistantSnapshotFixtures.swift in Sources */,
@@ -779,6 +786,7 @@
 				C91E72F7F455ACF6C5D11128 /* AssistantToolbox.swift in Sources */,
 				BA7C04A8ACB0FB5D4D2AE8E4 /* AssistantTool.swift in Sources */,
 				E34E0F0FE212EEF04171E725 /* PlanParser.swift in Sources */,
+				FED721409C4141C3AF2746E8 /* AssistantGuard.swift in Sources */,
 				27D19168387F85F0C304E71E /* AssistantPlan.swift in Sources */,
 				DF0DCAD99C99643670E693A5 /* AssistantPrompt.swift in Sources */,
 				A591BFE9C431C81748C10A87 /* SnapshotRenderer.swift in Sources */,

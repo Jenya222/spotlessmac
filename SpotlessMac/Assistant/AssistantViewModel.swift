@@ -68,6 +68,16 @@ final class AssistantViewModel {
         let trimmed = (text ?? draft).trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, !isStreaming else { return }
         planNotice = nil
+        // Answered locally: nothing leaves this Mac, so no cloud disclosure is needed either.
+        if AssistantGuard.isInjectionAttempt(trimmed) {
+            if fromDraft { draft = "" }
+            let now = deps.now()
+            messages.append(.user(trimmed, at: now))
+            messages.append(AssistantMessage(id: UUID(), role: .assistant, text: AssistantGuard.refusal,
+                                             status: .complete, createdAt: now))
+            persist()
+            return
+        }
         if needsCloudDisclosure {
             pendingText = trimmed
             pendingFromDraft = fromDraft
@@ -231,6 +241,7 @@ final class AssistantViewModel {
             persist()
         }
         let redacts = settings.sendsDataOffDevice
+        let tokens = AssistantGuard.Tokens.random()
         await deps.refreshContext()
         let snapshot = Self.prepared(deps.snapshot(), redacts: redacts)
         do {
@@ -241,7 +252,8 @@ final class AssistantViewModel {
             var toolsEnabled = toolsEnabled(for: settings)
             // The snapshot does not change within one answer, so it is rendered once. Rendering it
             // first registers folder aliases, so history that names the same folder gets the same alias.
-            let context = SnapshotRenderer.render(snapshot) { self.format($0, redacts: redacts) }
+            // File, folder and app names are untrusted: fenced so they read as data, not instructions.
+            let context = AssistantGuard.fence(SnapshotRenderer.render(snapshot) { self.format($0, redacts: redacts) }, tokens: tokens)
             var conversation = wireHistory(excluding: messageID, redacts: redacts)
             var transcript = ""
             var rounds = 0
@@ -251,7 +263,7 @@ final class AssistantViewModel {
                 let offerTools = toolsEnabled && rounds < Self.maxToolRounds
                 let request = ChatRequest(
                     model: settings.trimmedModel,
-                    messages: systemMessages(toolsEnabled: toolsEnabled, context: context) + conversation,
+                    messages: systemMessages(toolsEnabled: toolsEnabled, context: context, tokens: tokens) + conversation,
                     tools: offerTools ? AssistantTool.specs : []
                 )
                 var roundText = ""
@@ -262,7 +274,7 @@ final class AssistantViewModel {
                         case .text(let delta):
                             roundText += delta
                             let visible = PlanParser.visibleWhileStreaming(display(transcript + roundText, redacts: redacts))
-                            update(messageID) { $0.text = visible }
+                            update(messageID) { $0.text = AssistantGuard.screen(visible, tokens: tokens).text }
                         case .toolCalls(let newCalls):
                             calls += newCalls
                         case .done:
@@ -287,7 +299,8 @@ final class AssistantViewModel {
                     statusLine = Self.status(for: call)
                     let outcome = AssistantToolbox.execute(call, snapshot: snapshot) { self.format($0, redacts: redacts) }
                     if let proposed = outcome.proposal { proposal = proposed }
-                    conversation.append(WireMessage(role: .tool, content: outcome.resultText, toolCallID: call.id, toolName: call.name))
+                    conversation.append(WireMessage(role: .tool, content: AssistantGuard.fence(outcome.resultText, tokens: tokens),
+                                                    toolCallID: call.id, toolName: call.name))
                 }
                 statusLine = nil
                 if !transcript.isEmpty && !transcript.hasSuffix("\n") { transcript += "\n\n" }
@@ -300,11 +313,12 @@ final class AssistantViewModel {
                 restored.reason = display(restored.reason, redacts: redacts)
                 return PlanResolver.resolve(restored, in: snapshot)
             }
-            let finalText = display(parsed.text, redacts: redacts)
+            let screened = AssistantGuard.screen(display(parsed.text, redacts: redacts), tokens: tokens)
+            // An answer that repeats the system prompt is treated as hijacked: its plan is dropped too.
             update(messageID) {
-                $0.text = finalText
-                $0.plan = plan?.isMeaningful == true ? plan : nil
-                $0.planMalformed = proposal == nil && parsed.malformed
+                $0.text = screened.text
+                $0.plan = !screened.leaked && plan?.isMeaningful == true ? plan : nil
+                $0.planMalformed = !screened.leaked && proposal == nil && parsed.malformed
                 $0.status = .complete
             }
         } catch {
@@ -323,19 +337,38 @@ final class AssistantViewModel {
         }
     }
 
-    private func systemMessages(toolsEnabled: Bool, context: String) -> [WireMessage] {
+    private func systemMessages(toolsEnabled: Bool, context: String, tokens: AssistantGuard.Tokens) -> [WireMessage] {
         [
-            WireMessage(role: .system, content: AssistantPrompt.system(toolsEnabled: toolsEnabled)),
+            WireMessage(role: .system, content: AssistantPrompt.system(toolsEnabled: toolsEnabled, tokens: tokens)),
             WireMessage(role: .system, content: context),
         ]
     }
 
     private func wireHistory(excluding id: UUID, redacts: Bool) -> [WireMessage] {
-        let history = messages.filter { $0.id != id && !$0.text.isEmpty }.suffix(Self.historyLimit)
+        let history = Self.withoutRefusedExchanges(messages).filter { $0.id != id && !$0.text.isEmpty }.suffix(Self.historyLimit)
         return history.map { message in
             let text = redacts ? redactor.redactText(message.text) : message.text
             return WireMessage(role: message.role == .user ? .user : .assistant, content: text)
         }
+    }
+
+    // A message the input guard flags, and the answer after it, never reach the model.
+    private static func withoutRefusedExchanges(_ messages: [AssistantMessage]) -> [AssistantMessage] {
+        var kept: [AssistantMessage] = []
+        var skipReply = false
+        for message in messages {
+            if message.role == .user && AssistantGuard.isInjectionAttempt(message.text) {
+                skipReply = true
+                continue
+            }
+            if skipReply && message.role == .assistant {
+                skipReply = false
+                continue
+            }
+            skipReply = false
+            kept.append(message)
+        }
+        return kept
     }
 
     private func toolsEnabled(for settings: AssistantSettings) -> Bool {
