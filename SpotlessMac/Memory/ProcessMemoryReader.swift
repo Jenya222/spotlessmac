@@ -45,7 +45,8 @@ enum ProcessMemoryReader {
         let hasBSD = proc_pidinfo(pid, PROC_PIDTBSDINFO, 0, &bsd, bsdSize) == bsdSize
 
         let path = string(capacity: Int(MAXPATHLEN) * 4) { proc_pidpath(pid, $0, $1) }
-        let name = argumentZero(pid: pid)
+        let arguments = arguments(pid: pid)
+        let name = argumentZero(arguments)
             ?? string(capacity: 256) { proc_name(pid, $0, $1) }
             ?? path.map { ($0 as NSString).lastPathComponent }
         guard hasBSD || path != nil || name != nil else { return nil } // process exited
@@ -67,28 +68,27 @@ enum ProcessMemoryReader {
             responsiblePID: responsibility.responsiblePID(for: pid),
             footprint: hasUsage ? usage.ri_phys_footprint : 0,
             resident: hasUsage ? usage.ri_resident_size : 0,
-            isPartial: !hasUsage
+            isPartial: !hasUsage,
+            role: arguments.flatMap(HelperRole.classify)
         )
     }
 
-    /// Last path component of argv[0] — `claude` rather than the versioned
-    /// binary name `2.1.285`. Only readable for the current user's processes.
-    private static func argumentZero(pid: pid_t) -> String? {
+    /// The process's argv. Only readable for the current user's processes.
+    private static func arguments(pid: pid_t) -> [String]? {
         var mib: [Int32] = [CTL_KERN, KERN_PROCARGS2, pid]
         var size = 0
         guard sysctl(&mib, 3, nil, &size, nil, 0) == 0, size > MemoryLayout<Int32>.size else { return nil }
         var buffer = [UInt8](repeating: 0, count: size)
         guard sysctl(&mib, 3, &buffer, &size, nil, 0) == 0 else { return nil }
-        // Layout: argc (Int32), exec path, NUL padding, argv[0], ...
-        var index = MemoryLayout<Int32>.size
-        while index < size, buffer[index] != 0 { index += 1 }
-        while index < size, buffer[index] == 0 { index += 1 }
-        let start = index
-        while index < size, buffer[index] != 0 { index += 1 }
-        guard index > start else { return nil }
-        let argument = String(decoding: buffer[start..<index], as: UTF8.self)
+        return ProcessArguments.parse(Array(buffer.prefix(size)))
+    }
+
+    /// Last path component of argv[0] — `claude` rather than the versioned
+    /// binary name `2.1.285`.
+    private static func argumentZero(_ arguments: [String]?) -> String? {
+        guard let first = arguments?.first, !first.isEmpty else { return nil }
         // NSString, not URL: `URL(fileURLWithPath:)` stats the filesystem, and this runs per process.
-        let name = (argument as NSString).lastPathComponent
+        let name = (first as NSString).lastPathComponent
         return name.isEmpty ? nil : name
     }
 

@@ -244,9 +244,11 @@ struct MemoryView: View {
                 }
             }
             if expanded {
+                helperSummary(group)
                 ForEach(group.processes.prefix(40), id: \.pid) { process in
                     HStack {
-                        Text(process.name).font(.system(size: 11.5)).lineLimit(1)
+                        Text(process.role?.label ?? process.name).font(.system(size: 11.5)).lineLimit(1)
+                            .help(process.name)
                         Text("PID \(process.pid)").font(.system(size: 10.5)).foregroundStyle(Theme.textTertiary)
                         Spacer()
                         Text(process.isPartial ? "нет доступа" : MemoryVerdict.format(process.footprint))
@@ -265,6 +267,30 @@ struct MemoryView: View {
         .background(Color(nsColor: .textBackgroundColor))
         .overlay(RoundedRectangle(cornerRadius: Theme.radiusRow).stroke(Theme.divider))
         .clipShape(RoundedRectangle(cornerRadius: Theme.radiusRow))
+    }
+
+    /// "Вкладки 12 · 6,9 GB · Расширения 4 · 410 MB · …" plus, for browsers,
+    /// where to find the per-tab breakdown that only the browser itself knows.
+    @ViewBuilder
+    private func helperSummary(_ group: AppMemoryGroup) -> some View {
+        let totals = group.roleTotals
+        if !totals.isEmpty {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(totals.map { "\($0.role.summaryLabel) \($0.count) · \(MemoryVerdict.format($0.bytes))" }
+                    .joined(separator: "   "))
+                    .font(.system(size: 11.5, weight: .semibold))
+                    .foregroundStyle(Theme.textSecondary)
+                if group.looksLikeBrowser {
+                    Label("Какая именно вкладка или расширение занимает память, показывает диспетчер задач браузера: в Chrome — Shift+Esc или «Окно → Диспетчер задач».",
+                          systemImage: "info.circle")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Theme.textTertiary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .padding(.leading, 56)
+            .padding(.bottom, 2)
+        }
     }
 
     @ViewBuilder

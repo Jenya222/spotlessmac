@@ -38,6 +38,8 @@ struct ProcessMemorySample: Sendable, Equatable {
     let resident: UInt64
     /// True when the memory figures could not be read (other users, root).
     let isPartial: Bool
+    /// Chromium/Electron helper role from the command line; nil for other processes.
+    var role: HelperRole? = nil
 
     /// Estimate of the part held compressed or in swap.
     var pushedOut: UInt64 { footprint > resident ? footprint - resident : 0 }
