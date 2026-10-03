@@ -119,4 +119,32 @@ final class KnowledgeCorpusTests: XCTestCase {
             }
         }
     }
+
+    static let protectedRoots = [
+        "/System", "/private/var/vm", "~/Pictures/Photos Library.photoslibrary", "~/Library/Mobile Documents",
+        "~/Library/Messages", "~/Library/Application Support/MobileSync/Backup",
+    ]
+
+    func testSafeArticlesNeverCoverProtectedRoots() throws {
+        let base = try corpus()
+        let home = "/Users/tester"
+        for root in Self.protectedRoots {
+            let path = root.hasPrefix("~/") ? home + root.dropFirst() : root
+            for probe in [path, path + "/inner"] {
+                guard let article = KnowledgeMatcher.article(forPath: probe, category: nil, in: base, homePath: home) else { continue }
+                XCTAssertNotEqual(article.verdict, .safe, "\(article.id) calls \(probe) safe")
+            }
+        }
+    }
+
+    func testBindingKeysAreUnique() throws {
+        var owners: [String: String] = [:]
+        for article in try corpus().articles {
+            for key in article.processes.map({ "process:" + $0 }) + article.bundles.map({ "bundle:" + $0 })
+                + article.paths.map({ "path:" + $0 }) {
+                if let other = owners[key] { XCTFail("\(key) bound by both \(other) and \(article.id)") }
+                owners[key] = article.id
+            }
+        }
+    }
 }
