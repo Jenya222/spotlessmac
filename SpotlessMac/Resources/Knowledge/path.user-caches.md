@@ -11,7 +11,7 @@ categories: [user_caches, known_app_caches]
 related: [guide.caches-explained, guide.space-not-freed, guide.system-data, path.logs, app.electron]
 macOS: 14-26
 reviewed: 2026-10-03
-sources: [https://developer.apple.com/library/archive/documentation/FileManagement/Conceptual/FileSystemProgrammingGuide/FileSystemOverview/FileSystemOverview.html, https://support.apple.com/ru-ru/guide/mac-help/sysp4ee93ca4/mac, https://www.electronjs.org/docs/latest/api/app, https://www.electronjs.org/docs/latest/api/session]
+sources: [https://developer.apple.com/library/archive/documentation/FileManagement/Conceptual/FileSystemProgrammingGuide/FileSystemOverview/FileSystemOverview.html, https://support.apple.com/ru-ru/guide/mac-help/sysp4ee93ca4/mac, https://www.electronjs.org/docs/latest/api/app, https://www.electronjs.org/docs/latest/api/session, https://www.jetbrains.com/help/idea/directories-used-by-the-ide-to-store-settings-caches-plugins-and-logs.html]
 ---
 ## Что это
 Папка Library/Caches в вашей домашней папке. Программы хранят в ней данные, которые можно получить заново: загруженные картинки и страницы, миниатюры, промежуточные результаты. По правилам Apple это воссоздаваемые данные: программа не должна на них полагаться. Обычно у каждой программы своя подпапка, названная по её идентификатору. Часть программ, например построенные на Electron, держат кэш отдельно: в подпапках вроде Cache и Code Cache внутри своей папки в Application Support.
@@ -23,7 +23,7 @@ sources: [https://developer.apple.com/library/archive/documentation/FileManageme
 Программы редко чистят свой кэш сами: пока места хватает, он копится. Быстрее всего растут кэши браузеров, мессенджеров, редакторов фото и видео, программ для разработки.
 
 ## Что делать
-Закройте программу, кэш которой убираете, и очистите его во вкладке «Чистка»: файлы уйдут в Корзину, их можно вернуть. Место освободится после очистки Корзины. При следующем запуске программа может работать медленнее и заново загрузит часть данных, поэтому понадобится интернет.
+Закройте программу, кэш которой убираете. Пользовательские кэши SpotlessMac убирает во вкладке «Уход» (одним действием) или во вкладке «Диск» в разделе «Освободить место» (с просмотром по категориям). Кэши отдельных программ вне Library/Caches, например Cursor или Claude, показываются там же, в блоке «ПРОВЕРЬТЕ»: у каждой записи есть «Переместить в Корзину». Файлы уходят в Корзину, их можно вернуть, а место освободится после очистки Корзины. При следующем запуске программа может работать медленнее и заново загрузит часть данных, поэтому понадобится интернет.
 
 ## Чего не делать
-Не удаляйте кэш программы, пока она запущена: файлы могут быть нужны ей прямо сейчас. Не путайте кэш с данными самой программы: остальное содержимое Application Support, а также папки Containers и Group Containers — это документы, настройки и базы, их удаление может стоить вам данных. Из Application Support убирайте только подпапки, которые явно называются кэшем.
+Не удаляйте кэш программы, пока она запущена: файлы могут быть нужны ей прямо сейчас. Не путайте кэш с данными самой программы: остальное содержимое Application Support, а также папки Containers и Group Containers — это документы, настройки и базы, их удаление может стоить вам данных. Из Application Support убирайте только подпапки, которые явно называются кэшем. Проверьте кэш программ разработчика: по правилам Apple в Caches лежат восстанавливаемые данные, но не все программы им следуют. Например, среды разработки JetBrains хранят в Library/Caches/JetBrains не только кэши, но и локальную историю изменений файлов (так сказано в документации JetBrains), и после удаления её не вернуть. Если сомневаетесь, не удаляйте кэш такой программы.
