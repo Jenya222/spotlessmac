@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		B52A34EE400F9080F1385D93 /* KnowledgeBase.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBA5FCF321C5CFE28050C739 /* KnowledgeBase.swift */; };
+		E511185C9F4C1F3A1585AC37 /* KnowledgeCorpusTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9CD1EBACBE838F1D40BE1FE /* KnowledgeCorpusTests.swift */; };
+		C6BCC335EC8E51B30892B22D /* KnowledgeBaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28BAC6F76C08909200266336 /* KnowledgeBaseTests.swift */; };
+		9CA886F98C9C21775904C1FE /* Knowledge in Resources */ = {isa = PBXBuildFile; fileRef = EB649F6E6EBF1DEA6E9B30FF /* Knowledge */; };
 		1975721901D78B2D3EB66C83 /* KnowledgeSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 978B03E0343EBF117F9D8C59 /* KnowledgeSearch.swift */; };
 		3385A3C9B030965E8CEA6A89 /* KnowledgeSearchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AB6331E8A8434B5F64FBB2F /* KnowledgeSearchTests.swift */; };
 		41A8FE27CA67CEF311F6399F /* KnowledgeParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B2CA63076BDA920A4F5CCC0 /* KnowledgeParser.swift */; };
@@ -171,6 +175,10 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		EBA5FCF321C5CFE28050C739 /* KnowledgeBase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnowledgeBase.swift; sourceTree = "<group>"; };
+		A9CD1EBACBE838F1D40BE1FE /* KnowledgeCorpusTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnowledgeCorpusTests.swift; sourceTree = "<group>"; };
+		28BAC6F76C08909200266336 /* KnowledgeBaseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnowledgeBaseTests.swift; sourceTree = "<group>"; };
+		EB649F6E6EBF1DEA6E9B30FF /* Knowledge */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Knowledge; sourceTree = "<group>"; };
 		978B03E0343EBF117F9D8C59 /* KnowledgeSearch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnowledgeSearch.swift; sourceTree = "<group>"; };
 		0AB6331E8A8434B5F64FBB2F /* KnowledgeSearchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnowledgeSearchTests.swift; sourceTree = "<group>"; };
 		7B2CA63076BDA920A4F5CCC0 /* KnowledgeParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnowledgeParser.swift; sourceTree = "<group>"; };
@@ -356,9 +364,18 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		887A6F90336FF23D95C3914B /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				EB649F6E6EBF1DEA6E9B30FF /* Knowledge */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
 		B2B489C2435F0FB76091E6B5 /* Assistant */ = {
 			isa = PBXGroup;
 			children = (
+				EBA5FCF321C5CFE28050C739 /* KnowledgeBase.swift */,
 				978B03E0343EBF117F9D8C59 /* KnowledgeSearch.swift */,
 				7B2CA63076BDA920A4F5CCC0 /* KnowledgeParser.swift */,
 				565F1ABD5332C4A6C624030B /* KnowledgeArticle.swift */,
@@ -426,6 +443,7 @@
 		AA000003000000000000AA00 /* SpotlessMac */ = {
 			isa = PBXGroup;
 			children = (
+				887A6F90336FF23D95C3914B /* Resources */,
 				B2B489C2435F0FB76091E6B5 /* Assistant */,
 				45819CC578BB45491CC3FC92 /* Memory */,
 				DD000040000000000000DD00 /* Assets.xcassets */,
@@ -526,6 +544,8 @@
 		AA100001000000000000AA00 /* SpotlessMacTests */ = {
 			isa = PBXGroup;
 			children = (
+				A9CD1EBACBE838F1D40BE1FE /* KnowledgeCorpusTests.swift */,
+				28BAC6F76C08909200266336 /* KnowledgeBaseTests.swift */,
 				0AB6331E8A8434B5F64FBB2F /* KnowledgeSearchTests.swift */,
 				202F2B222F926E1ED2A05439 /* KnowledgeParserTests.swift */,
 				7E65839DF74F3E83E0D3E8BF /* KnowledgeFixtures.swift */,
@@ -721,6 +741,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9CA886F98C9C21775904C1FE /* Knowledge in Resources */,
 				EE000040000000000000EE00 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -732,6 +753,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E511185C9F4C1F3A1585AC37 /* KnowledgeCorpusTests.swift in Sources */,
+				C6BCC335EC8E51B30892B22D /* KnowledgeBaseTests.swift in Sources */,
 				3385A3C9B030965E8CEA6A89 /* KnowledgeSearchTests.swift in Sources */,
 				0C276AFAD0AC6013B2363A61 /* KnowledgeParserTests.swift in Sources */,
 				2095CC1DE7CD145AF162A6F3 /* KnowledgeFixtures.swift in Sources */,
@@ -791,6 +814,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B52A34EE400F9080F1385D93 /* KnowledgeBase.swift in Sources */,
 				1975721901D78B2D3EB66C83 /* KnowledgeSearch.swift in Sources */,
 				41A8FE27CA67CEF311F6399F /* KnowledgeParser.swift in Sources */,
 				E7704E1F7DA85E8C1F4B20CE /* KnowledgeArticle.swift in Sources */,

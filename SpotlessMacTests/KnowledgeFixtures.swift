@@ -22,4 +22,8 @@ enum KnowledgeFixtures {
             categories: categories, related: related, macOS: nil, reviewed: "2026-10-03", sources: [], body: body
         )
     }
+
+    static func base(_ articles: [KnowledgeArticle]) -> KnowledgeBase {
+        KnowledgeBase(articles: articles)
+    }
 }

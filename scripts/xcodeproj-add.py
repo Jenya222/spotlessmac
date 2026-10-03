@@ -4,6 +4,7 @@
 Usage:
   scripts/xcodeproj-add.py app Memory SpotlessMac/Memory/Foo.swift [...]
   scripts/xcodeproj-add.py tests SpotlessMacTests SpotlessMacTests/FooTests.swift [...]
+  scripts/xcodeproj-add.py resource-folder Resources SpotlessMac/Resources/Knowledge
 
 The group is looked up by name; a missing app subgroup is created under the
 SpotlessMac group. IDs are derived from the file path, so re-running is a no-op.
@@ -16,6 +17,7 @@ from pathlib import Path
 PROJECT = Path(__file__).resolve().parent.parent / "SpotlessMac.xcodeproj" / "project.pbxproj"
 SOURCES_PHASE = {"app": "BB000002000000000000BB00", "tests": "BB100002000000000000BB00"}
 APP_ROOT_GROUP = "AA000003000000000000AA00"
+RESOURCES_PHASE = "BB000004000000000000BB00"
 
 
 def make_id(kind: str, key: str) -> str:
@@ -51,10 +53,34 @@ def ensure_group(text: str, name: str):
     return text, group_id
 
 
+def add_resource_folder(text: str, group_id: str, folder: str) -> str:
+    """Adds a blue folder reference copied as-is into Contents/Resources."""
+    name = Path(folder).name
+    ref_id, build_id = make_id("ref", folder), make_id("build", folder)
+    if ref_id in text:
+        return text
+    text = insert_after(text, "/* Begin PBXFileReference section */",
+                        f"\t\t{ref_id} /* {name} */ = {{isa = PBXFileReference; lastKnownFileType = folder; "
+                        f"path = {name}; sourceTree = \"<group>\"; }};")
+    text = insert_after(text, "/* Begin PBXBuildFile section */",
+                        f"\t\t{build_id} /* {name} in Resources */ = {{isa = PBXBuildFile; fileRef = {ref_id} /* {name} */; }};")
+    text = add_child(text, group_id, f"\t\t\t\t{ref_id} /* {name} */,")
+    marker = (f"{RESOURCES_PHASE} /* Resources */ = {{\n\t\t\tisa = PBXResourcesBuildPhase;\n"
+              f"\t\t\tbuildActionMask = 2147483647;\n\t\t\tfiles = (")
+    if marker not in text:
+        raise SystemExit(f"resources phase {RESOURCES_PHASE} not found")
+    return insert_after(text, marker, f"\t\t\t\t{build_id} /* {name} in Resources */,")
+
+
 def main() -> None:
     target, group_name, *files = sys.argv[1:]
     text = PROJECT.read_text()
     text, group_id = ensure_group(text, group_name)
+    if target == "resource-folder":
+        for folder in files:
+            text = add_resource_folder(text, group_id, folder)
+        PROJECT.write_text(text)
+        return
     for file in files:
         name = Path(file).name
         ref_id, build_id = make_id("ref", file), make_id("build", file)
