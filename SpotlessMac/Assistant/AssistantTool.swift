@@ -11,8 +11,9 @@ enum AssistantTool: Equatable, Sendable {
     case listItems(category: ScanCategory?, minBytes: Int64?, olderThanDays: Int?, limit: Int)
     case itemDetails(id: String)
     case proposePlan(PlanProposal)
+    case lookupKnowledge(id: String?, query: String?)
 
-    static let names = ["list_items", "item_details", "propose_plan"]
+    static let names = ["list_items", "item_details", "propose_plan", "lookup_knowledge"]
 
     static let specs: [ToolSpec] = {
         let categories = ScanCategory.allCases.map(\.rawValue)
@@ -50,10 +51,18 @@ enum AssistantTool: Equatable, Sendable {
             ],
             "required": ["reason"],
         ]
+        let lookupKnowledge: [String: Any] = [
+            "type": "object",
+            "properties": [
+                "id": ["type": "string", "description": "ID статьи справки, например proc.kernel-task или из колонки «справка»"],
+                "query": ["type": "string", "description": "Вопрос или ключевые слова по-русски: процесс, папка, программа, проблема"],
+            ],
+        ]
         return [
             ToolSpec(name: "list_items", description: "Найти найденные сканированием элементы по категории, размеру и возрасту.", parametersJSON: JSONText.string(from: listItems)),
             ToolSpec(name: "item_details", description: "Подробности об элементе снимка по его ID.", parametersJSON: JSONText.string(from: itemDetails)),
             ToolSpec(name: "propose_plan", description: "Предложить пользователю план очистки. Ничего не удаляет: пользователь сам проверит список.", parametersJSON: JSONText.string(from: proposePlan)),
+            ToolSpec(name: "lookup_knowledge", description: "Найти статью во встроенной справке SpotlessMac о процессах, папках, памяти, настройках macOS и организации файлов. Ничего не меняет.", parametersJSON: JSONText.string(from: lookupKnowledge)),
         ]
     }()
 
@@ -72,6 +81,12 @@ enum AssistantTool: Equatable, Sendable {
         case "item_details":
             guard let id = arguments["id"] as? String, !id.isEmpty else { return .failure(.invalidArguments("нужен id")) }
             return .success(.itemDetails(id: id))
+        case "lookup_knowledge":
+            do throws(ToolParseError) {
+                return .success(try parseLookup(arguments))
+            } catch {
+                return .failure(error)
+            }
         default:
             guard let proposal = PlanProposal.decode(json: call.argumentsJSON) else {
                 return .failure(.invalidArguments("неверный формат плана"))
@@ -98,6 +113,20 @@ enum AssistantTool: Equatable, Sendable {
             olderThanDays: olderThanDays?.intValue,
             limit: min(max(limit?.intValue ?? 50, 1), 200)
         )
+    }
+
+    // Both fields are optional strings, but at least one must carry text; blank strings count as absent.
+    private static func parseLookup(_ arguments: [String: Any]) throws(ToolParseError) -> AssistantTool {
+        func text(_ key: String) throws(ToolParseError) -> String? {
+            guard let value = provided(arguments[key]) else { return nil }
+            guard let string = value as? String else { throw .invalidArguments("\(key) должно быть строкой") }
+            let trimmed = string.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.isEmpty ? nil : trimmed
+        }
+        let id = try text("id")
+        let query = try text("query")
+        guard id != nil || query != nil else { throw .invalidArguments("нужен id или query") }
+        return .lookupKnowledge(id: id, query: query)
     }
 
     private static func provided(_ value: Any?) -> Any? {

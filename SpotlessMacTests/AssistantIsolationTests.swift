@@ -125,7 +125,7 @@ final class AssistantIsolationTests: XCTestCase {
     }
 
     func testToolSetIsClosedAndReadOnly() {
-        XCTAssertEqual(AssistantTool.names, ["list_items", "item_details", "propose_plan"])
+        XCTAssertEqual(AssistantTool.names, ["list_items", "item_details", "propose_plan", "lookup_knowledge"])
         XCTAssertEqual(AssistantTool.specs.map(\.name), AssistantTool.names)
         for name in ["delete_file", "trash", "run_shell", "rm", "exec", "quit_app", "kill_process"] {
             let call = ToolCall(id: "x", name: name, argumentsJSON: "{}")

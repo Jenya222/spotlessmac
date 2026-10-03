@@ -8,8 +8,8 @@ final class AssistantToolboxTests: XCTestCase {
         AssistantToolbox.execute(ToolCall(id: "1", name: name, argumentsJSON: arguments), snapshot: snapshot) { $0 }
     }
 
-    func testToolSetIsExactlyThreeReadOnlyTools() {
-        XCTAssertEqual(AssistantTool.names, ["list_items", "item_details", "propose_plan"])
+    func testToolSetIsExactlyFourReadOnlyTools() {
+        XCTAssertEqual(AssistantTool.names, ["list_items", "item_details", "propose_plan", "lookup_knowledge"])
         XCTAssertEqual(AssistantTool.specs.map(\.name), AssistantTool.names)
     }
 
@@ -120,5 +120,61 @@ final class AssistantToolboxTests: XCTestCase {
         var redactor = PathRedactor(homePath: SystemSnapshot.testHome)
         let outcome = AssistantToolbox.execute(ToolCall(id: "1", name: "list_items", argumentsJSON: "{}"), snapshot: snapshot) { redactor.redact($0) }
         XCTAssertFalse(outcome.resultText.contains("/Users/tester"))
+    }
+
+    private func knowledge() -> KnowledgeContext {
+        let base = KnowledgeFixtures.base([
+            KnowledgeFixtures.article("guide.swap", title: "Своп и подкачка", summary: "Файл подкачки."),
+            KnowledgeFixtures.article("path.xcode-deriveddata", kind: .path, title: "DerivedData", verdict: .safe),
+        ])
+        return KnowledgeContext(base: base, annotations: KnowledgeAnnotations(items: ["c1": "path.xcode-deriveddata"]))
+    }
+
+    private func lookup(_ arguments: String) -> String {
+        AssistantToolbox.execute(ToolCall(id: "k", name: "lookup_knowledge", argumentsJSON: arguments),
+                                 snapshot: .sample(), knowledge: knowledge()) { $0 }.resultText
+    }
+
+    func testLookupKnowledgeByID() {
+        XCTAssertTrue(lookup(#"{"id":"guide.swap"}"#).hasPrefix("[guide.swap] Своп и подкачка"))
+    }
+
+    func testLookupKnowledgeByQuery() {
+        XCTAssertTrue(lookup(#"{"query":"что такое своп"}"#).contains("[guide.swap]"))
+    }
+
+    func testLookupKnowledgeRejectsBadArguments() {
+        XCTAssertEqual(lookup("{}"), "Ошибка в аргументах lookup_knowledge: нужен id или query.")
+        XCTAssertEqual(lookup(#"{"id":"  ","query":null}"#), "Ошибка в аргументах lookup_knowledge: нужен id или query.")
+        XCTAssertEqual(lookup(#"{"id":5}"#), "Ошибка в аргументах lookup_knowledge: id должно быть строкой.")
+        XCTAssertEqual(lookup(#"{"query":true}"#), "Ошибка в аргументах lookup_knowledge: query должно быть строкой.")
+        XCTAssertEqual(lookup("[]"), "Ошибка в аргументах lookup_knowledge: аргументы должны быть JSON-объектом.")
+    }
+
+    func testLookupKnowledgeUnknownIDAndNoHits() {
+        XCTAssertTrue(lookup(#"{"id":"guide.nope"}"#).hasPrefix("Статья guide.nope не найдена."))
+        XCTAssertEqual(lookup(#"{"query":"zzzz"}"#),
+                       "В справке ничего не найдено. Отвечай осторожно и скажи, что точных данных нет.")
+    }
+
+    func testLookupKnowledgeNeverProposesAPlan() {
+        let outcome = AssistantToolbox.execute(ToolCall(id: "k", name: "lookup_knowledge", argumentsJSON: #"{"query":"своп"}"#),
+                                               snapshot: .sample(), knowledge: knowledge()) { $0 }
+        XCTAssertNil(outcome.proposal)
+    }
+
+    func testListItemsAndDetailsShowTheArticle() {
+        let list = AssistantToolbox.execute(ToolCall(id: "l", name: "list_items", argumentsJSON: #"{"category":"developer_caches"}"#),
+                                            snapshot: .sample(), knowledge: knowledge()) { $0 }.resultText
+        XCTAssertTrue(list.contains("Колонки: \(SnapshotRenderer.itemColumns):"))
+        XCTAssertTrue(list.contains("| path.xcode-deriveddata"))
+        let card = AssistantToolbox.execute(ToolCall(id: "d", name: "item_details", argumentsJSON: #"{"id":"c1"}"#),
+                                            snapshot: .sample(), knowledge: knowledge()) { $0 }.resultText
+        XCTAssertTrue(card.contains("Справка: path.xcode-deriveddata"))
+    }
+
+    func testUnknownToolListsAllFourTools() {
+        let text = AssistantToolbox.execute(ToolCall(id: "x", name: "rm", argumentsJSON: "{}"), snapshot: .sample()) { $0 }.resultText
+        XCTAssertTrue(text.contains("list_items, item_details, propose_plan и lookup_knowledge"))
     }
 }

@@ -9,12 +9,12 @@ struct ToolOutcome: Equatable, Sendable {
 enum AssistantToolbox {
     private static let logger = Logger(subsystem: "com.spotlessmac.app", category: "assistant")
 
-    static func execute(_ call: ToolCall, snapshot: SystemSnapshot, formatPath: (String) -> String) -> ToolOutcome {
+    static func execute(_ call: ToolCall, snapshot: SystemSnapshot, knowledge: KnowledgeContext = .none, formatPath: (String) -> String) -> ToolOutcome {
         switch AssistantTool.parse(call) {
         case .failure(.unknownTool(let name)):
             logger.warning("Assistant requested unknown tool \(name, privacy: .public)")
             return ToolOutcome(
-                resultText: "Ошибка: инструмента «\(name)» не существует. Доступны только list_items, item_details и propose_plan. Удалять файлы, запускать команды и менять систему ассистент не может.",
+                resultText: "Ошибка: инструмента «\(name)» не существует. Доступны только list_items, item_details, propose_plan и lookup_knowledge. Удалять файлы, запускать команды и менять систему ассистент не может.",
                 proposal: nil
             )
         case .failure(.invalidArguments(let reason)):
@@ -36,14 +36,16 @@ enum AssistantToolbox {
             if let olderThanDays { applied.append("старше \(olderThanDays) дн.") }
             if let minBytes { applied.append("от \(SnapshotRenderer.bytes(minBytes))") }
             let filters = applied.isEmpty ? "" : " (\(applied.joined(separator: "; ")))"
-            let header = "Найдено \(matches.count), показано \(shown.count)\(filters). Колонки: ID | путь | размер | категория | политика | изменён | владелец:"
-            let lines = shown.map { SnapshotRenderer.itemLine($0, formatPath: formatPath) }
+            let header = "Найдено \(matches.count), показано \(shown.count)\(filters). Колонки: \(SnapshotRenderer.itemColumns):"
+            let lines = shown.map { SnapshotRenderer.itemLine($0, articleID: knowledge.annotations.items[$0.shortID], formatPath: formatPath) }
             return ToolOutcome(resultText: ([header] + lines).joined(separator: "\n"), proposal: nil)
         case .success(.itemDetails(let id)):
             guard let item = snapshot.item(shortID: id) else {
                 return ToolOutcome(resultText: "Элемент \(id) не найден в снимке.", proposal: nil)
             }
-            return ToolOutcome(resultText: SnapshotRenderer.itemCard(item, formatPath: formatPath), proposal: nil)
+            return ToolOutcome(resultText: SnapshotRenderer.itemCard(item, articleID: knowledge.annotations.items[item.shortID], formatPath: formatPath), proposal: nil)
+        case .success(.lookupKnowledge(let id, let query)):
+            return ToolOutcome(resultText: KnowledgeRenderer.lookup(id: id, query: query, in: knowledge.base), proposal: nil)
         case .success(.proposePlan(let proposal)):
             let plan = PlanResolver.resolve(proposal, in: snapshot)
             // The chat shows a card only for a meaningful plan, so the model must not be told one was shown otherwise.
