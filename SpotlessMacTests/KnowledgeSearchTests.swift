@@ -24,11 +24,21 @@ final class KnowledgeSearchTests: XCTestCase {
         XCTAssertEqual(KnowledgeSearch.stem("chrome"), "chrome")
     }
 
+    // The noisy body repeats the identifier whole, so plain BM25 favours it; only the exact-name boost lets the target win.
     func testExactProcessNameRanksFirst() {
-        let noisy = KnowledgeFixtures.article("guide.noise", title: "Шум", body: String(repeating: "mds stores ", count: 40))
+        let noisy = KnowledgeFixtures.article("guide.noise", title: "Шум", body: String(repeating: "mds_stores ", count: 40))
         let target = KnowledgeFixtures.article("proc.spotlight", kind: .process, title: "Spotlight", processes: ["mds_stores"])
-        let search = KnowledgeSearch(articles: [noisy, target])
-        XCTAssertEqual(search.search("что за mds_stores?", limit: 3).first?.article.id, "proc.spotlight")
+        let hits = KnowledgeSearch(articles: [noisy, target]).search("что за mds_stores?", limit: 3)
+        XCTAssertEqual(hits.first?.article.id, "proc.spotlight")
+        XCTAssertGreaterThanOrEqual(hits.first?.score ?? 0, KnowledgeSearch.exactMatchBoost)
+    }
+
+    func testExactBundleIDRanksFirst() {
+        let noisy = KnowledgeFixtures.article("guide.noise", title: "Шум", body: String(repeating: "com.google.Chrome ", count: 40))
+        let target = KnowledgeFixtures.article("app.browser", kind: .app, title: "Браузер", bundles: ["com.google.Chrome"])
+        let hits = KnowledgeSearch(articles: [noisy, target]).search("что с com.google.Chrome", limit: 3)
+        XCTAssertEqual(hits.first?.article.id, "app.browser")
+        XCTAssertGreaterThanOrEqual(hits.first?.score ?? 0, KnowledgeSearch.exactMatchBoost)
     }
 
     func testTitleOutweighsBody() {
