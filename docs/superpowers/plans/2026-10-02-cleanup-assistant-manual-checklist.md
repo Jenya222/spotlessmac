@@ -63,3 +63,17 @@ What each item needs in addition:
 23. «Docker»: ⓘ and the context menu on an image/container/volume row: the tab switches and an answer about that resource streams. ⓘ stays usable while a scan/delete runs.
 24. Fresh install state (reset above; cloud default, no key): ⓘ on a row switches to «Ассистент» and shows «Подключите модель»; no disclosure sheet, and no message in the history after configuring.
 
+## Knowledge base (2026-10-03)
+
+Run each question twice — local Ollama with tools on, and with «Инструменты: Выкл» — on a Mac with a fresh scan and the «Память» tab opened once.
+
+- [ ] «Что за процесс kernel_task и почему он грузит процессор?» — answer matches `proc.kernel-task`, no invented settings.
+- [ ] «Почему Системные данные занимают так много?» — follows `guide.system-data`.
+- [ ] «Как разобрать папку Загрузки?» — follows `guide.downloads-cleanup`, points to «Освободить место».
+- [ ] «Можно удалить резервные копии iPhone?» — verdict «не трогать», points to Finder.
+- [ ] «Chrome ест 6 ГБ памяти, что делать?» — follows `app.chrome`, mentions «Память».
+- [ ] «Как убрать программы из автозагрузки?» — gives the «Объекты входа» path from `guide.login-items`.
+- [ ] «Что такое mds_stores?» — tool mode calls `lookup_knowledge` (status «Читаю справку…»).
+- [ ] Ask about something not in the base («как настроить принтер») — the assistant says it has no reference and answers cautiously.
+- [ ] Cloud provider: request log contains article ids but no real home paths.
+- [ ] Every answer above stays within the no-delete rules and contains no terminal commands.

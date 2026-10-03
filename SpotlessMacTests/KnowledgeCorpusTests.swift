@@ -147,4 +147,31 @@ final class KnowledgeCorpusTests: XCTestCase {
             }
         }
     }
+
+    func testWaveOneIsComplete() throws {
+        let ids = Set(try corpus().articles.map(\.id))
+        XCTAssertEqual(Self.wave1.subtracting(ids).sorted(), [], "missing wave-1 articles")
+    }
+
+    func testEveryScanCategoryHasExactlyOneFallback() throws {
+        let base = try corpus()
+        for category in ScanCategory.allCases {
+            let owners = base.articles.filter { $0.categories.contains(category) }.map(\.id)
+            XCTAssertEqual(owners.count, 1, "\(category.rawValue): \(owners)")
+        }
+    }
+
+    func testEveryArticleHasAnEvalQuery() throws {
+        let folder = URL(filePath: #filePath).deletingLastPathComponent().appending(path: "Fixtures")
+        let names = try FileManager.default.contentsOfDirectory(atPath: folder.path(percentEncoded: false))
+            .filter { $0.hasPrefix("knowledge-eval-") && $0.hasSuffix(".json") }
+        var expected = Set<String>()
+        for name in names {
+            let cases = try JSONDecoder().decode([KnowledgeEvalTests.EvalCase].self,
+                                                 from: Data(contentsOf: folder.appending(path: name)))
+            expected.formUnion(cases.map(\.expected))
+        }
+        let ids = Set(try corpus().articles.map(\.id))
+        XCTAssertEqual(ids.subtracting(expected).sorted(), [], "articles without eval queries")
+    }
 }

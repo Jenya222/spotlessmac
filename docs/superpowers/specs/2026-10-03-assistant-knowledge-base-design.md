@@ -1,7 +1,7 @@
 # Assistant Knowledge Base — Design
 
 Date: 2026-10-03
-Status: draft for review
+Status: implemented; aligned with the plan (Task 13)
 
 ## 1. Goal
 
@@ -219,8 +219,10 @@ A corpus test (§8) lints every article:
 - A `path.` article with `verdict: safe` must not match any root that `SafetyRules` forbids or
   treats as personal (`/System`, `/private/var/vm`, Photos library, `~/Library/Mobile Documents`,
   `~/Library/Messages`, iPhone backups…). Checked by running the matcher against those roots.
-- Articles refer to SpotlessMac features by their UI names (tabs «Чистка», «Программы», «Диск» with
-  «Освободить место», «Память», «Docker»), never promise that the assistant itself will act.
+- Articles refer to SpotlessMac features by their UI names (tabs «Уход», «Программы», «Диск» with
+  «Освободить место», «Память», «Docker»), never promise that the assistant itself will act. The
+  tab «Чистка» only shows the progress of a running cleanup, so articles never send the user there
+  to clean anything.
 - Tool output (including `lookup_knowledge`) stays fenced by `AssistantGuard` like all tool output; the
   tools-off reference is bundled, trusted text and goes as its own unfenced system message. The guard's
   topic rule is widened to processes, performance and file organization so these questions are not refused.
