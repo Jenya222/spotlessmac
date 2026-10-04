@@ -17,8 +17,21 @@ enum AssistantMarkdownBlock: Equatable {
 /// Один `Text(AttributedString(markdown:, .full))` теряет блочную структуру:
 /// заголовки и пункты списка сливаются в один абзац. Поэтому блоки — наши,
 /// а внутри блока `AttributedString(markdown:)` в режиме «только строчная
-/// разметка» даёт жирный, курсив и код (ссылки из ответа модели вьюха гасит).
+/// разметка» даёт жирный, курсив и код (ссылки из ответа модели гасит `inline`).
 enum AssistantMarkdownBlocks {
+    /// Bold, italic and code only. Links in model output are rendered as plain text: the
+    /// assistant must not be able to put a clickable URL in front of the user.
+    static func inline(_ text: String) -> AttributedString {
+        guard var result = try? AttributedString(
+            markdown: text,
+            options: AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace)
+        ) else { return AttributedString(text) }
+        for run in result.runs where run.link != nil {
+            result[run.range].link = nil
+        }
+        return result
+    }
+
     static func parse(_ markdown: String) -> [AssistantMarkdownBlock] {
         var blocks: [AssistantMarkdownBlock] = []
         var paragraph: [String] = []

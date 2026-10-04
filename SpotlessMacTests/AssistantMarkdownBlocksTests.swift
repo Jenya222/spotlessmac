@@ -19,7 +19,7 @@ final class AssistantMarkdownBlocksTests: XCTestCase {
     }
 
     func testInlineKeepsEmphasisButDropsLinks() {
-        let result = AssistantMarkdownView.inline("[сайт](https://example.com) и **важно**")
+        let result = AssistantMarkdownBlocks.inline("[сайт](https://example.com) и **важно**")
         XCTAssertEqual(String(result.characters), "сайт и важно")
         XCTAssertTrue(result.runs.allSatisfy { $0.link == nil })
         XCTAssertTrue(result.runs.contains { $0.inlinePresentationIntent?.contains(.stronglyEmphasized) == true })
