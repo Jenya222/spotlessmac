@@ -6,7 +6,9 @@ Requires full Xcode. UI compilation is verified separately with xcodebuild.
 Temporary build products and fixture files are deliberately retained in /private/tmp.
 """
 from pathlib import Path
+import os
 import plistlib
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -40,5 +42,24 @@ subprocess.run(["xcrun", "swiftc", *common, "-emit-library", "-module-name", "Do
                 "-Xlinker", "-rpath", "-Xlinker", str(root),
                 "-Xlinker", "-rpath", "-Xlinker", frameworks, *tests,
                 "-o", str(bundle / "Contents/MacOS/DomainTests")], check=True)
-subprocess.run([str(developer / "usr/bin/xctest"), str(bundle)], check=True)
-print(f"Test products retained at {root}")
+# Production loads knowledge from Bundle.main. Host XCTest in a temporary app
+# with the same resource layout, rather than Xcode's resource-free runner bundle.
+host = root / "DomainRunner.app"
+runner = host / "Contents/MacOS/xctest"
+runner.parent.mkdir(parents=True)
+shutil.copy2(developer / "usr/bin/xctest", runner)
+(host / "Contents/Info.plist").write_bytes(plistlib.dumps({
+    "CFBundleExecutable": "xctest",
+    "CFBundleIdentifier": "local.spotless.domain-runner",
+    "CFBundlePackageType": "APPL",
+}))
+shutil.copytree(repo / "SpotlessMac/Resources/Knowledge", host / "Contents/Resources/Knowledge")
+# The copied Xcode runner's relative rpaths no longer point into Xcode. Supply
+# its frameworks and Swift XCTest support only to this child process.
+runner_env = os.environ.copy()
+runner_env["DYLD_FRAMEWORK_PATH"] = os.pathsep.join([
+    str(developer / "Frameworks"), str(developer / "PrivateFrameworks"), frameworks,
+])
+runner_env["DYLD_LIBRARY_PATH"] = libraries
+print(f"Test products retained at {root}", flush=True)
+subprocess.run([str(runner), str(bundle)], env=runner_env, check=True)
