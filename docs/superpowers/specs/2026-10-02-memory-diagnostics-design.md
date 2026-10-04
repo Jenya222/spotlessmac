@@ -32,11 +32,13 @@ Per process (via `proc_pid_rusage`, `RUSAGE_INFO_V4` or later):
 - **Pushed out** = `max(0, ri_phys_footprint − ri_resident_size)`, an estimate of the part held compressed or in swap. macOS has no public per-process swap figure. The UI labels this as an estimate.
 - Processes whose rusage cannot be read (typically other users and root without privileges) keep pid, name and path when available and are flagged `isPartial`. They are never dropped from the list.
 
-System-wide (exact values):
+System-wide (exact values when available):
 
 - `host_statistics64(HOST_VM_INFO64)`: free, active, inactive, wired, compressor pages (`compressor_page_count`), purgeable, external (file-backed) pages. App memory = internal − purgeable; cached files = external + purgeable; used = app memory + wired + compressed. This matches Activity Monitor's breakdown.
 - `sysctl vm.swapusage` (`struct xsw_usage`): swap total/used.
-- `sysctl kern.memorystatus_vm_pressure_level`: 1 = normal, 2 = warning, 4 = critical.
+- `sysctl kern.memorystatus_vm_pressure_level`: 1 = normal, 2 = warning, 4 = critical; read failure/unknown level = unknown.
+- Page counts and swap each carry independent availability through the verdict, dashboard, chart and assistant snapshot. Missing values show «—» / «данные не получены»; normal pressure with complete metrics is required to claim «Памяти достаточно». Reliable high pressure or measured heavy swap can still produce a warning when another read fails.
+- Each `mach_host_self()` send right is released with `mach_port_deallocate` on every exit, including failed statistics/page-size reads.
 
 The Care dashboard switches from `MemoryStatsService` to `MemoryMonitor`, and `MemoryStatsService` is deleted, so both screens show the same numbers.
 
@@ -44,7 +46,7 @@ The Care dashboard switches from `MemoryStatsService` to `MemoryMonitor`, and `M
 
 `ProcessGrouper` is a pure function over `[ProcessMemorySample]` plus an optional responsibility lookup. For each process, it tries these in order:
 
-Inputs: the process samples plus a snapshot of running applications (`NSWorkspace.runningApplications`: pid, bundle path, bundle id, whether `activationPolicy == .regular`). Every bundle path is normalized to its **outermost** `*.app` component, because Docker runs `Docker.app/Contents/MacOS/Docker Desktop.app` (bundle id `com.electron.dockerdesktop`) next to `Docker.app/Contents/MacOS/com.docker.backend`, and both must land in one Docker group.
+Inputs: the process samples plus a snapshot of running applications (`NSWorkspace.runningApplications`: pid, bundle path, bundle id, launch date, whether `activationPolicy == .regular`). Every bundle path is normalized to its **outermost** `*.app` component, because Docker runs `Docker.app/Contents/MacOS/Docker Desktop.app` (bundle id `com.electron.dockerdesktop`) next to `Docker.app/Contents/MacOS/com.docker.backend`, and both must land in one Docker group.
 
 For each process, attribution tries these in order:
 
@@ -65,7 +67,7 @@ New folder `SpotlessMac/Memory/`:
 | `ProcessMemorySample` | struct, Sendable | pid, ppid, uid, name, path, footprint, resident, `pushedOut`, `isPartial` |
 | `AppMemoryGroup` | struct, Sendable, Identifiable | id (bundle id/path/name), displayName, bundleURL?, kind (`userApp`/`system`/`other`), processes, totals |
 | `MemorySample` | struct, Sendable | timestamp + `SystemMemorySnapshot` + `[AppMemoryGroup]` |
-| `SystemMemoryReader` | enum, static funcs | Reads system metrics; parses `xsw_usage`; never throws: missing values become 0 / `.unknown` |
+| `SystemMemoryReader` | enum, static funcs | Reads system metrics; parses `xsw_usage`; never throws: missing page/swap reads have separate availability flags; numeric zero fallback is only source compatibility, pressure is `.unknown` |
 | `ProcessMemoryReader` | enum, static funcs | Lists pids and reads per-process data |
 | `ResponsibilityResolver` | struct, Sendable | Wraps the optional `dlsym` symbol; `responsiblePID(for:) -> pid_t?` |
 | `ProcessGrouper` | enum, static pure func | Attribution described above |
@@ -82,8 +84,8 @@ UI (`SpotlessMac/App/`):
 
 ## Memory section UI
 
-1. **Summary.** Pressure indicator (green/yellow/red) with tiles: used, compressed, swap, cached files.
-2. **History.** A small chart (Swift Charts) of swap used and compressed over the session, with the background tinted by pressure level.
+1. **Summary.** Pressure indicator (green/yellow/red; unknown is neutral) with tiles: used, compressed, swap, cached files.
+2. **History.** A small chart (Swift Charts) of swap used and compressed over the session, with the background tinted by pressure level. Unavailable samples are gaps (optional values, separate chart segments), never plotted as zero or joined by a line.
 3. **Verdict line.** One rule-generated sentence. Examples: «Своп 9,3 ГБ — система активно вытесняет память. Больше всего держат: Docker (5,1 ГБ), Chrome (2,4 ГБ).» / «Памяти достаточно.» No app-specific advice.
 4. **Sources list.** `.userApp` groups sorted by memory descending. Each row shows icon, name, a bar for its share of physical RAM, Memory, Pushed out, and the process count. A row expands to its processes (name, PID, memory, partial marker). `.system` and `.other` appear as two collapsed groups at the bottom with no actions. Partial entries show the hint «нужны права администратора для точных данных».
 
@@ -93,7 +95,8 @@ The list keeps stable identity across samples (group id), so rows do not jump wh
 
 - Only `.userApp` groups with running applications inside their bundle (matched by outermost bundle path) get a «Завершить» button. The action targets the application as a whole, never an individual helper pid.
 - The confirmation sheet lists the application and its process count, and shows the memory expected to be freed (current group total, marked approximate).
-- Confirm → `NSRunningApplication.terminate()` for every running application inside the bundle. The app may ask to save documents.
+- Approval captures each vetted launch identity: PID, outermost bundle path, bundle ID and launch date. Missing identity cannot be acted on. Immediately before ordinary or force termination, the live adapter validates the identity against the same `NSRunningApplication` object it will terminate; PID reuse and a relaunch of the same bundle invalidate old approval. A newer sample with mismatched identity also ends the stale request.
+- Confirm → `NSRunningApplication.terminate()` for the approved still-running launches inside the bundle. The app may ask to save documents.
 - If the app is still running after 5 seconds, the sheet offers «Завершить принудительно». A second confirmation warns about unsaved data, then calls `forceTerminate()`.
 - After quitting, the next samples show the real change. Nothing is claimed beyond them.
 - No `kill(2)` anywhere in the subsystem.
@@ -144,3 +147,8 @@ Unit tests in `SpotlessMacTests/`:
   - quit flow covers terminate → still running → force offer, and denial.
 
 Manual check: compare the section against Activity Monitor on the same machine (Memory column, swap, compressed) while Docker Desktop is running.
+
+
+## 2026-10-04 verification
+
+Regression suites cover reused PID (other app and same-bundle relaunch), missing identity, stale samples, ordinary/force phases, independent page/swap/pressure failures, true zero swap, and history gaps. A live host-port ownership probe measured +10 references before the fix and 0 after ten reads. Automated checks use a fake terminator; they do not quit user apps. Environment and remaining Activity Monitor / disposable-app GUI checks are in the [execution report](../reviews/2026-10-04-memory-assistant-fixes-verification.md).

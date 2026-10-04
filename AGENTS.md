@@ -59,6 +59,7 @@ These invariants must be preserved in all changes:
 3. **Preview before delete** — user must see paths and sizes before any deletion is triggered.
 4. **`SafetyRules.isSafe(_:)` gates every delete call** in `ScanEngine.delete()`.
 5. **Never touch:** `/System`, `/private/var/vm` (swap), `/dev`, `/cores`, or anything outside the whitelist.
+6. **Assistant never deletes or quits** — the Assistant module has no access to deletion or process-quit APIs; `AssistantIsolationTests` enforce its closed tool set and approved dependencies.
 
 ## Adding a new scanner
 

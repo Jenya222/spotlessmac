@@ -1,6 +1,6 @@
 # Cleanup Assistant — manual end-to-end checklist
 
-Not run (needs a GUI plus real Ollama Cloud / local Ollama / LM Studio servers). Build and install with `./scripts/install-local-debug.sh` (Debug configuration, so the license bypass applies and the Full Disk Access grant survives rebuilds).
+GUI scenarios remain not run as of 2026-10-04. A Debug app was launched, but input automation failed with `window_not_focused`; no settings, key or user action was changed. Automated regressions are recorded separately in the [verification report](../reviews/2026-10-04-memory-assistant-fixes-verification.md) and do not mark these live scenarios passed. Build and install with `./scripts/install-local-debug.sh` (Debug configuration, so the license bypass applies and the Full Disk Access grant survives rebuilds).
 
 Privacy rule these checks rely on (`AssistantSettings.sendsDataOffDevice`): **Ollama Cloud is always treated as off-device, whatever the URL** (redacted paths + disclosure sheet). Only «Локальная Ollama» and «OpenAI-совместимый» have the loopback exemption: with a host of `localhost`, `127.0.0.1` or `::1` they send full paths and show no disclosure; with any other host they are redacted and gated like the cloud.
 
@@ -77,3 +77,32 @@ Run each question twice — local Ollama with tools on, and with «Инстру�
 - [ ] Ask about something not in the base («как настроить принтер») — the assistant says it has no reference and answers cautiously.
 - [ ] Cloud provider: request log contains article ids but no real home paths.
 - [ ] Every answer above stays within the no-delete rules and contains no terminal commands.
+
+
+## Review-fix additions (2026-10-04; pending live GUI checks)
+
+Use only disposable synthetic projects/conversations for cloud captures; never include a real credential in logs. Existing human-data reset commands above are optional manual prerequisites, not actions run by the automated test suite.
+
+- [ ] Unsaved endpoint A→B→enter fake key B→C: field clears before Check/Models/Save; returning to saved A restores only A's saved key.
+- [ ] Change endpoint and key while a chat waits for context refresh: old request uses the old pair or stops; new key never goes to old endpoint.
+- [ ] Start two probes in different response orders, edit model/URL/key, Reset or Save: old status/models do not overwrite current draft or spinner.
+- [ ] Row focus with fake boundary/bidi in its synthetic title: visible context is removable in draft; Retry/relaunch retain it; capture shows clean per-answer fence.
+- [ ] Quit/relaunch during a partial reply: question and screened partial answer return as interrupted; New Conversation stays empty after old request ends.
+- [ ] Restore legacy/local history, switch cloud and Retry: unsafe old messages stay visible locally and are omitted from request; context notice appears.
+- [ ] Register an external project after an earlier question mentioned it: next request redacts both current path and historical safe text; overlapping roots preserve old aliases.
+- [ ] Model plan nonempty→empty: final empty result leaves no old card, including when final text contains an old fallback block.
+- [ ] Commands or prompt canary in a native/fallback reason: no command/prompt appears in the card; prompt leakage removes the plan.
+- [ ] Compare Memory values and unknown placeholders against Activity Monitor on macOS 15.7.4; also validate macOS 14 minimum target separately.
+- [ ] In a disposable application with no unsaved documents, verify ordinary Quit, still-running fallback and second force confirmation; after closing/relaunching it, old confirmation cannot act on the new launch.
+
+Live Ollama Cloud, LM Studio, tool-capable model plan generation, broad knowledge answers and the GUI quit/Activity Monitor comparison remain release checks until actually performed. The automated suite provides deterministic boundary coverage, not evidence of their visual or real-model behavior.
+
+
+## Live local API smoke (performed; not a GUI scenario)
+
+2026-10-04, macOS15.7.4 / Ollama0.34.4, `dzgg/Gemma-4-Uncensored-HauhauCS-Aggressive:e2b`, temporary loopback-only server. Synthetic one-word request only; no snapshot, project paths or token. The server started for this check was stopped afterward.
+
+- [x] Real `OllamaClient` + `AssistantConnectionTester`: accepted a request with tool schema, completed explicitly, `ok=true`, `toolsSupported=true`.
+- [x] Explicit tool-less `OllamaClient` request:2 text deltas and `.done`, no stream interruption.
+
+This does not verify real native tool invocation, plan quality, fallback on an actually tool-less model, UI behavior or the knowledge-question matrix. Those scenarios above remain unchecked.
