@@ -16,9 +16,10 @@ enum MemoryFixtures {
 
     static func app(
         _ pid: pid_t, _ bundlePath: String, id: String? = nil,
-        policy: RunningAppInfo.ActivationPolicy = .regular
+        policy: RunningAppInfo.ActivationPolicy = .regular,
+        launchDate: Date? = Date(timeIntervalSince1970: 100)
     ) -> RunningAppInfo {
-        RunningAppInfo(pid: pid, bundlePath: bundlePath, bundleIdentifier: id, policy: policy)
+        RunningAppInfo(pid: pid, bundlePath: bundlePath, bundleIdentifier: id, policy: policy, launchDate: launchDate)
     }
 
     static func userGroup(_ bundlePath: String, processes: [ProcessMemorySample]) -> AppMemoryGroup {

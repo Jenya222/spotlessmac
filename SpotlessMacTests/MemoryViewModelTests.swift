@@ -20,6 +20,13 @@ private actor SampleSource {
 @MainActor
 private final class TerminatorSpy {
     var running: Set<pid_t>
+    var identities: [pid_t: RunningAppIdentity] = [:]
+    private enum Fallback {
+        static func identity(_ pid: pid_t) -> RunningAppIdentity {
+            RunningAppIdentity(pid: pid, bundlePath: "/Applications/Slack.app", bundleIdentifier: nil,
+                               launchDate: Date(timeIntervalSince1970: 100))
+        }
+    }
     var terminated: [pid_t] = []
     var forced: [pid_t] = []
     /// The app ignores the polite quit request.
@@ -34,14 +41,14 @@ private final class TerminatorSpy {
     var terminator: AppTerminator {
         AppTerminator(
             terminate: { pids in
-                self.terminated += pids
-                if !self.ignoresTerminate { self.running.subtract(pids) }
+                self.terminated += pids.map(\.pid)
+                if !self.ignoresTerminate { self.running.subtract(pids.map(\.pid)) }
             },
             forceTerminate: { pids in
-                self.forced += pids
-                if !self.survivesForce { self.running.subtract(pids) }
+                self.forced += pids.map(\.pid)
+                if !self.survivesForce { self.running.subtract(pids.map(\.pid)) }
             },
-            isAnyRunning: { pids in pids.contains { self.running.contains($0) } }
+            isAnyRunning: { pids in pids.contains { self.running.contains($0.pid) && (self.identities[$0.pid] ?? Fallback.identity($0.pid)) == $0 } }
         )
     }
 }
@@ -303,6 +310,62 @@ final class MemoryViewModelTests: XCTestCase {
         await waitUntil { isFinished(viewModel) }
         XCTAssertEqual(spy.forced, [42])
         XCTAssertTrue(spy.running.contains(77), "the unvetted instance must stay untouched")
+    }
+
+    func testQuitDoesNotTouchPIDReusedByFinder() async {
+        let spy = TerminatorSpy()
+        let (viewModel, slack) = makeSlack(spy: spy)
+        viewModel.requestQuit(slack)
+        viewModel.apply(F.sample(at: Date(), runningApps: [F.app(42, "/System/Library/CoreServices/Finder.app", id: "com.apple.finder")]))
+        await viewModel.confirmQuit()
+        XCTAssertTrue(spy.terminated.isEmpty, "a replacement process must never receive the approved quit")
+    }
+
+    func testForceQuitDoesNotTouchPIDReusedByFinder() async {
+        let spy = TerminatorSpy()
+        spy.ignoresTerminate = true
+        let (viewModel, slack) = makeSlack(spy: spy)
+        viewModel.requestQuit(slack)
+        await viewModel.confirmQuit()
+        viewModel.apply(F.sample(at: Date(), runningApps: [F.app(42, "/System/Library/CoreServices/Finder.app", id: "com.apple.finder")]))
+        viewModel.confirmForceQuit()
+        XCTAssertTrue(spy.forced.isEmpty, "force approval belongs to the original instance")
+    }
+
+    func testBothQuitActionsRejectRelaunchedSameApp() async {
+        for force in [false, true] {
+            let spy = TerminatorSpy()
+            spy.ignoresTerminate = true
+            let (viewModel, slack) = makeSlack(spy: spy)
+            viewModel.requestQuit(slack)
+            if force { await viewModel.confirmQuit() }
+            let replacement = F.app(42, slackPath, launchDate: Date(timeIntervalSince1970: 200))
+            spy.identities[42] = replacement.identity
+            viewModel.apply(F.sample(at: Date(), runningApps: [replacement]))
+            if force { viewModel.confirmForceQuit(); XCTAssertTrue(spy.forced.isEmpty) }
+            else { await viewModel.confirmQuit(); XCTAssertTrue(spy.terminated.isEmpty) }
+            XCTAssertFalse(viewModel.quitState.finishedWithQuit)
+        }
+    }
+
+    func testLiveCheckRejectsReplacementEvenWithStaleSample() async {
+        let spy = TerminatorSpy()
+        let (viewModel, slack) = makeSlack(spy: spy)
+        viewModel.requestQuit(slack)
+        spy.identities[42] = F.app(42, slackPath, launchDate: Date(timeIntervalSince1970: 200)).identity
+        await viewModel.confirmQuit()
+        XCTAssertTrue(spy.terminated.isEmpty)
+        XCTAssertFalse(viewModel.quitState.finishedWithQuit)
+    }
+
+    func testMissingLaunchIdentityDeniesQuit() async {
+        let spy = TerminatorSpy()
+        let (viewModel, slack) = makeSlack(spy: spy)
+        viewModel.apply(F.sample(at: Date(), runningApps: [F.app(42, slackPath, launchDate: nil)]))
+        viewModel.requestQuit(slack)
+        guard case .confirm(_, .denied) = viewModel.quitState else { return XCTFail("identity must be required") }
+        await viewModel.confirmQuit()
+        XCTAssertTrue(spy.terminated.isEmpty)
     }
 
     func testForceQuitReportsFailureWhenAppSurvives() async {

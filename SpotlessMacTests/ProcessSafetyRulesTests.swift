@@ -9,6 +9,15 @@ final class ProcessSafetyRulesTests: XCTestCase {
         ProcessSafetyRules.canQuit(group, runningApps: apps, currentUID: F.me, ownBundlePath: own, ownPID: 9999)
     }
 
+    func testMissingLaunchIdentityIsDenied() {
+        let path = "/Applications/Slack.app"
+        let group = F.userGroup(path, processes: [F.process(1)])
+        guard case .denied(let reason) = decide(group, [F.app(1, path, launchDate: nil)]) else {
+            return XCTFail("missing launch identity must fail closed")
+        }
+        XCTAssertTrue(reason.contains("экземпляр"))
+    }
+
     func testRegularUserAppIsAllowed() {
         let group = F.userGroup("/Applications/Slack.app", processes: [F.process(1, name: "Slack")])
         XCTAssertEqual(decide(group, [F.app(1, "/Applications/Slack.app")]), .allowed)

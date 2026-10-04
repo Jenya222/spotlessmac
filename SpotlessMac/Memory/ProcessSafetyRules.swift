@@ -49,6 +49,9 @@ enum ProcessSafetyRules {
         if !quittable {
             return .denied("Это фоновая служба, а не обычное приложение.")
         }
+        guard runningApps.allSatisfy({ $0.bundlePath == bundlePath && $0.identity != nil }) else {
+            return .denied("Не удалось проверить экземпляр приложения. Обновите данные и попробуйте снова.")
+        }
         return .allowed
     }
 }

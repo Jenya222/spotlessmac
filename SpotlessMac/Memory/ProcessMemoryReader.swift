@@ -119,7 +119,8 @@ enum RunningAppsReader {
                 pid: app.processIdentifier,
                 bundlePath: bundlePath,
                 bundleIdentifier: app.bundleIdentifier,
-                policy: policy(app.activationPolicy)
+                policy: policy(app.activationPolicy),
+                launchDate: app.launchDate
             )
         }
     }

@@ -45,12 +45,26 @@ struct ProcessMemorySample: Sendable, Equatable {
     var pushedOut: UInt64 { footprint > resident ? footprint - resident : 0 }
 }
 
+/// Approval belongs to one launch, even when the operating system reuses its PID.
+struct RunningAppIdentity: Sendable, Equatable {
+    let pid: pid_t
+    let bundlePath: String
+    let bundleIdentifier: String?
+    let launchDate: Date
+}
+
 struct RunningAppInfo: Sendable, Equatable {
     let pid: pid_t
     /// Outermost `*.app` that contains the application bundle.
     let bundlePath: String
     let bundleIdentifier: String?
     let policy: ActivationPolicy
+    var launchDate: Date? = nil
+
+    var identity: RunningAppIdentity? {
+        launchDate.map { RunningAppIdentity(pid: pid, bundlePath: bundlePath,
+                                           bundleIdentifier: bundleIdentifier, launchDate: $0) }
+    }
 
     enum ActivationPolicy: Sendable, Equatable { case regular, accessory, prohibited }
 }
