@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1BF2B3EC96B7470405354495 /* AssistantSettingsEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BCF607486BE766CA49B6BAF /* AssistantSettingsEditor.swift */; };
+		D4C66657F881B65F375E0F5E /* AssistantSettingsEditorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFC34A36AB46E6E6586D339C /* AssistantSettingsEditorTests.swift */; };
 		61FD4C9E90D66F214E0AC7D5 /* KnowledgeRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 153D9D14927D9FE08B5F6D62 /* KnowledgeRenderer.swift */; };
 		DCE5CB98CBFC4AA7D4C7E3AA /* KnowledgeRendererTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD5BEA61F498FEC15AE9B85E /* KnowledgeRendererTests.swift */; };
 		0708271B3A5A0B8C7AFB47A9 /* KnowledgeMatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = E418ED495F5A5AEDC6C8D6D2 /* KnowledgeMatcher.swift */; };
@@ -180,6 +182,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		2BCF607486BE766CA49B6BAF /* AssistantSettingsEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantSettingsEditor.swift; sourceTree = "<group>"; };
+		AFC34A36AB46E6E6586D339C /* AssistantSettingsEditorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantSettingsEditorTests.swift; sourceTree = "<group>"; };
 		153D9D14927D9FE08B5F6D62 /* KnowledgeRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnowledgeRenderer.swift; sourceTree = "<group>"; };
 		FD5BEA61F498FEC15AE9B85E /* KnowledgeRendererTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnowledgeRendererTests.swift; sourceTree = "<group>"; };
 		E418ED495F5A5AEDC6C8D6D2 /* KnowledgeMatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnowledgeMatcher.swift; sourceTree = "<group>"; };
@@ -385,6 +389,7 @@
 		B2B489C2435F0FB76091E6B5 /* Assistant */ = {
 			isa = PBXGroup;
 			children = (
+				2BCF607486BE766CA49B6BAF /* AssistantSettingsEditor.swift */,
 				153D9D14927D9FE08B5F6D62 /* KnowledgeRenderer.swift */,
 				E418ED495F5A5AEDC6C8D6D2 /* KnowledgeMatcher.swift */,
 				EBA5FCF321C5CFE28050C739 /* KnowledgeBase.swift */,
@@ -556,6 +561,7 @@
 		AA100001000000000000AA00 /* SpotlessMacTests */ = {
 			isa = PBXGroup;
 			children = (
+				AFC34A36AB46E6E6586D339C /* AssistantSettingsEditorTests.swift */,
 				FD5BEA61F498FEC15AE9B85E /* KnowledgeRendererTests.swift */,
 				3A1034281BB4458EA0685882 /* KnowledgeMatcherTests.swift */,
 				AB3D937A157D334B33A568EC /* KnowledgeEvalTests.swift */,
@@ -768,6 +774,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D4C66657F881B65F375E0F5E /* AssistantSettingsEditorTests.swift in Sources */,
 				DCE5CB98CBFC4AA7D4C7E3AA /* KnowledgeRendererTests.swift in Sources */,
 				32D3B7EF93514AF28595CCB4 /* KnowledgeMatcherTests.swift in Sources */,
 				1CA416A5DE08A6D2F1AB876E /* KnowledgeEvalTests.swift in Sources */,
@@ -832,6 +839,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1BF2B3EC96B7470405354495 /* AssistantSettingsEditor.swift in Sources */,
 				61FD4C9E90D66F214E0AC7D5 /* KnowledgeRenderer.swift in Sources */,
 				0708271B3A5A0B8C7AFB47A9 /* KnowledgeMatcher.swift in Sources */,
 				B52A34EE400F9080F1385D93 /* KnowledgeBase.swift in Sources */,

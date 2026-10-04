@@ -71,19 +71,9 @@ struct AssistantSettings: Codable, Equatable, Sendable {
         }
     }
 
-    // A token saved with `saved` may be offered again only for the same provider and the same host.
-    // Editing the address to another host must not carry the token there. Hosts compare case-insensitively;
-    // addresses without a parsable host match only when they are identical.
+    // Credentials follow the provider and host, including when neither endpoint is saved.
     func sharesTokenEndpoint(with saved: AssistantSettings) -> Bool {
-        guard provider == saved.provider else { return false }
-        guard let host = Self.host(of: baseURL), let savedHost = Self.host(of: saved.baseURL) else {
-            return baseURL == saved.baseURL
-        }
-        return host == savedHost
-    }
-
-    private static func host(of address: String) -> String? {
-        URL(string: address.trimmingCharacters(in: .whitespacesAndNewlines))?.host()?.lowercased()
+        AssistantEndpointIdentity(settings: self) == AssistantEndpointIdentity(settings: saved)
     }
 
     private var pointsAtLoopback: Bool {
@@ -92,6 +82,28 @@ struct AssistantSettings: Codable, Equatable, Sendable {
     }
 
     var toolSupportKey: String { "\(provider.rawValue)|\(baseURL)|\(trimmedModel)" }
+}
+
+/// Current credential policy: provider + case-insensitive host. A malformed address
+/// has its own identity and can match only the same trimmed address.
+struct AssistantEndpointIdentity: Equatable, Sendable {
+    private enum Address: Equatable, Sendable {
+        case host(String)
+        case invalid(String)
+    }
+
+    private let provider: AssistantProvider
+    private let address: Address
+
+    init(settings: AssistantSettings) {
+        provider = settings.provider
+        let trimmed = settings.baseURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let host = URL(string: trimmed)?.host(), !host.isEmpty {
+            address = .host(host.lowercased())
+        } else {
+            address = .invalid(trimmed)
+        }
+    }
 }
 
 @MainActor
