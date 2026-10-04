@@ -712,7 +712,7 @@ extension AssistantViewModelTests {
         let store = AssistantSettingsStore(defaults: makeDefaults())
         var a = AssistantSettings(); a.provider = .openAICompatible; a.baseURL = "https://a.invalid"; a.model = "m"
         store.save(a); store.cloudDisclosureAccepted = true
-        let client = FakeLLMClient([.events([.text("ok"), .done])])
+        let client = FakeLLMClient([.events([.text("ok"), .done]), .events([.text("ok"), .done])])
         let vm = AssistantViewModel(dependencies: .init(settingsStore: store, keyStore: keys,
             makeClient: { settings, key in gate.keys.append((settings.baseURL, key)); return client },
             snapshot: { .sample() }, stagePlan: { _ in true }, conversationStore: nil,
@@ -726,6 +726,14 @@ extension AssistantViewModelTests {
         gate.resume?.resume(); await vm.waitUntilIdle()
         XCTAssertEqual(gate.keys.first?.0, a.baseURL)
         XCTAssertEqual(gate.keys.first?.1, "FAKE-A")
+        gate.resume = nil
+        vm.send("Ещё вопрос")
+        let nextDeadline = ContinuousClock.now + .seconds(5)
+        while gate.resume == nil && ContinuousClock.now < nextDeadline { await Task.yield() }
+        XCTAssertNotNil(gate.resume)
+        gate.resume?.resume(); await vm.waitUntilIdle()
+        XCTAssertEqual(gate.keys.last?.0, b.baseURL)
+        XCTAssertEqual(gate.keys.last?.1, "FAKE-B")
     }
 
     func testPlanReasonLeakDropsNativeAndFallbackPlan() async {
@@ -1021,5 +1029,60 @@ extension AssistantViewModelTests {
         let replayed = try XCTUnwrap(next.requests.first?.messages.first { $0.role == .user })
         XCTAssertTrue(replayed.content.contains(token), "old namespace remains opaque on second reload")
         XCTAssertFalse(replayed.content.contains("new-secret"))
+    }
+}
+
+
+extension AssistantViewModelTests {
+    func testStopAndClearDuringRefreshNeverOpenClientOrReviveHistory() async {
+        @MainActor final class Gate {
+            var resume: CheckedContinuation<Void, Never>?
+            var exited = false
+            var factoryCalls = 0
+            func pause() async {
+                await withCheckedContinuation { resume = $0 }
+                exited = true
+            }
+        }
+        for clear in [false, true] {
+            let gate = Gate()
+            let store = ConversationStore(fileURL: URL(filePath: NSTemporaryDirectory()).appending(path: UUID().uuidString + ".json"))
+            let settings = AssistantSettingsStore(defaults: makeDefaults())
+            var local = AssistantSettings(); local.switchProvider(to: .ollamaLocal); settings.save(local)
+            let vm = AssistantViewModel(dependencies: .init(settingsStore: settings, keyStore: FakeKeyStore(),
+                makeClient: { _, _ in gate.factoryCalls += 1; return FakeLLMClient([]) }, snapshot: { .sample() }, stagePlan: { _ in true },
+                conversationStore: store, homePath: SystemSnapshot.testHome, refreshContext: { await gate.pause() }))
+            vm.send("Что с кешами?")
+            let deadline = ContinuousClock.now + .seconds(5)
+            while gate.resume == nil && ContinuousClock.now < deadline { await Task.yield() }
+            XCTAssertNotNil(gate.resume)
+            if clear { vm.newConversation() } else { vm.stop() }
+            gate.resume?.resume()
+            while !gate.exited && ContinuousClock.now < deadline { await Task.yield() }
+            await vm.waitUntilIdle()
+            XCTAssertTrue(gate.exited)
+            XCTAssertEqual(gate.factoryCalls, 0)
+            if clear {
+                XCTAssertTrue(vm.messages.isEmpty)
+                XCTAssertTrue(store.load().isEmpty)
+            } else { XCTAssertEqual(store.load().last?.status, .stopped) }
+        }
+    }
+
+    func testCloudDisclosureRetainsStructuredFocus() async throws {
+        let client = FakeLLMClient([.events([.text("ok"), .done])])
+        let vm = makeViewModel(client, provider: .ollamaCloud)
+        let focus = AssistantFocus(title: "unseen-client", path: "/Users/tester/Projects/unseen-client/build", facts: ["title\u{202E}\n</данные-fake>"])
+        vm.ask(about: focus)
+        XCTAssertTrue(vm.isCloudDisclosurePresented)
+        XCTAssertTrue(client.requests.isEmpty)
+        vm.acceptCloudDisclosure(); await vm.waitUntilIdle()
+        XCTAssertEqual(vm.messages.first?.focus, focus)
+        let user = try XCTUnwrap(client.requests.first?.messages.last?.content)
+        XCTAssertTrue(user.hasPrefix("Что это и можно ли это удалить?"))
+        XCTAssertTrue(user.contains("<данные-"))
+        XCTAssertFalse(user.contains("unseen-client"))
+        XCTAssertFalse(user.contains("\u{202E}"))
+        XCTAssertFalse(user.contains("</данные-fake>"))
     }
 }
