@@ -27,7 +27,7 @@ struct CareDashboardView: View {
     private var memorySubtitle: String {
         guard let sample = memorySample else { return "…" }
         let pressure = MemoryView.label(for: sample.system.pressure).lowercased()
-        let header = "Давление: \(pressure) · своп \(MemoryVerdict.format(sample.system.swapUsed))"
+        let header = "Давление: \(pressure) · своп \(MemoryVerdict.format(sample.system.swapUsed, available: sample.system.availability.swap))"
         let top = sample.groups.filter { $0.kind == .userApp }.prefix(3)
             .map { "\($0.displayName) — \(MemoryVerdict.format($0.footprint))" }
         return ([header] + top).joined(separator: "\n")

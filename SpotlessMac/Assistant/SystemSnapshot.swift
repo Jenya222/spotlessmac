@@ -99,6 +99,8 @@ struct MemoryInfo: Equatable, Sendable {
     let swapUsedBytes: Int64
     let topApps: [MemoryAppInfo]
     var topProcesses: [MemoryProcessInfo] = []
+    var pagesAvailable = true
+    var swapAvailable = true
 }
 
 // Immutable copy of what the assistant may know. Holds no references to live objects.

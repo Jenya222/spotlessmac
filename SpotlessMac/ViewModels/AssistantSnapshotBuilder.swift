@@ -79,7 +79,9 @@ enum AssistantSnapshotBuilder {
             physicalBytes: Int64(clamping: sample.system.physical),
             swapUsedBytes: Int64(clamping: sample.system.swapUsed),
             topApps: Array(topApps),
-            topProcesses: Array(topProcesses)
+            topProcesses: Array(topProcesses),
+            pagesAvailable: sample.system.availability.pages,
+            swapAvailable: sample.system.availability.swap
         )
     }
 

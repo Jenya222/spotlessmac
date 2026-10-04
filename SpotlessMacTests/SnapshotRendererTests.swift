@@ -50,6 +50,16 @@ final class SnapshotRendererTests: XCTestCase {
         XCTAssertTrue(SnapshotRenderer.render(noMemory) { $0 }.contains("Память: данные не получены"))
     }
 
+    func testUnavailableMemoryMetricsAreRenderedAsMissing() {
+        var snapshot = SystemSnapshot.sample()
+        snapshot.memory?.pagesAvailable = false
+        snapshot.memory?.swapAvailable = false
+        let text = SnapshotRenderer.render(snapshot) { $0 }
+        XCTAssertTrue(text.contains("занято —"), text)
+        XCTAssertTrue(text.contains("своп —"), text)
+        XCTAssertTrue(text.contains("данные не получены"), text)
+    }
+
     func testItemCard() {
         let item = SystemSnapshot.sample().items[3]
         let card = SnapshotRenderer.itemCard(item) { $0 }

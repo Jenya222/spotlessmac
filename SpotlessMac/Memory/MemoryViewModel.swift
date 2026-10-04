@@ -4,9 +4,16 @@ import Observation
 
 struct MemoryHistoryPoint: Sendable, Equatable, Identifiable {
     let date: Date
-    let swapUsed: UInt64
-    let compressed: UInt64
+    let swapUsed: UInt64?
+    let compressed: UInt64?
     let pressure: MemoryPressure
+    var id: Date { date }
+}
+
+struct MemoryHistorySeriesPoint: Identifiable {
+    let date: Date
+    let bytes: UInt64
+    let segment: Int
     var id: Date { date }
 }
 
@@ -142,12 +149,21 @@ final class MemoryViewModel {
 
     func apply(_ next: MemorySample) {
         latest = next
-        history.append(MemoryHistoryPoint(date: next.date, swapUsed: next.system.swapUsed,
-                                          compressed: next.system.compressed, pressure: next.system.pressure))
+        history.append(MemoryHistoryPoint(date: next.date, swapUsed: next.system.availability.swap ? next.system.swapUsed : nil,
+                                          compressed: next.system.availability.pages ? next.system.compressed : nil, pressure: next.system.pressure))
         if history.count > Self.historyLimit { history.removeFirst(history.count - Self.historyLimit) }
         let resort = lastSort.map { next.date.timeIntervalSince($0) >= Self.resortInterval } ?? true
         displayedGroups = Self.order(next.groups, previous: displayedGroups, resort: resort)
         if resort { lastSort = next.date }
+    }
+
+    /// Separate series segments keep Charts from joining across unavailable samples.
+    func historySeries(_ metric: KeyPath<MemoryHistoryPoint, UInt64?>) -> [MemoryHistorySeriesPoint] {
+        var segment = 0
+        return history.compactMap { point in
+            guard let bytes = point[keyPath: metric] else { segment += 1; return nil }
+            return MemoryHistorySeriesPoint(date: point.date, bytes: bytes, segment: segment)
+        }
     }
 
     /// Keeps the previous order for known groups (so expanded rows don't jump),

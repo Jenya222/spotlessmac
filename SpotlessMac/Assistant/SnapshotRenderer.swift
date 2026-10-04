@@ -67,7 +67,12 @@ enum SnapshotRenderer {
             lines.append("Последняя очистка: в Корзину перемещено \(bytes(cleanup.trashedBytes)), наблюдаемый прирост свободного места \(delta).")
         }
         if let memory = snapshot.memory {
-            var line = "Память: давление \(memory.load.label), занято \(memoryBytes(memory.usedBytes)) из \(memoryBytes(memory.physicalBytes)), своп \(memoryBytes(memory.swapUsedBytes))."
+            let used = memory.pagesAvailable ? memoryBytes(memory.usedBytes) : "—"
+            let swap = memory.swapAvailable ? memoryBytes(memory.swapUsedBytes) : "—"
+            var line = "Память: давление \(memory.load.label), занято \(used) из \(memoryBytes(memory.physicalBytes)), своп \(swap)."
+            if !memory.pagesAvailable || !memory.swapAvailable || memory.load == .unknown {
+                line += " Часть показателей: данные не получены."
+            }
             if !memory.topApps.isEmpty {
                 line += " Больше всего памяти занимают: "
                     + memory.topApps.map { app in

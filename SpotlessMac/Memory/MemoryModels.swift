@@ -12,6 +12,11 @@ enum MemoryPressure: Int, Sendable {
     }
 }
 
+struct MemoryMetricAvailability: Sendable, Equatable {
+    var pages: Bool = true
+    var swap: Bool = true
+}
+
 struct SystemMemorySnapshot: Sendable, Equatable {
     var physical: UInt64
     var appMemory: UInt64
@@ -22,6 +27,7 @@ struct SystemMemorySnapshot: Sendable, Equatable {
     var swapUsed: UInt64
     var swapTotal: UInt64
     var pressure: MemoryPressure
+    var availability = MemoryMetricAvailability()
 
     /// Matches Activity Monitor's "Memory Used".
     var used: UInt64 { appMemory + wired + compressed }

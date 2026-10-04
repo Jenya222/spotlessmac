@@ -70,12 +70,12 @@ struct MemoryView: View {
     private func summary(_ system: SystemMemorySnapshot) -> some View {
         HStack(spacing: 10) {
             pressureTile(system.pressure)
-            tile("Используется", MemoryVerdict.format(system.used),
+            tile("Используется", MemoryVerdict.format(system.used, available: system.availability.pages),
                  detail: "из \(MemoryVerdict.format(system.physical))")
-            tile("Сжато", MemoryVerdict.format(system.compressed), detail: nil)
-            tile("Своп", MemoryVerdict.format(system.swapUsed),
-                 detail: system.swapTotal > 0 ? "из \(MemoryVerdict.format(system.swapTotal))" : nil)
-            tile("Кэш файлов", MemoryVerdict.format(system.cachedFiles), detail: "освобождается сам")
+            tile("Сжато", MemoryVerdict.format(system.compressed, available: system.availability.pages), detail: nil)
+            tile("Своп", MemoryVerdict.format(system.swapUsed, available: system.availability.swap),
+                 detail: system.availability.swap && system.swapTotal > 0 ? "из \(MemoryVerdict.format(system.swapTotal))" : nil)
+            tile("Кэш файлов", MemoryVerdict.format(system.cachedFiles, available: system.availability.pages), detail: "освобождается сам")
         }
     }
 
@@ -137,12 +137,14 @@ struct MemoryView: View {
                 RectangleMark(xStart: .value("Начало", band.start), xEnd: .value("Конец", band.end))
                     .foregroundStyle(Self.color(for: band.pressure).opacity(0.12))
             }
-            ForEach(viewModel.history) { point in
-                LineMark(x: .value("Время", point.date), y: .value("ГБ", Self.gigabytes(point.swapUsed)),
-                         series: .value("Метрика", "Своп"))
+            ForEach(viewModel.historySeries(\.swapUsed)) { point in
+                LineMark(x: .value("Время", point.date), y: .value("ГБ", Self.gigabytes(point.bytes)),
+                         series: .value("Отрезок", "Своп-\(point.segment)"))
                     .foregroundStyle(by: .value("Метрика", "Своп"))
-                LineMark(x: .value("Время", point.date), y: .value("ГБ", Self.gigabytes(point.compressed)),
-                         series: .value("Метрика", "Сжато"))
+            }
+            ForEach(viewModel.historySeries(\.compressed)) { point in
+                LineMark(x: .value("Время", point.date), y: .value("ГБ", Self.gigabytes(point.bytes)),
+                         series: .value("Отрезок", "Сжато-\(point.segment)"))
                     .foregroundStyle(by: .value("Метрика", "Сжато"))
             }
         }

@@ -32,7 +32,7 @@ enum ImprovementAdvisor {
             )))
         }
         if let memory = snapshot.memory,
-           memory.load == .warning || memory.load == .critical || memory.swapUsedBytes >= gigabyte {
+           memory.load == .warning || memory.load == .critical || (memory.swapAvailable && memory.swapUsedBytes >= gigabyte) {
             let title = switch memory.load {
             case .critical: "Критическая нехватка памяти"
             case .warning: "Высокое давление памяти"
@@ -40,7 +40,9 @@ enum ImprovementAdvisor {
             }
             weighted.append((Int64.max - 1, Improvement(
                 id: "memory", icon: "memorychip", title: title,
-                detail: "Занято \(SnapshotRenderer.memoryBytes(memory.usedBytes)) из \(SnapshotRenderer.memoryBytes(memory.physicalBytes))",
+                detail: memory.pagesAvailable
+                    ? "Занято \(SnapshotRenderer.memoryBytes(memory.usedBytes)) из \(SnapshotRenderer.memoryBytes(memory.physicalBytes))"
+                    : "Использование памяти: данные не получены",
                 action: .ask("Почему не хватает памяти и какие программы стоит закрыть?")
             )))
         }

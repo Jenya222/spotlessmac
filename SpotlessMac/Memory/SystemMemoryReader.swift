@@ -15,12 +15,23 @@ enum SystemMemoryReader {
     static func current() -> SystemMemorySnapshot {
         let swap = readSwap()
         return snapshot(
-            pages: readPages() ?? VMPageCounts(),
+            pages: readPages(),
             pageSize: UInt64(getpagesize()),
             physical: ProcessInfo.processInfo.physicalMemory,
-            swapUsed: swap.used, swapTotal: swap.total,
+            swap: swap,
             pressureLevel: readPressureLevel()
         )
+    }
+
+    /// Optional read results retain availability; numeric zeros remain for API compatibility only.
+    static func snapshot(
+        pages: VMPageCounts?, pageSize: UInt64, physical: UInt64,
+        swap: (used: UInt64, total: UInt64)?, pressureLevel: Int32?
+    ) -> SystemMemorySnapshot {
+        var result = snapshot(pages: pages ?? VMPageCounts(), pageSize: pageSize, physical: physical,
+                              swapUsed: swap?.used ?? 0, swapTotal: swap?.total ?? 0, pressureLevel: pressureLevel)
+        result.availability = MemoryMetricAvailability(pages: pages != nil, swap: swap != nil)
+        return result
     }
 
     /// Same breakdown as Activity Monitor: app = internal − purgeable,
@@ -63,10 +74,10 @@ enum SystemMemoryReader {
         )
     }
 
-    private static func readSwap() -> (used: UInt64, total: UInt64) {
+    private static func readSwap() -> (used: UInt64, total: UInt64)? {
         var usage = xsw_usage()
         var size = MemoryLayout<xsw_usage>.size
-        guard sysctlbyname("vm.swapusage", &usage, &size, nil, 0) == 0 else { return (0, 0) }
+        guard sysctlbyname("vm.swapusage", &usage, &size, nil, 0) == 0 else { return nil }
         return (usage.xsu_used, usage.xsu_total)
     }
 

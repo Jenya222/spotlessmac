@@ -17,6 +17,20 @@ final class SystemMemoryReaderTests: XCTestCase {
         XCTAssertEqual(snapshot.pressure, .warning)
     }
 
+    func testUnavailablePagesAndSwapAreIndependent() {
+        let noPages = SystemMemoryReader.snapshot(pages: nil, pageSize: 4096, physical: 16 << 30,
+                                                  swap: (used: 0, total: 0), pressureLevel: 1)
+        XCTAssertFalse(noPages.availability.pages)
+        XCTAssertTrue(noPages.availability.swap, "a measured zero swap stays available")
+        XCTAssertEqual(MemoryVerdict.format(noPages.used, available: noPages.availability.pages), "—")
+        let noSwap = SystemMemoryReader.snapshot(pages: VMPageCounts(internalPages: 100), pageSize: 4096,
+                                                 physical: 16 << 30, swap: nil, pressureLevel: nil)
+        XCTAssertTrue(noSwap.availability.pages)
+        XCTAssertFalse(noSwap.availability.swap)
+        XCTAssertEqual(noSwap.pressure, .unknown)
+        XCTAssertEqual(MemoryVerdict.format(noSwap.swapUsed, available: noSwap.availability.swap), "—")
+    }
+
     func testPurgeableAboveInternalClampsToZero() {
         let pages = VMPageCounts(internalPages: 10, purgeable: 20)
         let snapshot = SystemMemoryReader.snapshot(pages: pages, pageSize: 4096, physical: 1, swapUsed: 0, swapTotal: 0, pressureLevel: nil)

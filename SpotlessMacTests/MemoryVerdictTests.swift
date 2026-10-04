@@ -10,8 +10,32 @@ final class MemoryVerdictTests: XCTestCase {
         F.userGroup("/Applications/Notes.app", processes: [F.process(3, footprint: 1 << 30)]),
     ]
 
+    func testUnknownPressureDoesNotClaimMemoryIsSufficient() {
+        let text = MemoryVerdict.text(system: F.system(pressure: .unknown), groups: [])
+        XCTAssertTrue(text.contains("данные не получены"), text)
+        XCTAssertFalse(text.contains("Памяти достаточно"), text)
+    }
+
     func testCalmSystem() {
         XCTAssertEqual(MemoryVerdict.text(system: F.system(), groups: groups), "Памяти достаточно.")
+    }
+
+    func testPartialMetricsStillReportReliableLoad() {
+        var system = F.system(swapUsed: 9 << 30, pressure: .unknown)
+        system.availability = MemoryMetricAvailability(pages: false, swap: true)
+        XCTAssertTrue(MemoryVerdict.text(system: system, groups: []).hasPrefix("Своп "))
+        system.availability = MemoryMetricAvailability(pages: false, swap: false)
+        system.pressure = .critical
+        XCTAssertTrue(MemoryVerdict.text(system: system, groups: []).hasPrefix("Память на пределе"))
+        system.pressure = .normal
+        XCTAssertFalse(MemoryVerdict.text(system: system, groups: []).contains("Памяти достаточно"))
+    }
+
+    func testUnavailableSwapNeverCreatesFalseLoad() {
+        var system = F.system(swapUsed: 9 << 30)
+        system.availability.swap = false
+        XCTAssertFalse(MemoryVerdict.text(system: system, groups: []).hasPrefix("Своп "))
+        XCTAssertTrue(MemoryVerdict.text(system: system, groups: []).contains("данные не получены"))
     }
 
     func testHeavySwapNamesTopTwoApps() {
@@ -39,7 +63,7 @@ final class MemoryVerdictTests: XCTestCase {
         let zero = MemoryVerdict.format(0)
         XCTAssertFalse(zero.localizedCaseInsensitiveContains("zero"), zero)
         XCTAssertTrue(zero.hasPrefix("0"), zero)
-        XCTAssertTrue(MemoryVerdict.format(5 << 30).contains("GB"))
+        XCTAssertTrue(MemoryVerdict.format(5 << 30).hasPrefix("5"))
         XCTAssertFalse(MemoryVerdict.text(system: F.system(swapUsed: 0, pressure: .normal), groups: groups).contains("Zero"))
     }
 

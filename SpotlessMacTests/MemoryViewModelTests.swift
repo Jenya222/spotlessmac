@@ -75,6 +75,21 @@ final class MemoryViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.history.last?.swapUsed, 159)
     }
 
+    func testHistoryGapsUnavailableMetricsWithoutDrawingZero() {
+        let viewModel = MemoryViewModel(sample: { F.sample(at: Date()) })
+        for index in 0..<3 {
+            var system = F.system(compressed: 2 << 30, swapUsed: 1 << 30)
+            if index == 1 { system.availability = MemoryMetricAvailability(pages: false, swap: false) }
+            viewModel.apply(MemorySample(date: Date(timeIntervalSince1970: Double(index)), system: system,
+                                         groups: [], runningApps: []))
+        }
+        XCTAssertNil(viewModel.history[1].swapUsed)
+        XCTAssertNil(viewModel.history[1].compressed)
+        let swap = viewModel.historySeries(\.swapUsed)
+        XCTAssertEqual(swap.map(\.bytes), [1 << 30, 1 << 30])
+        XCTAssertNotEqual(swap[0].segment, swap[1].segment, "separate lines create a visible gap")
+    }
+
     func testOrderKeepsPreviousPositionsUntilResort() {
         let a = F.userGroup("/Applications/A.app", processes: [F.process(1, footprint: 100)])
         let b = F.userGroup("/Applications/B.app", processes: [F.process(2, footprint: 200)])

@@ -7,11 +7,11 @@ enum MemoryVerdict {
             .map { "\($0.displayName) (\(format($0.footprint)))" }
             .joined(separator: ", ")
         let holders = top.isEmpty ? "" : " Больше всего держат: \(top)."
-        let heavySwap = system.physical > 0 && system.swapUsed * 4 > system.physical
+        let heavySwap = system.availability.swap && system.physical > 0 && system.swapUsed > system.physical / 4
 
         if system.pressure == .critical || heavySwap {
             // Critical pressure can occur before anything reached swap; don't report "Своп 0 KB".
-            if system.swapUsed == 0 {
+            if !system.availability.swap || system.swapUsed == 0 {
                 return "Память на пределе — система сжимает данные.\(holders)"
             }
             return "Своп \(format(system.swapUsed)) — система активно вытесняет память.\(holders)"
@@ -19,11 +19,18 @@ enum MemoryVerdict {
         if system.pressure == .warning {
             return "Память под нагрузкой.\(holders)"
         }
+        guard system.pressure == .normal, system.availability.pages, system.availability.swap else {
+            return "Память: данные не получены полностью."
+        }
         return "Памяти достаточно."
     }
 
     /// Created per call: `ByteCountFormatter` is not `Sendable`, so a shared static
     /// instance would not pass Swift 6 strict concurrency.
+    static func format(_ bytes: UInt64, available: Bool) -> String {
+        available ? format(bytes) : "—"
+    }
+
     static func format(_ bytes: UInt64) -> String {
         let formatter = ByteCountFormatter()
         formatter.countStyle = .memory

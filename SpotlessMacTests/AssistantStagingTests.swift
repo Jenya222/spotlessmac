@@ -103,6 +103,22 @@ final class AssistantStagingTests: XCTestCase {
         XCTAssertEqual(snapshot.items[0].path, "/Users/tester/Library/Caches/big")
     }
 
+    func testMemoryAvailabilityReachesAssistantAndAdvisor() {
+        var system = MemoryFixtures.system(swapUsed: 9 << 30, pressure: .critical)
+        system.availability = MemoryMetricAvailability(pages: false, swap: false)
+        let info = AssistantSnapshotBuilder.memoryInfo(MemorySample(date: Date(), system: system, groups: [], runningApps: []))
+        XCTAssertFalse(info.pagesAvailable)
+        XCTAssertFalse(info.swapAvailable)
+        var snapshot = SystemSnapshot.sample()
+        snapshot.memory = info
+        let advice = ImprovementAdvisor.suggestions(for: snapshot).first { $0.id == "memory" }
+        XCTAssertEqual(advice?.title, "Критическая нехватка памяти")
+        XCTAssertTrue(advice?.detail.contains("данные не получены") == true)
+        snapshot.memory = MemoryInfo(load: .normal, usedBytes: 0, physicalBytes: 16 << 30,
+                                     swapUsedBytes: 9 << 30, topApps: [], swapAvailable: false)
+        XCTAssertFalse(ImprovementAdvisor.suggestions(for: snapshot).contains { $0.id == "memory" })
+    }
+
     func testMemoryInfoKeepsTopUserAppsOnly() {
         let kernel = AppMemoryGroup(id: "kernel", displayName: "kernel_task", kind: .system, bundlePath: nil,
                                     processes: [MemoryFixtures.process(0, footprint: 8 << 30)])
