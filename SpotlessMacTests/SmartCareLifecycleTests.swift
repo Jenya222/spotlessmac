@@ -5,7 +5,10 @@ import XCTest
 final class SmartCareLifecycleTests: XCTestCase {
     func testSuccessfulRunRecordsTrialWithoutProgressView() async {
         let item = makeItem(size: 10)
-        let viewModel = ScanViewModel(smartCareDelete: immediateFactory { .itemProcessed(item: $0, failure: nil) })
+        let viewModel = ScanViewModel(
+            smartCareDelete: immediateFactory { .itemProcessed(item: $0, failure: nil) },
+            sampleSpace: { _ in nil }
+        )
         viewModel.items = [item]
         var recorded = 0
 
@@ -18,7 +21,10 @@ final class SmartCareLifecycleTests: XCTestCase {
 
     func testDeniedAndEmptyRunsDoNotStart() {
         let item = makeItem(size: 10)
-        let viewModel = ScanViewModel(smartCareDelete: immediateFactory { .itemProcessed(item: $0, failure: nil) })
+        let viewModel = ScanViewModel(
+            smartCareDelete: immediateFactory { .itemProcessed(item: $0, failure: nil) },
+            sampleSpace: { _ in nil }
+        )
         viewModel.items = [item]
         var recorded = 0
 
@@ -32,7 +38,7 @@ final class SmartCareLifecycleTests: XCTestCase {
     func testSecondRunCannotStartWhileFirstIsActive() async {
         let item = makeItem(size: 10)
         let pair = AsyncStream<CleaningEvent>.makeStream()
-        let viewModel = ScanViewModel(smartCareDelete: { _, _ in pair.stream })
+        let viewModel = ScanViewModel(smartCareDelete: { _, _ in pair.stream }, sampleSpace: { _ in nil })
         viewModel.items = [item]
 
         XCTAssertTrue(viewModel.startSmartCare(canClean: true) {})
@@ -49,7 +55,8 @@ final class SmartCareLifecycleTests: XCTestCase {
             smartCareDelete: immediateFactory { processedItem in
                 .itemProcessed(item: processedItem, failure: processedItem.id == item.id ? failure : nil)
             },
-            scanItems: { _ in [nextItem] }
+            scanItems: { _ in [nextItem] },
+            sampleSpace: { _ in nil }
         )
         viewModel.items = [item]
         var recorded = 0
@@ -77,7 +84,10 @@ final class SmartCareLifecycleTests: XCTestCase {
 
     func testZeroByteSuccessRecordsTrial() async {
         let item = makeItem(size: 0)
-        let viewModel = ScanViewModel(smartCareDelete: immediateFactory { .itemProcessed(item: $0, failure: nil) })
+        let viewModel = ScanViewModel(
+            smartCareDelete: immediateFactory { .itemProcessed(item: $0, failure: nil) },
+            sampleSpace: { _ in nil }
+        )
         viewModel.items = [item]
         var recorded = 0
 
@@ -91,7 +101,7 @@ final class SmartCareLifecycleTests: XCTestCase {
         let first = makeItem(size: 10)
         let second = makeItem(size: 20, category: .logs)
         let pair = AsyncStream<CleaningEvent>.makeStream()
-        let viewModel = ScanViewModel(smartCareDelete: { _, _ in pair.stream })
+        let viewModel = ScanViewModel(smartCareDelete: { _, _ in pair.stream }, sampleSpace: { _ in nil })
         viewModel.items = [first, second]
         var recorded = 0
 
@@ -110,7 +120,7 @@ final class SmartCareLifecycleTests: XCTestCase {
     func testCancellationBeforeFirstItemDoesNotRecordTrial() async {
         let item = makeItem(size: 10)
         let pair = AsyncStream<CleaningEvent>.makeStream()
-        let viewModel = ScanViewModel(smartCareDelete: { _, _ in pair.stream })
+        let viewModel = ScanViewModel(smartCareDelete: { _, _ in pair.stream }, sampleSpace: { _ in nil })
         viewModel.items = [item]
         var recorded = 0
 
@@ -127,7 +137,7 @@ final class SmartCareLifecycleTests: XCTestCase {
     func testCancellationAfterFinalItemKeepsSucceededOutcome() async {
         let item = makeItem(size: 10)
         let pair = AsyncStream<CleaningEvent>.makeStream()
-        let viewModel = ScanViewModel(smartCareDelete: { _, _ in pair.stream })
+        let viewModel = ScanViewModel(smartCareDelete: { _, _ in pair.stream }, sampleSpace: { _ in nil })
         viewModel.items = [item]
         var recorded = 0
 
@@ -145,7 +155,10 @@ final class SmartCareLifecycleTests: XCTestCase {
 
     func testTrialPolicyRejectsSequentialRunAfterFirstSuccess() async {
         let first = makeItem(size: 10)
-        let viewModel = ScanViewModel(smartCareDelete: immediateFactory { .itemProcessed(item: $0, failure: nil) })
+        let viewModel = ScanViewModel(
+            smartCareDelete: immediateFactory { .itemProcessed(item: $0, failure: nil) },
+            sampleSpace: { _ in nil }
+        )
         viewModel.items = [first]
         var state = LicenseManager.LicenseState.trial(usedCleans: 0, allowed: 1)
 
@@ -173,19 +186,44 @@ final class SmartCareLifecycleTests: XCTestCase {
         }
     }
 
-    private func waitUntilProcessed(_ viewModel: ScanViewModel, count: Int) async {
-        for _ in 0..<1_000 {
-            if viewModel.processedSmartCareItemCount == count { return }
-            await Task.yield()
-        }
-        XCTFail("Timed out waiting for processed items")
+    private func waitUntilProcessed(
+        _ viewModel: ScanViewModel,
+        count: Int,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) async {
+        await waitUntil(
+            "Timed out waiting for processed items",
+            file: file,
+            line: line
+        ) { viewModel.processedSmartCareItemCount == count }
     }
 
-    private func waitUntilFinished(_ viewModel: ScanViewModel) async {
-        for _ in 0..<1_000 {
-            if !viewModel.isCleaning { return }
-            await Task.yield()
+    private func waitUntilFinished(
+        _ viewModel: ScanViewModel,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) async {
+        await waitUntil(
+            "Timed out waiting for Smart Care to finish",
+            file: file,
+            line: line
+        ) { !viewModel.isCleaning }
+    }
+
+    /// Wait for the observable lifecycle transition, allowing async report creation
+    /// to finish. An elapsed-time deadline is independent of executor yield speed.
+    private func waitUntil(
+        _ message: String,
+        file: StaticString,
+        line: UInt,
+        condition: @MainActor () -> Bool
+    ) async {
+        let clock = ContinuousClock()
+        let deadline = clock.now.advanced(by: .seconds(5))
+        while !condition(), clock.now < deadline {
+            try? await Task.sleep(for: .milliseconds(10))
         }
-        XCTFail("Timed out waiting for Smart Care to finish")
+        XCTAssertTrue(condition(), message, file: file, line: line)
     }
 }
