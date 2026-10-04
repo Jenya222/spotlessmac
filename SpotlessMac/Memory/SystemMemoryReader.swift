@@ -1,4 +1,4 @@
-import Darwin
+@preconcurrency import Darwin
 import Foundation
 
 /// Page counts from `host_statistics64(HOST_VM_INFO64)`.
@@ -43,11 +43,13 @@ enum SystemMemoryReader {
     }
 
     private static func readPages() -> VMPageCounts? {
+        let host = mach_host_self()
+        defer { mach_port_deallocate(mach_task_self_, host) }
         var stats = vm_statistics64()
         var count = mach_msg_type_number_t(MemoryLayout<vm_statistics64>.size / MemoryLayout<integer_t>.size)
         let result = withUnsafeMutablePointer(to: &stats) { pointer in
             pointer.withMemoryRebound(to: integer_t.self, capacity: Int(count)) {
-                host_statistics64(mach_host_self(), HOST_VM_INFO64, $0, &count)
+                host_statistics64(host, HOST_VM_INFO64, $0, &count)
             }
         }
         guard result == KERN_SUCCESS else { return nil }
