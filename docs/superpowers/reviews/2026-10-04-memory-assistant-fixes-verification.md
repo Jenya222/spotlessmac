@@ -52,3 +52,10 @@ Tasks2–7/13 объединены в один интеграционный code
 Task12 и ручная часть Task1 завершены частично. Debug app запущен, observation доступен, но GUI input отклонён с `window_not_focused`; ручное изменение URL, визуальные сценарии focus/settings/plan и quit/force confirmation не выполнены. Никакие пользовательские настройки, ключи, файлы или запущенные приложения ради этих сценариев не изменялись.
 
 Не выполнены: живые Ollama Cloud и LM Studio, фактическая native/tool-less plan generation, широкий knowledge-question checklist, Activity Monitor comparison и подтверждения quit/force на disposable app, запуск на macOS14. Они остаются unchecked в manual checklist. Реальные cloud credentials не читались и не использовались; автоматические quit tests используют injected terminator. Успешные automated gates не означают «готово к выпуску» до этих проверок.
+
+
+## Интеграция в main
+
+По выбору пользователя выполнен локальный fast-forward `main` с `091fa5a` до `c79626b`; `origin/main` перед объединением уже был актуален. В основном каталоге проекта повторены полные gates: Xcode466/466, domain466/466, оба exit0; knowledge retrieval103/103. Логи: `.superpowers/sdd/2026-10-04-memory-assistant-review-fixes/main-merge-xcode.log` и `main-merge-domain.log`.
+
+Исходные неотслеживаемые документы сохранены в `.superpowers/integration-original-docs-4razfctb`, все execution evidence перенесены в основной каталог `.superpowers/sdd/2026-10-04-memory-assistant-review-fixes/`. После успешных gates временная ветка и worktree удаляются. Оставшиеся ручные release checks выше сохраняют статус pending.
