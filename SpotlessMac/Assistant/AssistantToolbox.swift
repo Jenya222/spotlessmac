@@ -1,9 +1,19 @@
 import Foundation
 import os
 
+enum PlanUpdate: Equatable, Sendable {
+    case unchanged
+    case replace(PlanProposal)
+
+    var proposal: PlanProposal? {
+        if case .replace(let proposal) = self { return proposal }
+        return nil
+    }
+}
+
 struct ToolOutcome: Equatable, Sendable {
     let resultText: String
-    let proposal: PlanProposal?
+    let planUpdate: PlanUpdate
 }
 
 enum AssistantToolbox {
@@ -15,10 +25,10 @@ enum AssistantToolbox {
             logger.warning("Assistant requested unknown tool \(name, privacy: .public)")
             return ToolOutcome(
                 resultText: "Ошибка: инструмента «\(name)» не существует. Доступны только list_items, item_details, propose_plan и lookup_knowledge. Удалять файлы, запускать команды и менять систему ассистент не может.",
-                proposal: nil
+                planUpdate: .unchanged
             )
         case .failure(.invalidArguments(let reason)):
-            return ToolOutcome(resultText: "Ошибка в аргументах \(call.name): \(reason).", proposal: nil)
+            return ToolOutcome(resultText: "Ошибка в аргументах \(call.name): \(reason).", planUpdate: .unchanged)
         case .success(.listItems(let category, let minBytes, let olderThanDays, let limit)):
             let cutoff = olderThanDays.map { snapshot.takenAt.addingTimeInterval(-Double($0) * 86_400) }
             let matches = snapshot.items.filter { item in
@@ -29,7 +39,7 @@ enum AssistantToolbox {
                 }
                 return true
             }
-            guard !matches.isEmpty else { return ToolOutcome(resultText: "Ничего не найдено.", proposal: nil) }
+            guard !matches.isEmpty else { return ToolOutcome(resultText: "Ничего не найдено.", planUpdate: .unchanged) }
             let shown = matches.prefix(limit)
             var applied: [String] = []
             if let category { applied.append("категория: \(category.rawValue)") }
@@ -38,21 +48,21 @@ enum AssistantToolbox {
             let filters = applied.isEmpty ? "" : " (\(applied.joined(separator: "; ")))"
             let header = "Найдено \(matches.count), показано \(shown.count)\(filters). Колонки: \(SnapshotRenderer.itemColumns):"
             let lines = shown.map { SnapshotRenderer.itemLine($0, articleID: knowledge.annotations.items[$0.shortID], formatPath: formatPath) }
-            return ToolOutcome(resultText: ([header] + lines).joined(separator: "\n"), proposal: nil)
+            return ToolOutcome(resultText: ([header] + lines).joined(separator: "\n"), planUpdate: .unchanged)
         case .success(.itemDetails(let id)):
             guard let item = snapshot.item(shortID: id) else {
-                return ToolOutcome(resultText: "Элемент \(id) не найден в снимке.", proposal: nil)
+                return ToolOutcome(resultText: "Элемент \(id) не найден в снимке.", planUpdate: .unchanged)
             }
-            return ToolOutcome(resultText: SnapshotRenderer.itemCard(item, articleID: knowledge.annotations.items[item.shortID], formatPath: formatPath), proposal: nil)
+            return ToolOutcome(resultText: SnapshotRenderer.itemCard(item, articleID: knowledge.annotations.items[item.shortID], formatPath: formatPath), planUpdate: .unchanged)
         case .success(.lookupKnowledge(let id, let query)):
-            return ToolOutcome(resultText: KnowledgeRenderer.lookup(id: id, query: query, in: knowledge.base), proposal: nil)
+            return ToolOutcome(resultText: KnowledgeRenderer.lookup(id: id, query: query, in: knowledge.base), planUpdate: .unchanged)
         case .success(.proposePlan(let proposal)):
             let plan = PlanResolver.resolve(proposal, in: snapshot)
             // The chat shows a card only for a meaningful plan, so the model must not be told one was shown otherwise.
             guard plan.isMeaningful else {
                 return ToolOutcome(
                     resultText: "План пуст: ни один элемент не подошёл. Проверь ID и фильтры через list_items. Ничего не удалено.",
-                    proposal: nil
+                    planUpdate: .replace(proposal)
                 )
             }
             var text = "План показан пользователю карточкой: \(plan.itemIDs.count) элементов, \(SnapshotRenderer.bytes(plan.totalBytes)). Ничего не удалено — пользователь сам проверит список и решит. Кратко объясни план словами."
@@ -62,7 +72,7 @@ enum AssistantToolbox {
             if !plan.manualReview.isEmpty {
                 text += " Удалять вручную: \(plan.manualReview.count)."
             }
-            return ToolOutcome(resultText: text, proposal: proposal)
+            return ToolOutcome(resultText: text, planUpdate: .replace(proposal))
         }
     }
 }

@@ -24,7 +24,7 @@ struct AssistantMessageView: View, Equatable {
     private var userBubble: some View {
         HStack {
             Spacer(minLength: 80)
-            Text(message.text)
+            Text(message.displayText)
                 .font(.system(size: 13))
                 .textSelection(.enabled)
                 .foregroundStyle(.white)

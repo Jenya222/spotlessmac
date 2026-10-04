@@ -147,6 +147,15 @@ struct AssistantView: View {
 
     private var composer: some View {
         VStack(alignment: .leading, spacing: 10) {
+            if let focus = viewModel.draftFocus {
+                HStack {
+                    Text("Вопрос об элементе: " + focus.title).font(.caption)
+                    Button("Убрать элемент") { viewModel.clearDraftFocus() }.controlSize(.small)
+                }
+            }
+            if let notice = viewModel.contextNotice {
+                Text(notice).font(.caption).foregroundStyle(Theme.textSecondary)
+            }
             if let notice = viewModel.planNotice {
                 Label(notice, systemImage: "exclamationmark.triangle")
                     .font(.system(size: 12))

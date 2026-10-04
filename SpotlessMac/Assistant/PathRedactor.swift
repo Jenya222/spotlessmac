@@ -31,6 +31,7 @@ struct PathRedactor: Sendable {
     // called "a" cannot corrupt ordinary words.
     private static let minBareNameLength = 3
     private static let wordBoundary = #"[\p{L}\p{N}_]"#
+    private static let historyAliasPattern = #"<история-(?:[0-9a-f-]{36}|legacy)-(?:папка|проекты)-\d+>"#
 
     // A path component ends at "/", whitespace or one of |`'"«»,;().
     private static let terminatorUnits: Set<unichar> = Set("/|`'\"«»,;()".utf16)
@@ -40,7 +41,7 @@ struct PathRedactor: Sendable {
 
     let homePath: String
     // Absolute registered project roots without a trailing slash, longest first.
-    private let extraRoots: [String]
+    private var extraRoots: [String] = []
     // Registered roots in order of first use: alias number K is index + 1.
     private var rootAliases: [String] = []
     private var entries: [Entry] = []
@@ -49,8 +50,22 @@ struct PathRedactor: Sendable {
 
     init(homePath: String, extraRoots: [String] = []) {
         self.homePath = Self.strippingTrailingSlashes(homePath)
+        updateExtraRoots(extraRoots)
+    }
+
+    // Retain roots already seen until the conversation is cleared. Removing a project from
+    // settings must not expose paths or names that an earlier exchange already used.
+    mutating func updateExtraRoots(_ roots: [String]) {
         var seen = Set<String>()
-        self.extraRoots = extraRoots
+        let additions = roots.map(Self.strippingTrailingSlashes).filter { candidate in
+            // A nested root adds no coverage. Keep its established parent's aliases.
+            !extraRoots.contains { candidate == $0 || candidate.hasPrefix($0 + "/") }
+                && !Self.personalRoots.contains { folder in
+                    let root = homePath + "/" + folder
+                    return candidate == root || candidate.hasPrefix(root + "/")
+                }
+        }
+        extraRoots = (extraRoots + additions)
             .map(Self.strippingTrailingSlashes)
             .filter { $0.count > 1 && $0.hasPrefix("/") && seen.insert($0).inserted }
             .sorted { $0.count > $1.count }
@@ -105,7 +120,7 @@ struct PathRedactor: Sendable {
                 .joined(separator: "|")
             // Alias tokens and personal-root prefixes are matched first (and kept), so a name that
             // occurs inside one of them, such as a nested folder called "src", is never touched.
-            let barePattern = #"<папка-\d+>|<проекты-\d+>|~/(?:"# + Self.personalRootsPattern + #")(?!"# + Self.wordBoundary + ")"
+            let barePattern = Self.historyAliasPattern + #"|<папка-\d+>|<проекты-\d+>|~/(?:"# + Self.personalRootsPattern + #")(?!"# + Self.wordBoundary + ")"
                 + #"|(?<!"# + Self.wordBoundary + ")(?:" + names + ")(?!" + Self.wordBoundary + ")"
             result = Self.rewrite(result, pattern: barePattern) { aliasByName[$0[0]] }
         }
@@ -160,6 +175,9 @@ struct PathRedactor: Sendable {
     // Returns what to show for the folder `name` inside `parent`, and the folder's own key.
     private mutating func visit(parent: String, name: String) -> (display: String, key: String) {
         let key = parent + "/" + name
+        if name.range(of: "^" + Self.historyAliasPattern + "$", options: .regularExpression) != nil {
+            return (name, key)
+        }
         if Self.neutralComponents.contains(name) { return (name, key) }
         if let index = indexByKey[key] { return (entries[index].alias, key) }
         let alias = "<папка-\(entries.count + 1)>"
@@ -248,6 +266,15 @@ struct PathRedactor: Sendable {
                   source.substring(with: NSRange(location: start, length: length)) == entry.name,
                   Self.endsComponent(source, at: start + length) else { continue }
             return (entry.alias, entry.key, start + length)
+        }
+
+        // Historical aliases have no mapping in this conversation. Preserve their identity and
+        // still redact any new raw components below them.
+        if let regex = try? NSRegularExpression(pattern: Self.historyAliasPattern),
+           let token = regex.firstMatch(in: source as String, options: .anchored,
+                                        range: NSRange(location: start, length: source.length - start)) {
+            let text = source.substring(with: token.range)
+            return (text, parentKey + "/" + text, NSMaxRange(token.range))
         }
 
         // An alias token written by the model (or produced earlier): keep it and continue below its folder.

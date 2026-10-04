@@ -116,7 +116,7 @@ struct ContentView: View {
     // Project roots the redactor must hide from cloud providers. Roots that PathRedactor already treats
     // as personal home folders (~/MyProjects, ...) are left out so they keep their readable
     // "~/MyProjects/<папка-N>" form; any other root (~/work, /Volumes/Ext/clients) becomes "<проекты-K>".
-    // Read once when the assistant is created: roots registered later apply after the next launch.
+    // Read before every answer, including roots registered after the assistant was created.
     private static func registeredProjectRoots(home: String) -> [String] {
         let homeFolders = Set(PathRedactor.personalRoots.map { home + "/" + $0 })
         return SafetyRules.projectRoots
@@ -148,7 +148,7 @@ struct ContentView: View {
             },
             conversationStore: ConversationStore(fileURL: ConversationStore.defaultFileURL()),
             homePath: NSHomeDirectory(),
-            personalRoots: Self.registeredProjectRoots(home: NSHomeDirectory()),
+            personalRootsProvider: { Self.registeredProjectRoots(home: NSHomeDirectory()) },
             knowledge: Self.knowledgeBase,
             refreshContext: { await memory.refresh() }
         ))

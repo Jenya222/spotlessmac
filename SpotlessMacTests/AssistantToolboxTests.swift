@@ -17,7 +17,7 @@ final class AssistantToolboxTests: XCTestCase {
         let outcome = run("delete_file", #"{"path":"/Users/tester"}"#)
         XCTAssertTrue(outcome.resultText.contains("не существует"))
         XCTAssertTrue(outcome.resultText.contains("Удалять файлы"))
-        XCTAssertNil(outcome.proposal)
+        XCTAssertNil(outcome.planUpdate.proposal)
         XCTAssertEqual(AssistantTool.parse(ToolCall(id: "1", name: "run_shell", argumentsJSON: "{}")), .failure(.unknownTool("run_shell")))
     }
 
@@ -48,21 +48,22 @@ final class AssistantToolboxTests: XCTestCase {
 
     func testProposePlanReturnsProposalAndDeletesNothing() {
         let outcome = run("propose_plan", #"{"items":["c1","c3"],"reason":"кеши"}"#)
-        XCTAssertEqual(outcome.proposal, PlanProposal(items: ["c1", "c3"], reason: "кеши"))
+        XCTAssertEqual(outcome.planUpdate.proposal, PlanProposal(items: ["c1", "c3"], reason: "кеши"))
         XCTAssertTrue(outcome.resultText.contains("Ничего не удалено"))
         XCTAssertTrue(outcome.resultText.contains("2 элементов"))
     }
 
     func testEmptyPlanIsReportedHonestly() {
         let outcome = run("propose_plan", #"{"filters":[{"category":"logs","olderThanDays":3650}],"reason":"старые логи"}"#)
-        XCTAssertNil(outcome.proposal)
+        XCTAssertEqual(outcome.planUpdate.proposal?.reason, "старые логи")
+        XCTAssertEqual(outcome.planUpdate.proposal?.filters.count, 1)
         XCTAssertTrue(outcome.resultText.contains("План пуст"))
         XCTAssertFalse(outcome.resultText.contains("показан пользователю"))
     }
 
     func testProposePlanReportsSkippedGroups() {
         let outcome = run("propose_plan", #"{"items":["c1","c4","c99"],"reason":"проверка"}"#)
-        XCTAssertNotNil(outcome.proposal)
+        XCTAssertNotNil(outcome.planUpdate.proposal)
         XCTAssertTrue(outcome.resultText.contains("1 элементов"))
         XCTAssertTrue(outcome.resultText.contains("Пропущено:"))
         XCTAssertTrue(outcome.resultText.contains("личные данные — 1"))
@@ -71,7 +72,7 @@ final class AssistantToolboxTests: XCTestCase {
 
     func testProposePlanReportsManualReviewCountOnly() {
         let outcome = run("propose_plan", #"{"items":["c2"],"reason":"зависимости"}"#)
-        XCTAssertNotNil(outcome.proposal)
+        XCTAssertNotNil(outcome.planUpdate.proposal)
         XCTAssertTrue(outcome.resultText.contains("Удалять вручную: 1."))
         XCTAssertFalse(outcome.resultText.contains("node_modules"))
         XCTAssertFalse(outcome.resultText.contains("secret-client"))
@@ -160,7 +161,7 @@ final class AssistantToolboxTests: XCTestCase {
     func testLookupKnowledgeNeverProposesAPlan() {
         let outcome = AssistantToolbox.execute(ToolCall(id: "k", name: "lookup_knowledge", argumentsJSON: #"{"query":"своп"}"#),
                                                snapshot: .sample(), knowledge: knowledge()) { $0 }
-        XCTAssertNil(outcome.proposal)
+        XCTAssertNil(outcome.planUpdate.proposal)
     }
 
     func testListItemsAndDetailsShowTheArticle() {

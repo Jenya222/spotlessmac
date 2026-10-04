@@ -123,7 +123,7 @@ struct SystemSnapshot: Equatable, Sendable {
     }
 }
 
-struct AssistantFocus: Equatable, Sendable {
+struct AssistantFocus: Codable, Equatable, Sendable {
     let title: String
     let path: String
     let facts: [String]

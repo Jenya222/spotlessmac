@@ -52,6 +52,7 @@ final class FakeLLMClient: LLMClient, @unchecked Sendable {
         case events([ChatEvent])
         case failure(Error)
         case hang
+        case hangAfter([ChatEvent])
     }
 
     private let lock = NSLock()
@@ -76,6 +77,9 @@ final class FakeLLMClient: LLMClient, @unchecked Sendable {
                 continuation.finish()
             case .failure(let error):
                 continuation.finish(throwing: error)
+            case .hangAfter(let events):
+                for event in events { continuation.yield(event) }
+                lock.withLock { hanging.append(continuation) }
             case .hang:
                 // Kept alive on purpose: the stream ends only when the consumer is cancelled.
                 lock.withLock { hanging.append(continuation) }

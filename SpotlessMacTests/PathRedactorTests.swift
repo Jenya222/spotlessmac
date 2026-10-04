@@ -283,3 +283,52 @@ final class PathRedactorTests: XCTestCase {
         XCTAssertEqual(snapshot.volume?.freeFraction ?? 0, 31.0 / 494.0, accuracy: 0.0001)
     }
 }
+
+
+extension PathRedactorTests {
+    func testUpdatingRootsPreservesAliasesAndRemovedRoots() {
+        var r = redactor(extraRoots: ["/Volumes/Old/clients"])
+        let old = r.redact("/Volumes/Old/clients/old-secret/build")
+        r.updateExtraRoots(["/Volumes/New/projects/"])
+        let added = r.redact("/Volumes/New/projects/new-secret/build")
+        XCTAssertEqual(old, "<проекты-1>/<папка-1>/build")
+        XCTAssertEqual(added, "<проекты-2>/<папка-2>/build")
+        r.updateExtraRoots([])
+        XCTAssertEqual(r.redact("/Volumes/Old/clients/old-secret/build"), old)
+        XCTAssertEqual(r.restore(added), "/Volumes/New/projects/new-secret/build")
+        XCTAssertFalse(r.redactText("old-secret, new-secret").contains("secret"))
+    }
+}
+
+
+extension PathRedactorTests {
+    func testAddingNestedRootDoesNotChangeExistingAlias() {
+        var r = redactor(extraRoots: ["/Volumes/External"])
+        let path = "/Volumes/External/clients/acme/build"
+        let alias = r.redact(path)
+        r.updateExtraRoots(["/Volumes/External/clients"])
+        XCTAssertEqual(r.redact(path), alias)
+        XCTAssertEqual(r.redactText(path), alias)
+    }
+}
+
+
+extension PathRedactorTests {
+    func testAddingRootInsidePersonalHomeFolderPreservesAlias() {
+        var r = redactor()
+        let path = "/Users/tester/Projects/client/build"
+        let old = r.redact(path)
+        r.updateExtraRoots(["/Users/tester/Projects/client"])
+        XCTAssertEqual(r.redact(path), old)
+        XCTAssertEqual(r.redactText(path), old)
+    }
+
+    func testHistoricalTokensStayOpaqueInsidePaths() {
+        var r = redactor()
+        let token = "<история-00000000-0000-0000-0000-000000000001-папка-1>"
+        let path = "~/Projects/" + token + "/private-secret/build"
+        let safe = r.redactText(path)
+        XCTAssertTrue(safe.contains(token))
+        XCTAssertFalse(safe.contains("private-secret"))
+    }
+}

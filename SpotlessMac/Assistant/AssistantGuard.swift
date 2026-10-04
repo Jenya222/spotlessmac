@@ -95,6 +95,22 @@ enum AssistantGuard {
         return Screened(text: hidingCode(text), leaked: false)
     }
 
+    struct ScreenedResponse {
+        let text: String
+        let proposal: PlanProposal?
+        let leaked: Bool
+    }
+
+    static func screenResponse(text: String, proposal: PlanProposal?, tokens: Tokens) -> ScreenedResponse {
+        if leaksPrompt(text + "\n" + (proposal?.reason ?? ""), tokens: tokens) {
+            return ScreenedResponse(text: refusal, proposal: nil, leaked: true)
+        }
+        var safe = proposal
+        let safeReason = hidingCode(safe?.reason ?? "")
+        safe?.reason = safeReason
+        return ScreenedResponse(text: hidingCode(text), proposal: safe, leaked: false)
+    }
+
     // The canary is in the system prompt only, so seeing it, or two verbatim rule lines, means
     // the prompt is being repeated. One line alone is not enough: the model may rightly say that
     // deleted items go to the Trash in the very words of the rules.
@@ -113,7 +129,7 @@ enum AssistantGuard {
     }()
 
     // Hides fenced blocks with program code or terminal commands, inline `commands` and bare
-    // `sudo …` / `rm -…` lines. Fences that hold only paths or plain text stay. An unclosed fence
+    // recognized command lines. Fences that hold only paths or plain text stay. An unclosed fence
     // (still streaming) is judged by what has arrived so far.
     static func hidingCode(_ text: String) -> String {
         var output: [String] = []
@@ -211,11 +227,14 @@ enum AssistantGuard {
         return programCode.firstMatch(in: line, range: NSRange(line.startIndex..., in: line)) != nil
     }
 
-    private static let bareCommand = try? NSRegularExpression(pattern: #"^(?:[-*+]\s+|\d+[.)]\s+)?(?:\$\s+)?(?:sudo\s+\S|rm\s+-)"#)
-
     private static func isBareCommandLine(_ trimmed: String) -> Bool {
-        guard let bareCommand else { return false }
-        return bareCommand.firstMatch(in: trimmed, range: NSRange(trimmed.startIndex..., in: trimmed)) != nil
+        let prefix = #"^(?:>\s*|[-*+]\s+|\d+[.)]\s+)"#
+        var line = trimmed
+        while let range = line.range(of: prefix, options: .regularExpression) {
+            line.removeSubrange(range)
+        }
+        let first = line.split(whereSeparator: \.isWhitespace).first.map(String.init) ?? ""
+        return (first.hasPrefix("/") || first == first.lowercased()) && looksLikeCommand(line)
     }
 
     private static let inlineCode = try? NSRegularExpression(pattern: "`([^`\\n]+)`")
