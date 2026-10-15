@@ -43,6 +43,7 @@ actor ScanEngine {
             KnownCacheScanner(),
             ProjectArtifactsScanner(),
             RecordingScanner(),
+            AgentStorageScanner(),
         ] + SafetyRules.huggingFaceRoots.filter(SafetyRules.rootIsTrusted).map { HuggingFaceCacheScanner(root: $0) as any Scanner }
         var results: [ScanItem] = []
         for scanner in scanners {
@@ -73,7 +74,12 @@ actor ScanEngine {
             if let reason = await rejection(item) {
                 failures.append(DeletionFailure(item: item, reason: reason)); continue
             }
-            do { try trash(item.path) }
+            do {
+                if item.category == .agentData && !AgentStorageScanner.isSafeCandidate(item.path) {
+                    failures.append(DeletionFailure(item: item, reason: "Проверка данных агента перед очисткой не пройдена.")); continue
+                }
+                try trash(item.path)
+            }
             catch { failures.append(DeletionFailure(item: item, reason: error.localizedDescription)) }
         }
         let targetIDs = Set(targets.map(\.id))

@@ -8,6 +8,7 @@ final class AssistantIsolationTests: XCTestCase {
         "trashItem", "removeItem", "moveItem", "copyItem", "unlink(", "FileManager", "Process(",
         "NSWorkspace", "ScanEngine", "ScanViewModel", "DockerCleanupViewModel", "DockerClient",
         "DockerCommandRunner", "UninstallViewModel", "UninstallEngine", "deleteWithProgress",
+        "AgentStorageViewModel",
         "cleanCache", "URL(fileURLWithPath",
         // Memory section (quits apps): the assistant must not reach it either.
         "MemoryViewModel", "AppTerminator", "NSRunningApplication", "terminate(", "forceTerminate", "kill(",

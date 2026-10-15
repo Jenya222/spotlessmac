@@ -1,6 +1,6 @@
 import Foundation
 
-enum StorageRootKind: String { case projects, huggingFace }
+enum StorageRootKind: String { case projects, huggingFace, agentWorkspaces }
 enum StorageRootRegistry {
     static func isAdmissible(_ url: URL) -> Bool {
         let path = PathPolicy.canonical(url)
@@ -16,5 +16,10 @@ enum StorageRootRegistry {
     }
     static func roots(kind: StorageRootKind, store: UserDefaults = .standard) -> [URL] {
         (store.stringArray(forKey: "storageRoots." + kind.rawValue) ?? []).map { URL(filePath: $0) }.filter(isAdmissible)
+    }
+    static func unregister(_ url: URL, kind: StorageRootKind, store: UserDefaults = .standard) {
+        let key = "storageRoots." + kind.rawValue
+        let path = PathPolicy.canonical(url)
+        store.set((store.stringArray(forKey: key) ?? []).filter { $0 != path }, forKey: key)
     }
 }

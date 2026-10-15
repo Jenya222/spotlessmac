@@ -7,10 +7,11 @@ enum AppTab: String, CaseIterable {
     case diskUsage = "Диск"
     case memory = "Память"
     case docker = "Docker"
+    case agentStorage = "ИИ-агенты"
     case assistant = "Ассистент"
     case settings = "Настройки"
 
-    static let mainTabs: [AppTab] = [.care, .cleaning, .uninstall, .diskUsage, .memory, .docker, .assistant]
+    static let mainTabs: [AppTab] = [.care, .cleaning, .uninstall, .diskUsage, .memory, .docker, .agentStorage, .assistant]
 
     static func launchTab(from defaults: UserDefaults = .standard) -> AppTab {
         guard let value = defaults.string(forKey: "launchTab"),
@@ -22,6 +23,7 @@ enum AppTab: String, CaseIterable {
 struct ContentView: View {
     @State private var viewModel = ScanViewModel()
     @State private var dockerViewModel = DockerCleanupViewModel()
+    @State private var agentStorageViewModel = AgentStorageViewModel()
     @State private var memoryViewModel = MemoryViewModel()
     @State private var licenseManager = LicenseManager()
     @State private var uninstallViewModel = UninstallViewModel()
@@ -94,6 +96,8 @@ struct ContentView: View {
             MemoryView(viewModel: memoryViewModel)
         case .docker:
             DockerCleanupView(viewModel: dockerViewModel, licenseManager: licenseManager)
+        case .agentStorage:
+            AgentStorageView(viewModel: agentStorageViewModel, licenseManager: licenseManager)
         case .assistant:
             if let assistant {
                 AssistantView(
@@ -119,7 +123,7 @@ struct ContentView: View {
     // Read before every answer, including roots registered after the assistant was created.
     private static func registeredProjectRoots(home: String) -> [String] {
         let homeFolders = Set(PathRedactor.personalRoots.map { home + "/" + $0 })
-        return SafetyRules.projectRoots
+        return (SafetyRules.projectRoots + SafetyRules.agentStorageRoots)
             .map { $0.path(percentEncoded: false) }
             .filter { root in !homeFolders.contains(root.hasSuffix("/") ? String(root.dropLast()) : root) }
     }

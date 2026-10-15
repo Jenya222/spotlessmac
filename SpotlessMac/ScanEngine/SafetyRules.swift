@@ -31,7 +31,7 @@ enum SafetyRules {
     static var huggingFaceRoots: [URL] { [huggingFaceRoot] + StorageRootRegistry.roots(kind: .huggingFace) }
     static func rootIsTrusted(_ root: URL) -> Bool {
         let home = FileManager.default.homeDirectoryForCurrentUser
-        let registered = StorageRootRegistry.roots(kind: .projects) + StorageRootRegistry.roots(kind: .huggingFace)
+        let registered = StorageRootRegistry.roots(kind: .projects) + StorageRootRegistry.roots(kind: .huggingFace) + StorageRootRegistry.roots(kind: .agentWorkspaces)
         if registered.contains(where: { PathPolicy.canonical($0) == PathPolicy.canonical(root) }) { return true }
         if PathPolicy.contains(root.standardizedFileURL.path(percentEncoded: false), in: home.standardizedFileURL.path(percentEncoded: false)) {
             return PathPolicy.isUnredirected(root, below: home)
@@ -39,7 +39,8 @@ enum SafetyRules {
         return !PathPolicy.isForbidden(PathPolicy.canonical(root))
     }
     static var knownCacheRoots: [URL] { KnownCacheScanner.locations(home: FileManager.default.homeDirectoryForCurrentUser).map(\.url) }
-    static var allowedRoots: [URL] { legacyAllowedRoots + knownCacheRoots + huggingFaceRoots + [recordingsRoot] + projectRoots }
+    static var agentStorageRoots: [URL] { AgentStorageCatalog.sources().map(\.url) + StorageRootRegistry.roots(kind: .agentWorkspaces) }
+    static var allowedRoots: [URL] { legacyAllowedRoots + knownCacheRoots + huggingFaceRoots + [recordingsRoot] + projectRoots + agentStorageRoots }
 
     static let forbiddenPrefixes: [String] = [
         "/System",
@@ -51,6 +52,10 @@ enum SafetyRules {
     static func isSafe(url: URL) -> Bool {
         let path = PathPolicy.canonical(url)
         guard !PathPolicy.isForbidden(path), StorageFileIdentity.read(url)?.isSymbolicLink != true else { return false }
+        guard !protectsAgentWorkspace(url) else { return false }
+        if AgentStorageCatalog.sources().contains(where: {
+            PathPolicy.contains(path, in: PathPolicy.canonical($0.url))
+        }) { return AgentStorageScanner.isSafeCandidate(url) }
         if legacyAllowedRoots.contains(where: { rootIsTrusted($0) && PathPolicy.contains(path, in: PathPolicy.canonical($0), includeRoot: false) }) { return true }
         if knownCacheRoots.contains(where: { rootIsTrusted($0) && path == PathPolicy.canonical($0) && StorageFileIdentity.read($0)?.isSymbolicLink != true }) { return true }
         if huggingFaceRoots.contains(where: { rootIsTrusted($0) && PathPolicy.canonical(url.deletingLastPathComponent()) == PathPolicy.canonical($0) }) {
@@ -59,6 +64,30 @@ enum SafetyRules {
         if rootIsTrusted(recordingsRoot) && PathPolicy.canonical(url.deletingLastPathComponent()) == PathPolicy.canonical(recordingsRoot) { return RecordingScanner.isStandalone(url) }
         if projectRoots.contains(where: { rootIsTrusted($0) && PathPolicy.contains(path, in: PathPolicy.canonical($0), includeRoot: false) }) {
             return StorageFileIdentity.read(url)?.isDirectory == true && ProjectArtifactsScanner.hasMarker(url) && !ProjectArtifactsScanner.containsGitMetadata(url)
+        }
+        return false
+    }
+
+    /// Shared with uninstall: an enclosing app-data folder must not swallow protected workspaces.
+    static func protectsAgentWorkspace(_ url: URL,
+                                       registeredRoots: [URL] = StorageRootRegistry.roots(kind: .agentWorkspaces)) -> Bool {
+        if AgentStorageCatalog.isProtectedWorkspacePath(url) { return true }
+        let path = PathPolicy.canonical(url)
+        let protected = registeredRoots + AgentStorageCatalog.sources().filter { [.workspace, .sessions].contains($0.kind) }.map(\.url)
+        return protected.contains {
+            let root = PathPolicy.canonical($0)
+            return PathPolicy.contains(path, in: root) || PathPolicy.contains(root, in: path)
+        }
+    }
+
+    static func protectsAgentCacheProject(_ url: URL, sources: [AgentStorageSource] = AgentStorageCatalog.sources()) -> Bool {
+        let path = PathPolicy.canonical(url)
+        for source in sources where source.kind == .cache {
+            let root = PathPolicy.canonical(source.url)
+            guard PathPolicy.contains(path, in: root) || PathPolicy.contains(root, in: path),
+                  StorageFileIdentity.read(source.url) != nil else { continue }
+            guard rootIsTrusted(source.url), let item = try? AgentStorageScanner.inspect(source.url, source: source) else { return true }
+            if item.status == .protected || !item.isComplete { return true }
         }
         return false
     }
@@ -97,6 +126,8 @@ enum SafetyRules {
                                   rootTrust: (URL) -> Bool = rootIsTrusted) -> Bool {
         let path = PathPolicy.canonical(url)
         guard StorageFileIdentity.read(url)?.isSymbolicLink != true else { return false }
+        guard !protectsAgentWorkspace(url) else { return false }
+        guard !protectsAgentCacheProject(url) else { return false }
         guard !PathPolicy.isForbidden(path) else {
             return false
         }

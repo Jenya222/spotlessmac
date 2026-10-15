@@ -19,6 +19,11 @@ enum OwnerActivityChecker {
                 let commands = String(decoding: data, as: UTF8.self).split(separator: "\n").map { String($0).trimmingCharacters(in: .whitespaces).lowercased() }
                 let terms: [String]
                 switch item.category {
+                case .agentData:
+                    // CLI agents may be launched by Node/Python. Conservatively block those hosts too.
+                    terms = ["codex", "claude", "cursor", "node", "python", "uv", "bun"]
+                case .knownAppCaches where ["Cursor", "Claude"].contains(owner):
+                    terms = [owner.lowercased(), "node", "python", "uv", "bun"]
                 case .projectArtifacts: terms = ["node", "npm", "pnpm", "yarn", "bun", "swift", "xcodebuild", "cmake", "ninja", "make", "python", "uv"]
                 case .modelCaches: terms = ["python", "huggingface", "hf", "uv", "anythingllm", "comfy"]
                 case .recordings: terms = ["wooffoow"]

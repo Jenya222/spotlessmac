@@ -7,6 +7,13 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		8327D508BBAD791676B20C2A /* AgentStorageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33EABCE2CBF9B16584D3FDBD /* AgentStorageView.swift */; };
+		644BDC09BA6BB7000C96D7B3 /* AgentStorageViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79FAD4F8450C4BEBEC1124F5 /* AgentStorageViewModelTests.swift */; };
+		2554EC8F1B88999768D36D90 /* AgentStorageViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 892F8AEC097411B069A91AB2 /* AgentStorageViewModel.swift */; };
+		FD0B2B025F82C1ADF66E99D5 /* AgentStorageScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73803826C7BE51A996A413AD /* AgentStorageScanner.swift */; };
+		D2295A155269EF80A4BA147A /* AgentStorageCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20BEF9343BCD9AF15C7A9398 /* AgentStorageCatalog.swift */; };
+		5CB9F95EB6C5CF71CA35DEDC /* AgentStorageModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B2A7517DD3FEECFEDE1E08D /* AgentStorageModels.swift */; };
+		BAC04EF6CCB5EC70F090756B /* AgentStorageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5351A7F5C0440CFE338E510A /* AgentStorageTests.swift */; };
 		1BF2B3EC96B7470405354495 /* AssistantSettingsEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BCF607486BE766CA49B6BAF /* AssistantSettingsEditor.swift */; };
 		D4C66657F881B65F375E0F5E /* AssistantSettingsEditorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFC34A36AB46E6E6586D339C /* AssistantSettingsEditorTests.swift */; };
 		61FD4C9E90D66F214E0AC7D5 /* KnowledgeRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 153D9D14927D9FE08B5F6D62 /* KnowledgeRenderer.swift */; };
@@ -182,6 +189,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		33EABCE2CBF9B16584D3FDBD /* AgentStorageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentStorageView.swift; sourceTree = "<group>"; };
+		79FAD4F8450C4BEBEC1124F5 /* AgentStorageViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentStorageViewModelTests.swift; sourceTree = "<group>"; };
+		892F8AEC097411B069A91AB2 /* AgentStorageViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentStorageViewModel.swift; sourceTree = "<group>"; };
+		73803826C7BE51A996A413AD /* AgentStorageScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentStorageScanner.swift; sourceTree = "<group>"; };
+		20BEF9343BCD9AF15C7A9398 /* AgentStorageCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentStorageCatalog.swift; sourceTree = "<group>"; };
+		7B2A7517DD3FEECFEDE1E08D /* AgentStorageModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentStorageModels.swift; sourceTree = "<group>"; };
+		5351A7F5C0440CFE338E510A /* AgentStorageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentStorageTests.swift; sourceTree = "<group>"; };
 		2BCF607486BE766CA49B6BAF /* AssistantSettingsEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantSettingsEditor.swift; sourceTree = "<group>"; };
 		AFC34A36AB46E6E6586D339C /* AssistantSettingsEditorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantSettingsEditorTests.swift; sourceTree = "<group>"; };
 		153D9D14927D9FE08B5F6D62 /* KnowledgeRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnowledgeRenderer.swift; sourceTree = "<group>"; };
@@ -378,6 +392,17 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		F929FA62B136EFBFC3C61426 /* AgentStorage */ = {
+			isa = PBXGroup;
+			children = (
+				892F8AEC097411B069A91AB2 /* AgentStorageViewModel.swift */,
+				73803826C7BE51A996A413AD /* AgentStorageScanner.swift */,
+				20BEF9343BCD9AF15C7A9398 /* AgentStorageCatalog.swift */,
+				7B2A7517DD3FEECFEDE1E08D /* AgentStorageModels.swift */,
+			);
+			path = AgentStorage;
+			sourceTree = "<group>";
+		};
 		887A6F90336FF23D95C3914B /* Resources */ = {
 			isa = PBXGroup;
 			children = (
@@ -460,6 +485,7 @@
 		AA000003000000000000AA00 /* SpotlessMac */ = {
 			isa = PBXGroup;
 			children = (
+				F929FA62B136EFBFC3C61426 /* AgentStorage */,
 				887A6F90336FF23D95C3914B /* Resources */,
 				B2B489C2435F0FB76091E6B5 /* Assistant */,
 				45819CC578BB45491CC3FC92 /* Memory */,
@@ -490,6 +516,7 @@
 		AA000004000000000000AA00 /* App */ = {
 			isa = PBXGroup;
 			children = (
+				33EABCE2CBF9B16584D3FDBD /* AgentStorageView.swift */,
 				DD88663178515223FA631D9B /* PointingHandCursor.swift */,
 				5240732F80E382669BAFBC11 /* AskAssistantAction.swift */,
 				6DDCFDCD6005F4D774DA8F9C /* AssistantSettingsCard.swift */,
@@ -561,6 +588,8 @@
 		AA100001000000000000AA00 /* SpotlessMacTests */ = {
 			isa = PBXGroup;
 			children = (
+				79FAD4F8450C4BEBEC1124F5 /* AgentStorageViewModelTests.swift */,
+				5351A7F5C0440CFE338E510A /* AgentStorageTests.swift */,
 				AFC34A36AB46E6E6586D339C /* AssistantSettingsEditorTests.swift */,
 				FD5BEA61F498FEC15AE9B85E /* KnowledgeRendererTests.swift */,
 				3A1034281BB4458EA0685882 /* KnowledgeMatcherTests.swift */,
@@ -774,6 +803,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				644BDC09BA6BB7000C96D7B3 /* AgentStorageViewModelTests.swift in Sources */,
+				BAC04EF6CCB5EC70F090756B /* AgentStorageTests.swift in Sources */,
 				D4C66657F881B65F375E0F5E /* AssistantSettingsEditorTests.swift in Sources */,
 				DCE5CB98CBFC4AA7D4C7E3AA /* KnowledgeRendererTests.swift in Sources */,
 				32D3B7EF93514AF28595CCB4 /* KnowledgeMatcherTests.swift in Sources */,
@@ -839,6 +870,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8327D508BBAD791676B20C2A /* AgentStorageView.swift in Sources */,
+				2554EC8F1B88999768D36D90 /* AgentStorageViewModel.swift in Sources */,
+				FD0B2B025F82C1ADF66E99D5 /* AgentStorageScanner.swift in Sources */,
+				D2295A155269EF80A4BA147A /* AgentStorageCatalog.swift in Sources */,
+				5CB9F95EB6C5CF71CA35DEDC /* AgentStorageModels.swift in Sources */,
 				1BF2B3EC96B7470405354495 /* AssistantSettingsEditor.swift in Sources */,
 				61FD4C9E90D66F214E0AC7D5 /* KnowledgeRenderer.swift in Sources */,
 				0708271B3A5A0B8C7AFB47A9 /* KnowledgeMatcher.swift in Sources */,

@@ -12,11 +12,13 @@ enum ScanCategory: String, CaseIterable, Identifiable, Sendable {
     case knownAppCaches = "known_app_caches"
     case projectArtifacts = "project_artifacts"
     case recordings = "recordings"
+    case agentData = "agent_data"
 
     var id: String { rawValue }
 
     var displayName: String {
         switch self {
+        case .agentData: "Данные ИИ-агентов"
         case .modelCaches: "Модели Hugging Face"
         case .knownAppCaches: "Кэши Cursor, Claude и инструментов"
         case .projectArtifacts: "Зависимости и сборки проектов"
@@ -34,13 +36,14 @@ enum ScanCategory: String, CaseIterable, Identifiable, Sendable {
         switch self {
         case .userCaches, .developerCaches, .logs:
             true
-        case .trash, .largeFiles, .oldInstallers, .modelCaches, .knownAppCaches, .projectArtifacts, .recordings:
+        case .trash, .largeFiles, .oldInstallers, .modelCaches, .knownAppCaches, .projectArtifacts, .recordings, .agentData:
             false
         }
     }
 
     var cleanupReason: String {
         switch self {
+        case .agentData: "Проверьте Git и назначение папки в разделе ИИ-агенты."
         case .modelCaches: "Потребуется повторная загрузка модели или датасета."
         case .knownAppCaches: "Известный кэш. Закройте программу перед очисткой."
         case .projectArtifacts: "Потребуется переустановка зависимостей или пересборка."

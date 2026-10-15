@@ -14,6 +14,9 @@ enum CleanupPlanBuilder {
         return result
     }
     static func validationFailure(for item: ScanItem, allowsPath: (URL) -> Bool = SafetyRules.isSafe) -> String? {
+        if item.category == .agentData && !AgentStorageScanner.isSafeCandidate(item.path) {
+            return "Данные агента изменились или больше не подходят для очистки. Сканируйте снова."
+        }
         guard item.cleanupPolicy.canDelete, allowsPath(item.path) else { return "Путь не разрешён правилами безопасности." }
         guard let current = StorageFileIdentity.read(item.path), !current.isSymbolicLink,
               current.isDirectory || current.isRegularFile else { return "Объект исчез или изменил тип. Сканируйте снова." }

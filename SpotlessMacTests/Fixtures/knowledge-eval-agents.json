@@ -1,0 +1,4 @@
+[
+  { "query": "хвосты ИИ агентов Codex Claude Cursor worktrees", "expected": "path.agent-data" },
+  { "query": "можно удалить старую рабочую папку агента с Git репозиторием", "expected": "path.agent-data" }
+]

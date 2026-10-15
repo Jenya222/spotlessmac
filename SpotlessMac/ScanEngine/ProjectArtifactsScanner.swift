@@ -18,7 +18,7 @@ struct ProjectArtifactsScanner: Scanner {
     static func containsGitMetadata(_ url: URL) -> Bool {
         guard let walker = FileManager.default.enumerator(at: url, includingPropertiesForKeys: nil, options: [], errorHandler: { _, _ in false }) else { return true }
         for case let child as URL in walker {
-            if child.lastPathComponent == ".git" { return true }
+            if child.lastPathComponent.lowercased() == ".git" || AgentStorageCatalog.isProtectedWorkspacePath(child) { return true }
             if StorageFileIdentity.read(child)?.isSymbolicLink == true { walker.skipDescendants() }
             if Task.isCancelled { return true }
         }
