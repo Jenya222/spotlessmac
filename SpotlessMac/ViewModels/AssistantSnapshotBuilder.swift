@@ -110,6 +110,24 @@ enum AssistantSnapshotBuilder {
         return AssistantFocus(title: item.path.lastPathComponent, path: item.path.path(percentEncoded: false), facts: facts)
     }
 
+    static func focus(for node: StorageNode, deletable: Bool,
+                      sources: [StorageSource] = StorageSourceCatalog.sources()) -> AssistantFocus {
+        let format = { ByteCountFormatter.string(fromByteCount: $0, countStyle: .file) }
+        var facts = [
+            "Тип: \(node.isPackage ? "пакет" : node.isDirectory ? "папка" : "файл")",
+            "Размер на диске: \(node.measurement.isComplete ? "" : "не менее ")\(format(node.measurement.allocatedBytes))",
+            "Логический размер: \(format(node.measurement.logicalBytes))",
+        ]
+        let path = PathPolicy.canonical(node.url)
+        if let source = sources.first(where: { PathPolicy.contains(path, in: PathPolicy.canonical($0.url)) }) {
+            facts.append("Раздел обзора диска: \(source.title). \(source.explanation)")
+        }
+        facts.append(deletable
+            ? "SpotlessMac может переместить его в Корзину из обзора диска"
+            : "SpotlessMac не удаляет его из обзора диска: объект вне безопасных папок или очищается в своём разделе")
+        return AssistantFocus(title: node.url.lastPathComponent, path: node.url.path(percentEncoded: false), facts: facts)
+    }
+
     static func focus(for leftover: LeftoverItem, appName: String?) -> AssistantFocus {
         var facts = [
             "Расположение: \(leftover.location)",

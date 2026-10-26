@@ -11,6 +11,7 @@ struct DiskOverviewView: View {
     @State private var largestFolders: [FolderEntry] = []
     // An item-driven sheet carries its URL; a separate URL state could reach the sheet stale.
     @State private var drillDown: DrillDownTarget?
+    @State private var trashedInDrillDown = false
     @State private var showLargeFiles = false
     @State private var showStorageRecovery = false
 
@@ -39,8 +40,14 @@ struct DiskOverviewView: View {
             viewModel.recoveryPreviewRequested = false
             showStorageRecovery = true
         }
-        .sheet(item: $drillDown) { target in
-            DiskUsageView(startingURL: target.url)
+        .sheet(item: $drillDown, onDismiss: {
+            guard trashedInDrillDown else { return }
+            trashedInDrillDown = false
+            refreshDiskOverview()
+        }) { target in
+            DiskUsageView(startingURL: target.url, viewModel: viewModel, licenseManager: licenseManager) {
+                trashedInDrillDown = true
+            }
         }
         .sheet(isPresented: $showLargeFiles) {
             LargeFilesView(viewModel: viewModel, licenseManager: licenseManager)

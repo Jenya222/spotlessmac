@@ -32,6 +32,18 @@ final class SafetyRulesTests: XCTestCase {
         XCTAssertFalse(SafetyRules.isSafe(url: sibling))
     }
 
+    func testManualDeletionAllowsOnlyChildrenOfPlainWhitelistedRoots() {
+        let home = FileManager.default.homeDirectoryForCurrentUser
+        let derivedData = SafetyRules.developerCacheRoots[0]
+
+        XCTAssertTrue(SafetyRules.isManuallyDeletable(url: derivedData.appending(path: "Project/Build/output.o")))
+        XCTAssertFalse(SafetyRules.isManuallyDeletable(url: derivedData))
+        XCTAssertFalse(SafetyRules.isManuallyDeletable(url: home.appending(path: ".ollama/models/blobs/sha256-abc")))
+        XCTAssertFalse(SafetyRules.isManuallyDeletable(url: home.appending(path: ".npm/_cacache")))
+        XCTAssertFalse(SafetyRules.isManuallyDeletable(url: home.appending(path: ".claude/debug/log.txt")))
+        XCTAssertFalse(SafetyRules.isManuallyDeletable(url: URL(filePath: "/System/Library/file")))
+    }
+
     func testBatchDeleteReportsUnsafePathAsFailure() async {
         let item = ScanItem(path: URL(filePath: "/System/unsafe"), size: 1, category: .userCaches)
 

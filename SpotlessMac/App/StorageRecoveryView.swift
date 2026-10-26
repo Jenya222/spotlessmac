@@ -427,7 +427,8 @@ private struct StorageRecoveryRow: View {
     }
 }
 
-private struct BatchDeleteConfirmationSheet: View {
+// Shared preview of every path and size before a multi-item move to Trash.
+struct BatchDeleteConfirmationSheet: View {
     let items: [ScanItem]
     let onCancel: () -> Void
     let onConfirm: () -> Void

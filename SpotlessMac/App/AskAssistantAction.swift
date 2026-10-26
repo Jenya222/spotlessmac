@@ -30,7 +30,7 @@ struct AskAssistantButton: View {
         }
         .buttonStyle(.plainHand)
         .foregroundStyle(Theme.textSecondary)
-        .help("Спросить ассистента")
+        .help("Спросить ассистента: что это и можно ли удалить")
         .accessibilityLabel("Спросить ассистента")
     }
 }

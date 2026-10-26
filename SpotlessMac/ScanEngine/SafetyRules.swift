@@ -68,6 +68,20 @@ enum SafetyRules {
         return false
     }
 
+    /// Manual picks in the disk browser skip scanner-specific checks (owner activity, agent
+    /// confirmation), so only plain whitelisted folders qualify. Caches, models, recordings, projects
+    /// and agent data keep their own sections. Deletion itself is still gated by `isSafe(url:)`.
+    static func isManuallyDeletable(url: URL) -> Bool {
+        let path = PathPolicy.canonical(url)
+        let specialRoots = knownCacheRoots + huggingFaceRoots + [recordingsRoot] + projectRoots + agentStorageRoots
+        guard !specialRoots.contains(where: {
+            let root = PathPolicy.canonical($0)
+            return PathPolicy.contains(path, in: root) || PathPolicy.contains(root, in: path)
+        }) else { return false }
+        guard legacyAllowedRoots.contains(where: { PathPolicy.contains(path, in: PathPolicy.canonical($0), includeRoot: false) }) else { return false }
+        return isSafe(url: url)
+    }
+
     /// Shared with uninstall: an enclosing app-data folder must not swallow protected workspaces.
     static func protectsAgentWorkspace(_ url: URL,
                                        registeredRoots: [URL] = StorageRootRegistry.roots(kind: .agentWorkspaces)) -> Bool {
