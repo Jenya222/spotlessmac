@@ -35,7 +35,7 @@ struct MemoryQuitSheet: View {
                 HStack { Spacer(); Button("Готово") { viewModel.dismissQuit() }.keyboardShortcut(.defaultAction) }
             }
         }
-        .padding(22)
+        .padding(24)
         .frame(width: 420)
     }
 

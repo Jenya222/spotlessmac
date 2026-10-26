@@ -39,13 +39,16 @@ struct SmartCareConfirmSheet: View {
                 ScanItemRow(item: item) { viewModel.toggleSelection(item) }
                     .help(item.path.path(percentEncoded: false))
             }
+            .listStyle(.inset)
             .frame(height: 220)
 
             HStack {
-                Button("Отмена", action: onCancel)
                 Spacer()
+                Button("Отмена", action: onCancel)
+                    .keyboardShortcut(.cancelAction)
                 Button("Начать очистку", action: onConfirm)
                     .buttonStyle(.borderedProminentHand)
+                    .keyboardShortcut(.defaultAction)
                     .disabled(viewModel.smartCareSelectedItems.isEmpty || viewModel.isCleaning)
             }
         }

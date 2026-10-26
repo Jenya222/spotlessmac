@@ -9,8 +9,8 @@ struct DiskOverviewView: View {
 
     @State private var overview: DiskSpaceOverview?
     @State private var largestFolders: [FolderEntry] = []
-    @State private var showDrillDown = false
-    @State private var drillDownURL: URL = FileManager.default.homeDirectoryForCurrentUser
+    // An item-driven sheet carries its URL; a separate URL state could reach the sheet stale.
+    @State private var drillDown: DrillDownTarget?
     @State private var showLargeFiles = false
     @State private var showStorageRecovery = false
 
@@ -21,7 +21,7 @@ struct DiskOverviewView: View {
                 if let overview, overview.capacityKnown {
                     segmentedBar(overview)
                     legend(overview)
-                    if !overview.isComplete { Text("Измерение неполное: часть папок недоступна. В сегментах показан измеренный объём.").font(.caption).foregroundStyle(.orange) }
+                    if overview.breakdownMeasured && !overview.isComplete { Text("Измерение неполное: часть папок недоступна. В сегментах показан измеренный объём.").font(.caption).foregroundStyle(.orange) }
                 }
                 storageRecoveryCard
                 sourcesSection
@@ -39,19 +39,11 @@ struct DiskOverviewView: View {
             viewModel.recoveryPreviewRequested = false
             showStorageRecovery = true
         }
-        .sheet(isPresented: $showDrillDown) {
-            NavigationStack {
-                DiskUsageView(startingURL: drillDownURL)
-                    .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Закрыть") { showDrillDown = false } } }
-            }
-            .frame(width: 640, height: 480)
+        .sheet(item: $drillDown) { target in
+            DiskUsageView(startingURL: target.url)
         }
         .sheet(isPresented: $showLargeFiles) {
-            NavigationStack {
-                LargeFilesView(viewModel: viewModel, licenseManager: licenseManager)
-                    .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Закрыть") { showLargeFiles = false } } }
-            }
-            .frame(width: 640, height: 480)
+            LargeFilesView(viewModel: viewModel, licenseManager: licenseManager)
         }
         .sheet(isPresented: $showStorageRecovery, onDismiss: {
             viewModel.clearAssistantStaging()
@@ -165,11 +157,21 @@ struct DiskOverviewView: View {
         Rectangle().fill(color).frame(width: max(0, width))
     }
 
+    @ViewBuilder
     private func legend(_ overview: DiskSpaceOverview) -> some View {
-        HStack(spacing: 18) {
-            legendDot(color: Theme.accentGradientEnd, label: "Прочее и неразобранное", bytes: overview.unclassifiedBytes)
-            legendDot(color: Theme.accentGradientStart, label: "Программы", bytes: overview.applicationsBytes)
-            legendDot(color: Theme.healthGreen, label: "Документы", bytes: overview.documentsBytes)
+        if overview.breakdownMeasured {
+            HStack(spacing: 18) {
+                legendDot(color: Theme.accentGradientEnd, label: "Прочее и неразобранное", bytes: overview.unclassifiedBytes)
+                legendDot(color: Theme.accentGradientStart, label: "Программы", bytes: overview.applicationsBytes)
+                legendDot(color: Theme.healthGreen, label: "Документы", bytes: overview.documentsBytes)
+            }
+        } else {
+            HStack(spacing: 7) {
+                if analysis.isLoading { ProgressView().controlSize(.small) }
+                Text(analysis.isLoading ? "Измеряем программы и документы…" : "Программы и документы не измерены — нажмите «Обновить».")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(Color(white: 0.35))
+            }
         }
     }
 
@@ -213,7 +215,7 @@ struct DiskOverviewView: View {
                 VStack(alignment: .leading, spacing: 5) {
                     HStack {
                         Button(result.source.title) {
-                            drillDownURL = result.source.url; showDrillDown = true
+                            drillDown = DrillDownTarget(url: result.source.url)
                         }.disabled(result.measurement == nil)
                         Spacer()
                         if let size = result.measurement {
@@ -237,8 +239,7 @@ struct DiskOverviewView: View {
             let maxSize = largestFolders.first?.size ?? 1
             ForEach(largestFolders) { entry in
                 Button {
-                    drillDownURL = entry.url
-                    showDrillDown = true
+                    drillDown = DrillDownTarget(url: entry.url)
                 } label: {
                     folderRow(entry, maxSize: maxSize)
                 }
@@ -284,4 +285,9 @@ struct DiskOverviewView: View {
         default: return "folder.fill"
         }
     }
+}
+
+private struct DrillDownTarget: Identifiable {
+    let url: URL
+    var id: URL { url }
 }

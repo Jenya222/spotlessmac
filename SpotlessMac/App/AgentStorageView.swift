@@ -255,7 +255,7 @@ private struct AgentStorageConfirmation: View {
                     Text(item.path.path).font(.caption).textSelection(.enabled).fixedSize(horizontal: false, vertical: true)
                     Text(item.reason).font(.caption).foregroundStyle(.secondary)
                 }.padding(.vertical, 4)
-            }.frame(minHeight: 180, maxHeight: 320)
+            }.listStyle(.inset).frame(minHeight: 180, maxHeight: 320)
             Toggle("Агенты и связанные задачи закрыты", isOn: $closedAgents)
             Text("Перед очисткой приложение повторно проверит папки и активность инструментов.")
                 .font(.caption).foregroundStyle(.secondary)

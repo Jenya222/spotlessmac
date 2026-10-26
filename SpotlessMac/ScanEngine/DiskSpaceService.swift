@@ -7,6 +7,8 @@ struct DiskSpaceOverview: Sendable {
     let documentsBytes: Int64
     var isComplete = true
     var capacityKnown = true
+    /// False while no source has been measured yet: zero bytes then mean "unknown", not "empty".
+    var breakdownMeasured = true
 
     var usedBytes: Int64 { totalBytes - availableBytes }
     var unclassifiedBytes: Int64 { max(0, usedBytes - applicationsBytes - documentsBytes) }
@@ -52,7 +54,8 @@ enum DiskSpaceService {
 
         return DiskSpaceOverview(
             totalBytes: total, availableBytes: available,
-            applicationsBytes: appsBytes, documentsBytes: docsBytes, isComplete: complete, capacityKnown: values?.volumeTotalCapacity != nil && values?.volumeAvailableCapacity != nil
+            applicationsBytes: appsBytes, documentsBytes: docsBytes, isComplete: complete, capacityKnown: values?.volumeTotalCapacity != nil && values?.volumeAvailableCapacity != nil,
+            breakdownMeasured: sourceResults?.isEmpty != true
         )
     }
 

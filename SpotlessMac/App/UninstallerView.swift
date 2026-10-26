@@ -30,29 +30,20 @@ struct UninstallerView: View {
             if viewModel.apps.isEmpty { await viewModel.loadApps() }
         }
         .sheet(isPresented: Binding(get: { !pendingCache.isEmpty }, set: { if !$0 { pendingCache = [] } })) {
-            VStack(alignment: .leading, spacing: 16) {
-                Text("Переместить кэш в Корзину?").font(.title2.bold())
-                Text("Закройте приложение. Программа и личные данные сохраняются.").foregroundStyle(.secondary)
-                List(pendingCache) { item in
-                    VStack(alignment: .leading) {
-                        Text(item.path.path(percentEncoded: false)).textSelection(.enabled)
-                        Text(item.formattedSize).font(.caption)
-                    }
+            TrashConfirmationSheet(
+                title: "Переместить кэш в Корзину?",
+                message: "Закройте приложение. Программа и личные данные сохраняются.",
+                rows: pendingCache.map { TrashConfirmationSheet.Row(path: $0.path, size: $0.formattedSize, detail: nil) },
+                onCancel: { pendingCache = [] }
+            ) {
+                let snapshot = pendingCache; pendingCache = []
+                Task {
+                    guard licenseManager.canClean else { showActivation = true; return }
+                    let failures = await viewModel.cleanCache(snapshot)
+                    cacheFailure = failures.first?.reason
+                    if failures.count < snapshot.count && !licenseManager.isActivated { licenseManager.recordClean() }
                 }
-                HStack {
-                    Button("Отмена") { pendingCache = [] }
-                    Spacer()
-                    Button("Переместить в Корзину", role: .destructive) {
-                        let snapshot = pendingCache; pendingCache = []
-                        Task {
-                            guard licenseManager.canClean else { showActivation = true; return }
-                            let failures = await viewModel.cleanCache(snapshot)
-                            cacheFailure = failures.first?.reason
-                            if failures.count < snapshot.count && !licenseManager.isActivated { licenseManager.recordClean() }
-                        }
-                    }
-                }
-            }.padding(20).frame(width: 650, height: 450)
+            }
         }
         .sheet(isPresented: $showActivation) {
             ActivationView(licenseManager: licenseManager) {
@@ -163,28 +154,20 @@ struct UninstallerView: View {
             footer
         }
         .sheet(isPresented: $showConfirmation) {
-            VStack(alignment: .leading, spacing: 16) {
-                Text("Переместить выбранное в Корзину?").font(.title2.bold())
-                Text("Программа, кэш и личные данные показаны отдельно. Корзина продолжает занимать место.").font(.callout).foregroundStyle(.secondary)
-                List(pendingItems) { item in
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(item.path.path(percentEncoded: false)).textSelection(.enabled)
-                        Text(item.formattedSize + " · " + item.dispositionLabel).font(.caption).foregroundStyle(.secondary)
-                    }
+            TrashConfirmationSheet(
+                title: "Переместить выбранное в Корзину?",
+                message: "Программа, кэш и личные данные показаны отдельно. Корзина продолжает занимать место.",
+                rows: pendingItems.map { TrashConfirmationSheet.Row(path: $0.path, size: $0.formattedSize, detail: $0.dispositionLabel) },
+                isConfirmDisabled: pendingItems.isEmpty || viewModel.isDeleting,
+                onCancel: { showConfirmation = false }
+            ) {
+                let snapshot = pendingItems; showConfirmation = false
+                Task {
+                    guard licenseManager.canClean else { showActivation = true; return }
+                    await viewModel.uninstall(items: snapshot)
+                    if viewModel.failures.count < snapshot.count && !licenseManager.isActivated { licenseManager.recordClean() }
                 }
-                HStack {
-                    Button("Отмена") { showConfirmation = false }.keyboardShortcut(.cancelAction)
-                    Spacer()
-                    Button("Переместить в Корзину", role: .destructive) {
-                        let snapshot = pendingItems; showConfirmation = false
-                        Task {
-                            guard licenseManager.canClean else { showActivation = true; return }
-                            await viewModel.uninstall(items: snapshot)
-                            if viewModel.failures.count < snapshot.count && !licenseManager.isActivated { licenseManager.recordClean() }
-                        }
-                    }.disabled(pendingItems.isEmpty || viewModel.isDeleting)
-                }
-            }.padding(20).frame(minWidth: 650, minHeight: 450)
+            }
         }
     }
 
@@ -322,5 +305,67 @@ private struct LeftoverRow: View {
         .onTapGesture(perform: onToggle)
         .pointingHandCursor()
         .askAssistantMenu(onAsk)
+    }
+}
+
+/// Same layout as the batch confirmation in StorageRecoveryView: every path is visible before Trash.
+private struct TrashConfirmationSheet: View {
+    struct Row: Identifiable {
+        let path: URL
+        let size: String
+        let detail: String?
+        var id: URL { path }
+    }
+    let title: String
+    let message: String
+    let rows: [Row]
+    var isConfirmDisabled = false
+    let onCancel: () -> Void
+    let onConfirm: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 5) {
+                Text(title)
+                    .font(.title2.bold())
+                Text(message)
+                    .foregroundStyle(.secondary)
+            }
+
+            List(rows) { row in
+                HStack(alignment: .top, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(row.path.lastPathComponent)
+                            .font(.callout.weight(.medium))
+                        Text(row.path.path(percentEncoded: false))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .textSelection(.enabled)
+                        if let detail = row.detail {
+                            Text(detail)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    Spacer()
+                    Text(row.size)
+                        .font(.callout.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.vertical, 3)
+            }
+            .listStyle(.inset)
+
+            HStack {
+                Spacer()
+                Button("Отмена", action: onCancel)
+                    .keyboardShortcut(.cancelAction)
+                Button("Переместить в Корзину", role: .destructive, action: onConfirm)
+                    .keyboardShortcut(.defaultAction)
+                    .disabled(isConfirmDisabled)
+            }
+        }
+        .padding(20)
+        .frame(minWidth: 650, idealWidth: 700, minHeight: 420, idealHeight: 520)
     }
 }

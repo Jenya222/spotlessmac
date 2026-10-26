@@ -35,4 +35,19 @@ final class StorageAnalysisEngineTests: XCTestCase {
         XCTAssertEqual(size.logicalBytes, 16 * 1024 * 1024)
         XCTAssertLessThan(size.allocatedBytes, size.logicalBytes)
     }
+    func testOverviewBeforeSourcesAreMeasuredHasNoBreakdown() async {
+        let overview = await DiskSpaceService.overview(sourceResults: [])
+        XCTAssertFalse(overview.breakdownMeasured)
+    }
+    func testOverviewSumsMeasuredApplicationAndDocumentSources() async {
+        let home = FileManager.default.homeDirectoryForCurrentUser
+        let results = [
+            StorageSourceResult(source: StorageSource(url: URL(filePath: "/Applications"), title: "", explanation: ""), measurement: StorageMeasurement(allocatedBytes: 100), errorMessage: nil),
+            StorageSourceResult(source: StorageSource(url: home.appending(path: "Documents"), title: "", explanation: ""), measurement: StorageMeasurement(allocatedBytes: 50), errorMessage: nil)
+        ]
+        let overview = await DiskSpaceService.overview(sourceResults: results)
+        XCTAssertTrue(overview.breakdownMeasured)
+        XCTAssertEqual(overview.applicationsBytes, 100)
+        XCTAssertEqual(overview.documentsBytes, 50)
+    }
 }
