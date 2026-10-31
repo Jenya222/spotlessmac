@@ -25,6 +25,7 @@ struct ContentView: View {
     @State private var dockerViewModel = DockerCleanupViewModel()
     @State private var agentStorageViewModel = AgentStorageViewModel()
     @State private var memoryViewModel = MemoryViewModel()
+    @State private var storageAnalysis = StorageAnalysisViewModel()
     @State private var licenseManager = LicenseManager()
     @State private var uninstallViewModel = UninstallViewModel()
     @State private var assistantMemory = AssistantMemoryCache()
@@ -91,7 +92,7 @@ struct ContentView: View {
         case .uninstall:
             UninstallerView(viewModel: uninstallViewModel, licenseManager: licenseManager)
         case .diskUsage:
-            DiskOverviewView(viewModel: viewModel, licenseManager: licenseManager, onOpenDocker: { selectedTab = .docker })
+            DiskOverviewView(viewModel: viewModel, licenseManager: licenseManager, analysis: storageAnalysis, onOpenDocker: { selectedTab = .docker })
         case .memory:
             MemoryView(viewModel: memoryViewModel)
         case .docker:

@@ -85,14 +85,14 @@ enum AssistantSnapshotBuilder {
         )
     }
 
+    /// Same free space as the Disk section, so the assistant and the UI quote one number.
     static func readVolume() -> VolumeInfo? {
         let root = URL(filePath: "/", directoryHint: .isDirectory)
-        guard let values = try? root.resourceValues(forKeys: [.volumeTotalCapacityKey, .volumeAvailableCapacityKey, .volumeLocalizedNameKey]),
-              let total = values.volumeTotalCapacity else { return nil }
+        guard let capacity = DiskSpaceService.capacity(of: root) else { return nil }
         return VolumeInfo(
-            name: values.volumeLocalizedName ?? "Macintosh HD",
-            totalBytes: Int64(total),
-            availableBytes: Int64(values.volumeAvailableCapacity ?? 0)
+            name: (try? root.resourceValues(forKeys: [.volumeLocalizedNameKey]))?.volumeLocalizedName ?? "Macintosh HD",
+            totalBytes: capacity.totalBytes,
+            availableBytes: capacity.availableBytes
         )
     }
 

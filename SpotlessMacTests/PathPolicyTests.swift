@@ -15,6 +15,17 @@ final class PathPolicyTests: XCTestCase {
         XCTAssertFalse(policy.canRead(URL(filePath: "/tmp/fixture/allowed-other/cache")))
         XCTAssertFalse(policy.canRead(URL(filePath: "/System")))
     }
+    func testRootReplacedBySymlinkLaterDoesNotWidenPolicy() throws {
+        let fm = FileManager.default
+        let root = fm.temporaryDirectory.appending(path: UUID().uuidString)
+        let elsewhere = fm.temporaryDirectory.appending(path: UUID().uuidString)
+        try fm.createDirectory(at: root, withIntermediateDirectories: true)
+        try fm.createDirectory(at: elsewhere, withIntermediateDirectories: true)
+        let policy = PathPolicy(readRoots: [root])
+        try fm.removeItem(at: root)
+        try fm.createSymbolicLink(at: root, withDestinationURL: elsewhere)
+        XCTAssertFalse(policy.canRead(root.appending(path: "secret")))
+    }
     func testSymlinkEscape() throws {
         let root = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)

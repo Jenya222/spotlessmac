@@ -4,8 +4,9 @@ import AppKit
 struct DiskOverviewView: View {
     var viewModel: ScanViewModel
     var licenseManager: LicenseManager
+    // Owned by ContentView, so measured sources survive switching tabs.
+    var analysis: StorageAnalysisViewModel
     var onOpenDocker: () -> Void = {}
-    @State private var analysis = StorageAnalysisViewModel()
 
     @State private var overview: DiskSpaceOverview?
     @State private var largestFolders: [FolderEntry] = []
@@ -30,11 +31,12 @@ struct DiskOverviewView: View {
             .padding(24)
         }
         .task {
-            overview = await DiskSpaceService.overview(sourceResults: [])
-            await analysis.scanSources()
-            overview = await DiskSpaceService.overview(sourceResults: analysis.sourceResults)
+            await updateOverview()
+            if analysis.sampledAt == nil && !analysis.isLoading { await analysis.scanSources() }
         }
-        .onDisappear { analysis.cancel() }
+        .onChange(of: analysis.isLoading) { _, loading in
+            if !loading { Task { await updateOverview() } }
+        }
         .onChange(of: viewModel.recoveryPreviewRequested, initial: true) { _, requested in
             guard requested else { return }
             viewModel.recoveryPreviewRequested = false
@@ -119,10 +121,14 @@ struct DiskOverviewView: View {
 
     private func refreshDiskOverview() {
         Task {
-            overview = await DiskSpaceService.overview(sourceResults: [])
+            await updateOverview()
             await analysis.scanSources()
-            overview = await DiskSpaceService.overview(sourceResults: analysis.sourceResults)
         }
+    }
+
+    // Capacity is re-read every time; the breakdown reuses the last measured sources.
+    private func updateOverview() async {
+        overview = await DiskSpaceService.overview(sourceResults: analysis.breakdownSources)
     }
 
     private var header: some View {
@@ -135,6 +141,7 @@ struct DiskOverviewView: View {
                 Text("\(overview.formattedUsed) занято · \(overview.formattedAvailable) свободно")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(Theme.textSecondary)
+                    .help(overview.purgeableBytes > 0 ? "Как в Настройках macOS: \(overview.formattedPurgeable) свободного места сейчас занимают кэши и локальные снимки, которые система удаляет сама, когда место нужно. Дисковая утилита считает их занятыми." : "")
             }
             Button("Показать крупные файлы") {
                 Task {
@@ -148,7 +155,8 @@ struct DiskOverviewView: View {
 
     private func segmentedBar(_ overview: DiskSpaceOverview) -> some View {
         GeometryReader { geo in
-            let total = max(1, overview.usedBytes)
+            // Scaled to the whole disk: free space stays as the empty track, as in macOS Settings.
+            let total = max(1, overview.totalBytes)
             HStack(spacing: 0) {
                 segment(width: geo.size.width * CGFloat(overview.unclassifiedBytes) / CGFloat(total), color: Theme.accentGradientEnd)
                 segment(width: geo.size.width * CGFloat(overview.applicationsBytes) / CGFloat(total), color: Theme.accentGradientStart)

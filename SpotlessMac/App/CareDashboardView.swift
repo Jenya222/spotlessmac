@@ -44,8 +44,9 @@ struct CareDashboardView: View {
             memorySample = await MemoryMonitor().sample()
         }
         .task {
+            // Capacity only: the health score needs the free share, not another walk of every folder.
+            diskOverview = await DiskSpaceService.overview(sourceResults: [])
             if viewModel.items.isEmpty { await viewModel.scan() }
-            diskOverview = await DiskSpaceService.overview()
         }
         .sheet(isPresented: $showConfirmSheet) {
             SmartCareConfirmSheet(

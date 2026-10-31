@@ -35,6 +35,16 @@ final class StorageAnalysisEngineTests: XCTestCase {
         XCTAssertEqual(size.logicalBytes, 16 * 1024 * 1024)
         XCTAssertLessThan(size.allocatedBytes, size.logicalBytes)
     }
+    // macOS Settings and Finder count purgeable data (caches, local snapshots) as free space.
+    func testOverviewReportsFreeSpaceLikeSystemSettings() async throws {
+        let overview = await DiskSpaceService.overview(sourceResults: [])
+        let values = try URL(filePath: "/", directoryHint: .isDirectory)
+            .resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey, .volumeAvailableCapacityKey])
+        let systemFree = try XCTUnwrap(values.volumeAvailableCapacityForImportantUsage)
+        let rawFree = Int64(try XCTUnwrap(values.volumeAvailableCapacity))
+        XCTAssertLessThan(abs(overview.availableBytes - systemFree), 1_000_000_000)
+        XCTAssertLessThan(abs(overview.purgeableBytes - (systemFree - rawFree)), 1_000_000_000)
+    }
     func testOverviewBeforeSourcesAreMeasuredHasNoBreakdown() async {
         let overview = await DiskSpaceService.overview(sourceResults: [])
         XCTAssertFalse(overview.breakdownMeasured)

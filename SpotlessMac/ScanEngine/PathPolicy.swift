@@ -3,6 +3,13 @@ import Darwin
 
 struct PathPolicy: Sendable {
     let readRoots: [URL]
+    // Resolved once: canRead runs for every directory a measurement walks, and a root
+    // replaced by a symlink later must not move the policy along with it.
+    private let canonicalRoots: [String]
+    init(readRoots: [URL]) {
+        self.readRoots = readRoots
+        canonicalRoots = readRoots.map(Self.canonical).filter { $0 != "/" && !Self.isForbidden($0) }
+    }
     static func canonical(_ url: URL) -> String {
         var path = url.standardizedFileURL.path(percentEncoded: false)
         var tail: [String] = []
@@ -39,10 +46,7 @@ struct PathPolicy: Sendable {
     func canRead(_ url: URL) -> Bool {
         let path = Self.canonical(url)
         guard !Self.isForbidden(path) else { return false }
-        return readRoots.contains {
-            let root = Self.canonical($0)
-            return root != "/" && !Self.isForbidden(root) && Self.contains(path, in: root)
-        }
+        return canonicalRoots.contains { Self.contains(path, in: $0) }
     }
 }
 
